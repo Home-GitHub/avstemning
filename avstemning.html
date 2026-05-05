@@ -205,6 +205,25 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
 .blindtest-arrow{font-size:16px;color:var(--muted);}
 .blindtest-to{font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--accent);}
 
+/* RESULT TABS */
+.result-tabs{display:flex;gap:2px;background:var(--surface2);border-radius:10px;padding:3px;margin-bottom:20px;border:1px solid var(--border);}
+.result-tab{flex:1;padding:9px;text-align:center;font-size:13px;font-weight:500;border-radius:8px;cursor:pointer;color:var(--muted);transition:all 0.2s;}
+.result-tab.active{background:var(--surface);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,0.4);}
+.result-panel{display:none;}
+.result-panel.active{display:block;}
+.cat-breakdown-item{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;}
+.cat-breakdown-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.cat-breakdown-rank{font-family:'Bebas Neue',sans-serif;font-size:22px;width:28px;}
+.cat-breakdown-name{flex:1;font-size:15px;font-weight:600;}
+.cat-breakdown-avg{font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--accent);}
+.cat-breakdown-max{font-size:11px;color:var(--muted);}
+.cat-breakdown-bar{height:4px;background:var(--border);border-radius:2px;margin-bottom:10px;}
+.cat-breakdown-fill{height:4px;border-radius:2px;background:var(--accent);}
+.cat-person-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-top:1px solid var(--border);}
+.cat-person-rank{font-size:11px;color:var(--muted);width:20px;}
+.cat-person-name{flex:1;font-size:13px;}
+.cat-person-score{font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--text2);}
+
 /* CATEGORY SPOTLIGHT */
 .cat-spot-item{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;}
 .cat-spot-rank{font-family:'Bebas Neue',sans-serif;font-size:20px;margin-right:10px;}
@@ -436,6 +455,27 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
   </div>
 </div>
 
+<!-- ===== SCREEN: JUDGE SPOTLIGHT ===== -->
+<div id="screen-judge-lb" class="screen">
+  <div class="header">
+    <div>
+      <div class="header-title" id="judge-lb-title">Dommer-detaljer</div>
+      <div class="header-sub" id="judge-lb-sub">Hvem likte hva?</div>
+    </div>
+    <div class="header-right">
+      <div class="icon-btn" data-action="openSkalSheet">🥂</div>
+      <div class="icon-btn admin-only" data-action="openGear">⚙️</div>
+    </div>
+  </div>
+  <div class="content">
+    <div id="judge-spotlight-list"></div>
+    <div class="text-muted text-center mt-16" id="judge-lb-next-msg"></div>
+    <div class="admin-only mt-16" style="flex-direction:column;">
+      <button class="btn btn-secondary" data-action="forceNext">Neste emne → (tving)</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===== SCREEN: FINAL ===== -->
 <div id="screen-final" class="screen">
   <div class="header">
@@ -446,16 +486,25 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
     </div>
   </div>
   <div class="content">
-    <div id="final-leaderboard"></div>
-    <div id="blindtest-reveal-section" style="display:none;">
-      <div class="divider"></div>
-      <button class="btn btn-primary admin-only" style="margin-bottom:8px;" data-action="revealBlindtest">🎭 Avslør fasit!</button>
-    </div>
-    <div id="blindtest-fasit" style="display:none;margin-top:16px;">
-      <div class="card">
-        <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px;">Fasit avslørt</div>
-        <div id="fasit-content"></div>
+    <div class="result-tabs" id="result-tabs-container"></div>
+    <div class="result-panel active" id="panel-toplist">
+      <div id="final-leaderboard"></div>
+      <div id="blindtest-reveal-section" style="display:none;">
+        <div class="divider"></div>
+        <button class="btn btn-primary admin-only" style="margin-bottom:8px;" data-action="revealBlindtest">🎭 Avslør fasit!</button>
       </div>
+      <div id="blindtest-fasit" style="display:none;margin-top:16px;">
+        <div class="card">
+          <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px;">Fasit avslørt</div>
+          <div id="fasit-content"></div>
+        </div>
+      </div>
+    </div>
+    <div class="result-panel" id="panel-categories">
+      <div id="final-category-breakdown"></div>
+    </div>
+    <div class="result-panel" id="panel-judges">
+      <div id="final-judge-breakdown"></div>
     </div>
     <div class="text-muted text-center mt-24" style="font-size:12px;padding-bottom:32px;">Takk for deltakelse! 🎉</div>
   </div>
@@ -943,7 +992,7 @@ window.startSession=async function(){
   const session=state.session;
   const pCount=session.participants?Object.keys(session.participants).length:0;
   const errEl=document.getElementById('start-error');
-  if(pCount<3){errEl.textContent='Du trenger minst 3 deltakere for å starte';errEl.style.display='block';return;}
+  if(pCount<2){errEl.textContent='Du trenger minst 2 deltakere for å starte';errEl.style.display='block';return;}
   errEl.style.display='none';
   const timerEnd=session.minutesPerSubject>0?Date.now()+session.minutesPerSubject*60000:null;
   await update(ref(db,`sessions/${state.sessionId}`),{status:'voting',currentSubjectIndex:0,timerEnd:timerEnd||null});
@@ -951,11 +1000,20 @@ window.startSession=async function(){
 };
 
 // ========== VOTING ==========
+let lastShownSubjectIdx = -1;
 function showVotingScreen(session){
   const idx=session.currentSubjectIndex||0;
   const subjects=session.subjects?Object.values(session.subjects):[];
   const subject=subjects[idx];
   if(!subject)return;
+  
+  // Reset per-subject state when subject changes
+  if(lastShownSubjectIdx !== idx){
+    lastShownSubjectIdx = idx;
+    state.hasVotedCurrentSubject = false;
+    state.lastFirstInSubject = null;
+    eventQueue = []; // clear pending events
+  }
   updateProgressDots(idx,subjects.length,'progress-dots');
   updateProgressDots(idx,subjects.length,'submitted-dots');
   document.getElementById('voting-subject-name').textContent=subject.name;
@@ -971,7 +1029,7 @@ function showVotingScreen(session){
   document.getElementById('voter-count-voting').textContent=`${vCount} av ${pCount} stemt`;
   document.getElementById('submitted-voter-count').textContent=`${vCount} av ${pCount} stemt`;
   // First in event
-  if(vCount===1&&state.lastFirstInSubject!==idx&&idx===0){
+  if(vCount===1&&state.lastFirstInSubject!==idx){
     const firstVoter=votes[voteKey]?Object.values(votes[voteKey])[0]:null;
     if(firstVoter){state.lastFirstInSubject=idx;showEvent('⚡','Første inn!',firstVoter.participantName||'Noen');}
   }
@@ -1174,40 +1232,57 @@ function showLeaderboardScreen(session){
   const participants=session.participants?Object.keys(session.participants):[];
   const lbSecs=session.leaderboardSeconds||60;
   const isLast=session.isLastLeaderboard||false;
-  const halfMs=isLast?Math.min(lbSecs*250,4000):Math.floor(lbSecs/2)*1000;
+  const rc=session.resultConfig||{toplist:true,categories:true,judges:false};
 
-  // LB1: emne ranking
-  document.getElementById('lb-sub').textContent=`Etter emne ${idx+1} av ${subjects.length}`;
+  // Build list of enabled views
+  const views=[];
+  if(rc.toplist!==false) views.push('toplist');
+  if(rc.categories) views.push('categories');
+  if(rc.judges) views.push('judges');
+  if(!views.length) views.push('toplist');
+
+  const sliceMs=lbSecs>0?(isLast?Math.min(lbSecs*1000/views.length,6000):Math.floor(lbSecs/views.length)*1000):0;
+
+  // Prep leaderboard data
   const scores=calcScores(dedupeSubjects(subjects),cats,votes,participants);
-  renderLeaderboard('leaderboard-list',scores);
   const vCount=votes[idx]?Object.keys(votes[idx]).length:0;
-  document.getElementById('lb-voter-count').textContent=`${vCount} av ${participants.length} stemte`;
 
-  // Countdown first half
-  if(lbSecs>0){
-    let r1=Math.floor(lbSecs/2);
-    const el=document.getElementById('lb-countdown');
-    const iv1=setInterval(()=>{r1--;el.textContent=`Kategori-spotlight om ${formatTime(r1)}`;if(r1<=0)clearInterval(iv1);},1000);
-  }
+  function showView(viewIdx){
+    const view=views[viewIdx];
+    const isLastView=viewIdx===views.length-1;
+    const nextLabel=isLastView?(isLast?'🏆 Endelig resultat':'Neste emne'):views[viewIdx+1]==='categories'?'Kategori-detaljer':views[viewIdx+1]==='judges'?'Dommer-detaljer':'Topp-liste';
 
-  showScreen('screen-leaderboard');
-  showLeaderboardSkal(session,idx);
-
-  // Switch to LB2 after half time
-  if(lbSecs>0){
-    setTimeout(()=>{
+    if(view==='toplist'){
+      document.getElementById('lb-sub').textContent=`Etter emne ${idx+1} av ${subjects.length}`;
+      renderLeaderboard('leaderboard-list',scores);
+      document.getElementById('lb-voter-count').textContent=`${vCount} av ${participants.length} stemte`;
+      showScreen('screen-leaderboard');
+    } else if(view==='categories'){
       showCategorySpotlight(session,idx);
-      let r2=isLast?Math.min(Math.floor(lbSecs/2),8):Math.floor(lbSecs/2);
-      const el2=document.getElementById('cat-lb-next-msg');
-      if(el2){
-        const iv2=setInterval(()=>{
-          r2--;
-          el2.textContent=isLast?`🏆 Endelig resultat om ${formatTime(r2)}`:`Neste emne om ${formatTime(r2)}`;
-          if(r2<=0)clearInterval(iv2);
+    } else if(view==='judges'){
+      showJudgeSpotlight(session,idx);
+    }
+
+    // Countdown
+    if(sliceMs>0){
+      let r=Math.floor(sliceMs/1000);
+      const countEl=view==='toplist'?document.getElementById('lb-countdown'):document.getElementById('cat-lb-next-msg');
+      if(countEl){
+        countEl.textContent=`${nextLabel} om ${formatTime(r)}`;
+        const iv=setInterval(()=>{
+          r--;
+          countEl.textContent=`${nextLabel} om ${formatTime(r)}`;
+          if(r<=0)clearInterval(iv);
         },1000);
       }
-    },halfMs);
+      if(!isLastView){
+        setTimeout(()=>showView(viewIdx+1),sliceMs);
+      }
+    }
   }
+
+  showView(0);
+  showLeaderboardSkal(session,idx);
 }
 
 // startLbCountdown replaced by inline countdown in showLeaderboardScreen
@@ -1302,7 +1377,40 @@ function showFinalLeaderboard(session){
   }else if(session.blindtestRevealed&&session.blindtestMap){
     showFasit(session);
   }
+  // Build dynamic tabs from resultConfig
+  const rc = session.resultConfig || { toplist: true, categories: true, judges: false };
+  const tabDefs = [
+    { key: 'toplist', label: '🏆 Topp-liste', enabled: rc.toplist !== false },
+    { key: 'categories', label: '📊 Kategorier', enabled: !!rc.categories },
+    { key: 'judges', label: '🎯 Dommere', enabled: !!rc.judges },
+  ].filter(t => t.enabled);
+
+  const tabContainer = document.getElementById('result-tabs-container');
+  tabContainer.innerHTML = '';
+  tabDefs.forEach((t, i) => {
+    const btn = document.createElement('div');
+    btn.className = 'result-tab' + (i === 0 ? ' active' : '');
+    btn.id = `tab-btn-${t.key}`;
+    btn.textContent = t.label;
+    btn.onclick = () => window.switchResultTab(t.key);
+    tabContainer.appendChild(btn);
+  });
+
+  // Hide/show panels
+  ['toplist','categories','judges'].forEach(k => {
+    const p = document.getElementById(`panel-${k}`);
+    if (p) p.classList.remove('active');
+  });
+  if (tabDefs.length) {
+    const firstPanel = document.getElementById(`panel-${tabDefs[0].key}`);
+    if (firstPanel) firstPanel.classList.add('active');
+  }
+
   showScreen('screen-final');
+  setTimeout(() => {
+    if (rc.categories) buildCategoryBreakdown(session);
+    if (rc.judges) renderJudgeBreakdown('final-judge-breakdown', session);
+  }, 100);
 }
 
 function animateCount(id,from,to,duration){
@@ -1642,6 +1750,189 @@ function processEventQueue(){
   document.getElementById('event-sub').textContent=e.sub;
   box.classList.add('show');
   setTimeout(()=>{box.classList.remove('show');setTimeout(processEventQueue,500);},4500);
+}
+
+// ========== JUDGE BREAKDOWN ==========
+function buildJudgeBreakdown(session) {
+  const subjects = session.subjects ? Object.values(session.subjects) : [];
+  const cats = session.categories ? Object.values(session.categories) : [];
+  const votes = session.votes || {};
+  const participants = session.participants ? Object.entries(session.participants) : [];
+
+  // For each participant, find their favourite subject (highest total score given)
+  const judgeStats = participants.map(([pid, p]) => {
+    let favSubject = null, favScore = -1;
+    const subjectScores = subjects.map((sub, idx) => {
+      const v = votes[idx] && votes[idx][pid];
+      if (!v) return { name: sub.name, total: 0 };
+      let total = 0;
+      cats.forEach(cat => { total += ((v.votes && v.votes[cat.name]) || 0) * (cat.weight || 1); });
+      return { name: sub.name, total };
+    }).sort((a, b) => b.total - a.total);
+    favSubject = subjectScores[0];
+    // Also get their overall avg
+    const allScores = subjectScores.filter(s => s.total > 0);
+    const avg = allScores.length ? allScores.reduce((s, x) => s + x.total, 0) / allScores.length : 0;
+    return { pid, name: p.name, favSubject, avg, subjectScores };
+  }).sort((a, b) => b.avg - a.avg);
+
+  return judgeStats;
+}
+
+function renderJudgeBreakdown(containerId, session) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = '';
+  const stats = buildJudgeBreakdown(session);
+  const medals = ['🥇','🥈','🥉'];
+
+  stats.forEach((judge, i) => {
+    const div = document.createElement('div');
+    div.style.cssText = 'background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;';
+    const medal = i < 3 ? medals[i] : `#${i+1}`;
+    const topStr = judge.subjectScores.slice(0, 3).map((s, si) =>
+      `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-top:1px solid var(--border);">
+        <div style="font-size:11px;color:var(--muted);width:20px;">${si+1}.</div>
+        <div style="flex:1;font-size:13px;">${s.name}</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--text2);">${Math.round(s.total)}</div>
+      </div>`
+    ).join('');
+    div.innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:${i===0?'var(--gold)':i===1?'var(--silver)':i===2?'var(--bronze)':'var(--muted)'};">${medal}</div>
+        <div style="flex:1;font-size:15px;font-weight:600;">${judge.name}</div>
+        <div style="text-align:right;">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--accent);">${judge.avg.toFixed(1)}</div>
+          <div style="font-size:10px;color:var(--muted);">snitt</div>
+        </div>
+      </div>
+      ${topStr}
+    `;
+    container.appendChild(div);
+  });
+}
+
+// ========== RESULT TABS ==========
+window.switchResultTab = function(tab) {
+  document.querySelectorAll('.result-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.result-panel').forEach(p => p.classList.remove('active'));
+  const btnEl = document.getElementById(`tab-btn-${tab}`);
+  const panelEl = document.getElementById(`panel-${tab}`);
+  if (btnEl) btnEl.classList.add('active');
+  if (panelEl) panelEl.classList.add('active');
+};
+
+function buildCategoryBreakdown(session) {
+  const cats = session.categories ? Object.values(session.categories) : [];
+  const subjects = session.subjects ? Object.values(session.subjects) : [];
+  const votes = session.votes || {};
+  const participants = session.participants ? Object.entries(session.participants) : [];
+  const medals = ['🥇','🥈','🥉'];
+
+  // For each category, calculate:
+  // 1. Overall average across all subjects and participants
+  // 2. Per-participant average across all subjects
+  const catStats = cats.map(cat => {
+    let totalSum = 0, totalCount = 0;
+    const personSums = {};
+    const personCounts = {};
+
+    subjects.forEach((sub, idx) => {
+      participants.forEach(([pid, p]) => {
+        const v = votes[idx] && votes[idx][pid];
+        if (!v) return;
+        const pts = (v.votes && v.votes[cat.name]) || 0;
+        totalSum += pts; totalCount++;
+        if (!personSums[pid]) { personSums[pid] = 0; personCounts[pid] = 0; }
+        personSums[pid] += pts; personCounts[pid]++;
+      });
+    });
+
+    const avg = totalCount > 0 ? totalSum / totalCount : 0;
+
+    // Top 3 persons by their average for this category
+    const personAvgs = Object.entries(personSums).map(([pid, sum]) => ({
+      pid, name: session.participants[pid]?.name || pid,
+      avg: personCounts[pid] > 0 ? sum / personCounts[pid] : 0
+    })).sort((a, b) => b.avg - a.avg).slice(0, 3);
+
+    return { name: cat.name, max: cat.max, avg, personAvgs };
+  }).sort((a, b) => (b.avg / b.max) - (a.avg / a.max));
+
+  const container = document.getElementById('final-category-breakdown');
+  if (!container) return;
+  container.innerHTML = '';
+
+  catStats.forEach((cat, i) => {
+    const pct = cat.max > 0 ? (cat.avg / cat.max * 100) : 0;
+    const rankMedal = i < 3 ? medals[i] : `#${i+1}`;
+    const div = document.createElement('div');
+    div.className = 'cat-breakdown-item';
+    
+    let personsHTML = '';
+    cat.personAvgs.forEach((p, pi) => {
+      personsHTML += `
+        <div class="cat-person-row">
+          <div class="cat-person-rank">${pi+1}.</div>
+          <div class="cat-person-name">${p.name}</div>
+          <div class="cat-person-score">${p.avg.toFixed(1)}</div>
+        </div>`;
+    });
+
+    div.innerHTML = `
+      <div class="cat-breakdown-header">
+        <div class="cat-breakdown-rank" style="color:${i===0?'var(--gold)':i===1?'var(--silver)':i===2?'var(--bronze)':'var(--muted)'}">${rankMedal}</div>
+        <div class="cat-breakdown-name">${cat.name}</div>
+        <div>
+          <div class="cat-breakdown-avg">${cat.avg.toFixed(1)}</div>
+          <div class="cat-breakdown-max">/ ${cat.max} snitt</div>
+        </div>
+      </div>
+      <div class="cat-breakdown-bar">
+        <div class="cat-breakdown-fill" style="width:${pct}%;background:${i===0?'var(--gold)':i===1?'var(--silver)':i===2?'var(--bronze)':'var(--accent)'}"></div>
+      </div>
+      ${personsHTML}
+    `;
+    container.appendChild(div);
+  });
+}
+
+function showJudgeSpotlight(session, idx){
+  const subjects=session.subjects?Object.values(session.subjects):[];
+  const cats=session.categories?Object.values(session.categories):[];
+  const votes=session.votes||{};
+  const participants=session.participants?Object.entries(session.participants):[];
+  const subName=subjects[idx]?.name||'';
+
+  document.getElementById('judge-lb-title').textContent='Dommer-detaljer';
+  document.getElementById('judge-lb-sub').textContent=`Hvem likte ${subName} best?`;
+
+  // For this subject, rank participants by score given
+  const judgeScores=participants.map(([pid,p])=>{
+    const v=votes[idx]&&votes[idx][pid];
+    if(!v)return{name:p.name,total:0,voted:false};
+    let total=0;
+    cats.forEach(cat=>{total+=((v.votes&&v.votes[cat.name])||0)*(cat.weight||1);});
+    return{name:p.name,total,voted:true};
+  }).filter(j=>j.voted).sort((a,b)=>b.total-a.total);
+
+  const container=document.getElementById('judge-spotlight-list');
+  container.innerHTML='';
+  const medals=['🥇','🥈','🥉'];
+
+  judgeScores.forEach((j,i)=>{
+    const div=document.createElement('div');
+    div.className='cat-spot-item';
+    div.innerHTML=`
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:${i===0?'var(--gold)':i===1?'var(--silver)':i===2?'var(--bronze)':'var(--muted)'};">${medals[i]||`#${i+1}`}</div>
+        <div style="flex:1;font-size:15px;font-weight:500;">${j.name}</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--accent);">${Math.round(j.total)}</div>
+      </div>`;
+    container.appendChild(div);
+  });
+
+  showScreen('screen-judge-lb');
 }
 
 // ========== CATEGORY SPOTLIGHT ==========
