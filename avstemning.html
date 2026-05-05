@@ -81,6 +81,23 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 /* CONTENT */
 .content{flex:1;padding:18px 14px;overflow-y:auto;}
 
+/* GLOBAL SIDEBAR - visible on all screens except waiting */
+.global-sidebar{
+  position:fixed;
+  left:0;top:0;bottom:0;
+  width:48px;
+  background:rgba(0,0,0,0.4);
+  border-right:0.5px solid rgba(255,255,255,0.06);
+  display:none;
+  flex-direction:column;
+  align-items:center;
+  padding:10px 0;
+  z-index:15;
+  backdrop-filter:blur(8px);
+}
+.global-sidebar.visible{display:flex;}
+.screens-with-sidebar{padding-left:48px;}
+
 /* VOTING BODY: sidebar + categories */
 .voting-body{display:flex;flex:1;overflow:hidden;}
 
@@ -311,6 +328,17 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
   <div class="pause-msg" id="pause-msg">Pause – den som venter...</div>
   <div class="pause-sub" id="pause-sub">Venter på admin</div>
   <button id="pause-resume-btn" style="display:none;margin-top:24px;background:var(--accent);color:#0a0a0a;border:none;border-radius:12px;padding:14px 32px;font-family:DM Sans,sans-serif;font-size:16px;font-weight:600;cursor:pointer;" data-action="togglePauseWithMessage">▶ Fortsett</button>
+</div>
+
+<!-- GLOBAL SIDEBAR -->
+<div class="global-sidebar" id="global-sidebar">
+  <div class="sb-item sb-skal" data-action="openSkalSheet">🥂</div>
+  <div class="sb-divider"></div>
+  <div class="sb-item sb-emoji-toggle" id="global-emoji-toggle" data-action="toggleGlobalEmoji">😊</div>
+  <div class="sb-emoji-list" id="global-emoji-list"></div>
+  <div class="sb-admin-divider"></div>
+  <div class="sb-item sb-admin-btn" id="global-pause-btn" data-action="togglePause">⏸</div>
+  <div class="sb-item sb-admin-btn" data-action="openGear">⚙️</div>
 </div>
 
 <!-- TOAST -->
@@ -769,7 +797,7 @@ var _proxyHandler = function(name) {
     }
   };
 };
-var _fns = ['showAdminLoginSheet','loginFromSheet','openSkalSheet','joinSession','submitVote','toggleEmojiMenu',
+var _fns = ['showAdminLoginSheet','loginFromSheet','openSkalSheet','joinSession','submitVote','toggleEmojiMenu','toggleGlobalEmoji',
   'openGear','closeGear','showQrSheet','startSession','togglePause','togglePauseWithMessage',
   'forceNext','goBack','jumpToSubject','updateMinutes','updateLbSecs','addTime',
   'sendUserSkal','sendAutoSkal','shuffleBlindtest','lockBlindtest','revealBlindtest',
@@ -831,7 +859,21 @@ let state = {
 };
 
 function ls(k,v){if(v===undefined)return localStorage.getItem(k);if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v);}
-function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>{s.classList.remove('active');s.classList.remove('screens-with-sidebar');});
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.classList.add('active');
+  const noSidebar=['screen-waiting','screen-join','screen-no-session','screen-admin-login'];
+  const ownSidebar=['screen-voting','screen-submitted'];
+  if(noSidebar.includes(id)||ownSidebar.includes(id)){
+    hideGlobalSidebar();
+  } else {
+    showGlobalSidebar();
+    el.classList.add('screens-with-sidebar');
+    initGlobalEmojiMenu();
+  }
+}
 function formatTime(s){if(s<0)s=0;return`${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`;}
 function safeKey(s){return s.replace(/[.#$/\[\]\s]/g,'_');}
 function generateId(){return Date.now().toString(36)+Math.random().toString(36).substr(2,5);}
@@ -952,6 +994,40 @@ function initEmojiMenu(){
   });
 }
 
+window.toggleGlobalEmoji=function(){
+  const list=document.getElementById('global-emoji-list');
+  const toggle=document.getElementById('global-emoji-toggle');
+  if(!list)return;
+  const isOpen=list.classList.contains('open');
+  list.classList.toggle('open',!isOpen);
+  if(toggle)toggle.classList.toggle('open',!isOpen);
+};
+
+function showGlobalSidebar(){
+  const sb=document.getElementById('global-sidebar');
+  if(sb)sb.classList.add('visible');
+  // Add padding to all active screens
+  document.querySelectorAll('.screen.active').forEach(s=>s.classList.add('screens-with-sidebar'));
+}
+
+function hideGlobalSidebar(){
+  const sb=document.getElementById('global-sidebar');
+  if(sb)sb.classList.remove('visible');
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('screens-with-sidebar'));
+}
+
+function initGlobalEmojiMenu(){
+  const list=document.getElementById('global-emoji-list');
+  if(!list||list.children.length)return;
+  REACTIONS.forEach(r=>{
+    const btn=document.createElement('div');
+    btn.className='sb-e';
+    btn.textContent=r;
+    btn.onclick=()=>sendReaction(r);
+    list.appendChild(btn);
+  });
+}
+
 window.toggleEmojiMenu=function(){
   const list=document.getElementById('emoji-menu-list');
   const toggle=document.getElementById('emoji-toggle-btn');
@@ -963,9 +1039,21 @@ window.toggleEmojiMenu=function(){
 };
 
 // ========== SOUNDS ==========
+let _audioCtx=null;
+function getAudioCtx(){
+  if(!_audioCtx){
+    try{_audioCtx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){return null;}
+  }
+  if(_audioCtx.state==='suspended')_audioCtx.resume();
+  return _audioCtx;
+}
+// Init audio on first user interaction
+document.addEventListener('click',function(){getAudioCtx();},{once:true});
+
 function playSound(type){
   try{
-    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    const ctx=getAudioCtx();
+    if(!ctx)return;
     const osc=ctx.createOscillator();
     const gain=ctx.createGain();
     osc.connect(gain);gain.connect(ctx.destination);
@@ -990,7 +1078,7 @@ function playSound(type){
       gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.5);
       osc.start();osc.stop(ctx.currentTime+0.5);
     }
-  }catch(e){}
+  }catch(e){console.log('Sound error:',e);}
 }
 function updateJoinPreview(){const n=document.getElementById('join-name').value.trim();document.getElementById('join-preview').textContent=n?`Du vises som: ${state.selectedEmoji} ${n}`:'';}
 
@@ -1076,7 +1164,6 @@ function setAdminUI(isAdmin){
   document.querySelectorAll('.admin-only').forEach(el=>el.style.display=isAdmin?'flex':'none');
   if(isAdmin){
     document.body.classList.add('is-admin');
-    // Show admin sidebar buttons
     document.querySelectorAll('.sb-admin-btn').forEach(el=>el.style.display='flex');
     document.querySelectorAll('.sb-admin-divider').forEach(el=>el.style.display='block');
   } else {
@@ -1084,6 +1171,9 @@ function setAdminUI(isAdmin){
     document.querySelectorAll('.sb-admin-btn').forEach(el=>el.style.display='none');
     document.querySelectorAll('.sb-admin-divider').forEach(el=>el.style.display='none');
   }
+  // Also update global sidebar pause btn text
+  const pauseBtn=document.getElementById('global-pause-btn');
+  if(pauseBtn)pauseBtn.style.display=isAdmin?'flex':'none';
 }
 
 // ========== JOIN ==========
@@ -2343,7 +2433,9 @@ _fns.forEach(function(n) { if (window[n] && !window['_real_' + n]) { window['_re
 _calls.forEach(function(c) { if (window['_real_' + c[0]]) window['_real_' + c[0]].apply(null, c[1]); });
 _calls = [];
 init().then(() => {
-  // Bind buttons directly after init
+  // Re-register ALL proxy functions after module loads (some set after initial registration)
+  _fns.forEach(function(n) { if (window[n] && !window['_real_' + n]) { window['_real_' + n] = window[n]; } });
+  // Bind buttons directly
   var adminBtn = document.getElementById('admin-login-btn');
   if (adminBtn) adminBtn.onclick = function() { window.showAdminLoginSheet(); };
   var loginBtn = document.getElementById('login-from-sheet-btn');
