@@ -825,7 +825,8 @@ function startSessionListener(){
   });
 }
 
-function watchReactions(session){
+let lastShownSkalAt=0;
+function watchReactions(){
   onValue(ref(db,`sessions/${state.sessionId}/reactions`),snap=>{
     if(!snap.exists())return;
     const reactions=snap.val();
@@ -834,13 +835,17 @@ function watchReactions(session){
   });
 }
 
-function watchSkals(session){
+function watchSkals(){
   onValue(ref(db,`sessions/${state.sessionId}/skals`),snap=>{
     if(!snap.exists())return;
     const skals=snap.val();
     const arr=Object.values(skals).sort((a,b)=>b.at-a.at);
-    if(arr.length&&Date.now()-arr[0].at<4000&&arr[0].participantName!==state.participantName){
-      showSkalToast(arr[0].text,arr[0].participantName);
+    if(!arr.length)return;
+    const latest=arr[0];
+    // Only show if new and not already shown
+    if(latest.at>lastShownSkalAt&&Date.now()-latest.at<5000){
+      lastShownSkalAt=latest.at;
+      showSkalToast(latest.text,latest.participantName);
     }
   });
 }
@@ -1088,7 +1093,6 @@ async function advanceSubject(sessionId,session,idx){
       const timerEnd=session.minutesPerSubject>0?Date.now()+session.minutesPerSubject*60000:null;
       await update(ref(db,`sessions/${sessionId}`),{status:'voting',currentSubjectIndex:nextIdx,timerEnd:timerEnd||null});
       if(timerEnd)scheduleWatchdog(sessionId,timerEnd,session.minutesPerSubject,nextIdx);
-      showLeaderboardSkal(session,idx);
     },lbSecs*1000);
   }else{
     const timerEnd=session.minutesPerSubject>0?Date.now()+session.minutesPerSubject*60000:null;
@@ -1188,23 +1192,27 @@ function showFinalLeaderboard(session){
       if(i===0){
         const div=document.createElement('div');
         div.className='final-winner';
-        div.innerHTML=`<div class="final-winner-emoji">${i===0?'🥇':'🥈'}</div><div class="final-winner-name">${item.name}</div><div class="final-winner-score" id="final-score-${i}">0</div><div style="font-size:12px;color:var(--muted);margin-top:4px;">poeng totalt</div>`;
+        div.innerHTML=`<div class="final-winner-emoji">🥇</div><div class="final-winner-name">${item.name}</div><div class="final-winner-score" id="final-score-0">0</div><div style="font-size:12px;color:var(--muted);margin-top:4px;">poeng totalt</div>`;
         container.appendChild(div);
-        animateCount(`final-score-${i}`,0,Math.round(item.total),1200);
-      }else{
-        const medals=['','','🥈','🥉'];
-        const medal=i<3?medals[i]:`#${i+1}`;
-        const cls=i===1?'silver':i===2?'bronze':'other';
+        animateCount('final-score-0',0,Math.round(item.total),1200);
+      }else if(i===1||i===2){
+        const medal=i===1?'🥈':'🥉';
+        const cls=i===1?'silver':'bronze';
         const pct=max>0?(item.total/max*100):0;
         const div=document.createElement('div');
-        div.className=`lb-item ${cls}`;
-        div.style.marginBottom='12px';
-        div.innerHTML=`<div class="lb-row"><div class="lb-rank">${medal}</div><div class="lb-name">${item.name}</div><div class="lb-score" id="final-score-${i}">0</div></div><div class="lb-bar-bg"><div class="lb-bar-inner" style="width:0%" id="final-bar-${i}"></div></div>`;
+        div.style.cssText=`background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:12px;`;
+        div.innerHTML=`<div style="font-size:24px;">${medal}</div><div style="flex:1;font-size:15px;font-weight:500;">${item.name}</div><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--${cls==='silver'?'silver':'bronze'});" id="final-score-${i}">0</div>`;
         container.appendChild(div);
         animateCount(`final-score-${i}`,0,Math.round(item.total),800);
-        setTimeout(()=>{const bar=document.getElementById(`final-bar-${i}`);if(bar)bar.style.width=pct+'%';},200);
+      }else{
+        const pct=max>0?(item.total/max*100):0;
+        const div=document.createElement('div');
+        div.style.cssText=`display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);`;
+        div.innerHTML=`<div style="font-size:14px;color:var(--muted);width:28px;text-align:center;">#${i+1}</div><div style="flex:1;font-size:14px;">${item.name}</div><div style="font-size:16px;font-weight:600;color:var(--muted);" id="final-score-${i}">0</div>`;
+        container.appendChild(div);
+        animateCount(`final-score-${i}`,0,Math.round(item.total),600);
       }
-    },i*400);
+    },i*300);
   });
   // Blindtest reveal button
   if(session.blindtest&&session.blindtestLocked&&!session.blindtestRevealed){
@@ -1405,8 +1413,8 @@ window.lockBlindtest=async function(){
 
 // ========== SKÅL ==========
 function showSkalToast(text,sender){
-  document.getElementById('skal-text').textContent=text;
-  document.getElementById('skal-sender').textContent=sender||'';
+  document.getElementById('skal-text').textContent='🥂 ' + text;
+  document.getElementById('skal-sender').textContent=sender?`— ${sender}`:'';
   const toast=document.getElementById('skal-toast');
   toast.classList.add('show');
   setTimeout(()=>toast.classList.remove('show'),4000);
