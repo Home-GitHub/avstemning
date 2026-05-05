@@ -376,10 +376,15 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
 <!-- ===== SCREEN: WAITING ROOM ===== -->
 <div id="screen-waiting" class="screen">
   <div class="header">
-    <div><div class="header-title" id="waiting-title">Ølsmaking</div><div class="header-sub" id="waiting-sub">Venterom</div></div>
+    <div class="header-left" style="display:flex;align-items:center;gap:10px;">
+      <div class="icon-btn" data-action="openSkalSheet" style="flex-shrink:0;">🥂</div>
+      <div>
+        <div class="header-title" id="waiting-title">Ølsmaking</div>
+        <div class="header-sub" id="waiting-sub">Venterom</div>
+      </div>
+    </div>
     <div class="header-right">
       <div class="icon-btn" data-action="showQrSheet">📱</div>
-      <div class="icon-btn" data-action="openSkalSheet">🥂</div>
       <div class="icon-btn admin-only" data-action="openGear">⚙️</div>
     </div>
   </div>
@@ -461,13 +466,15 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
 <!-- ===== SCREEN: LEADERBOARD ===== -->
 <div id="screen-leaderboard" class="screen">
   <div class="header">
-    <div>
-      <div class="header-title">Resultater</div>
-      <div class="header-sub" id="lb-sub">Etter emne 1</div>
+    <div class="header-left" style="display:flex;align-items:center;gap:10px;">
+      <div class="icon-btn" data-action="openSkalSheet" style="flex-shrink:0;">🥂</div>
+      <div>
+        <div class="header-title">Resultater</div>
+        <div class="header-sub" id="lb-sub">Etter emne 1</div>
+      </div>
     </div>
     <div class="header-right">
       <span class="badge badge-live"><span class="live-dot"></span>Live</span>
-      <div class="icon-btn" data-action="openSkalSheet">🥂</div>
       <div class="icon-btn admin-only" data-action="openGear">⚙️</div>
     </div>
   </div>
@@ -486,12 +493,14 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
 <!-- ===== SCREEN: CATEGORY SPOTLIGHT ===== -->
 <div id="screen-category-lb" class="screen">
   <div class="header">
-    <div>
-      <div class="header-title" id="cat-lb-title">Kategori-spotlight</div>
-      <div class="header-sub" id="cat-lb-sub">Hva syntes dere?</div>
+    <div class="header-left" style="display:flex;align-items:center;gap:10px;">
+      <div class="icon-btn" data-action="openSkalSheet" style="flex-shrink:0;">🥂</div>
+      <div>
+        <div class="header-title" id="cat-lb-title">Kategori-spotlight</div>
+        <div class="header-sub" id="cat-lb-sub">Hva syntes dere?</div>
+      </div>
     </div>
     <div class="header-right">
-      <div class="icon-btn" data-action="openSkalSheet">🥂</div>
       <div class="icon-btn admin-only" data-action="openGear">⚙️</div>
     </div>
   </div>
@@ -508,12 +517,14 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
 <!-- ===== SCREEN: JUDGE SPOTLIGHT ===== -->
 <div id="screen-judge-lb" class="screen">
   <div class="header">
-    <div>
-      <div class="header-title" id="judge-lb-title">Dommer-detaljer</div>
-      <div class="header-sub" id="judge-lb-sub">Hvem likte hva?</div>
+    <div class="header-left" style="display:flex;align-items:center;gap:10px;">
+      <div class="icon-btn" data-action="openSkalSheet" style="flex-shrink:0;">🥂</div>
+      <div>
+        <div class="header-title" id="judge-lb-title">Dommer-detaljer</div>
+        <div class="header-sub" id="judge-lb-sub">Hvem likte hva?</div>
+      </div>
     </div>
     <div class="header-right">
-      <div class="icon-btn" data-action="openSkalSheet">🥂</div>
       <div class="icon-btn admin-only" data-action="openGear">⚙️</div>
     </div>
   </div>
@@ -529,9 +540,14 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
 <!-- ===== SCREEN: FINAL ===== -->
 <div id="screen-final" class="screen">
   <div class="header">
-    <div><div class="header-title">Endelig resultat</div><div class="header-sub" id="final-session-name"></div></div>
+    <div class="header-left" style="display:flex;align-items:center;gap:10px;">
+      <div class="icon-btn" data-action="openSkalSheet" style="flex-shrink:0;">🥂</div>
+      <div>
+        <div class="header-title">Endelig resultat</div>
+        <div class="header-sub" id="final-session-name"></div>
+      </div>
+    </div>
     <div class="header-right">
-      <div class="icon-btn" data-action="openSkalSheet">🥂</div>
       <div class="icon-btn admin-only" data-action="openGear">⚙️</div>
     </div>
   </div>
@@ -753,7 +769,7 @@ var _proxyHandler = function(name) {
     }
   };
 };
-var _fns = ['showAdminLoginSheet','loginFromSheet','openSkalSheet','joinSession','submitVote',
+var _fns = ['showAdminLoginSheet','loginFromSheet','openSkalSheet','joinSession','submitVote','toggleEmojiMenu',
   'openGear','closeGear','showQrSheet','startSession','togglePause','togglePauseWithMessage',
   'forceNext','goBack','jumpToSubject','updateMinutes','updateLbSecs','addTime',
   'sendUserSkal','sendAutoSkal','shuffleBlindtest','lockBlindtest','revealBlindtest',
@@ -822,6 +838,43 @@ function generateId(){return Date.now().toString(36)+Math.random().toString(36).
 // ========== THEME ==========
 function applyTheme(theme){
   document.body.className = theme && theme !== 'standard' ? `theme-${theme}` : '';
+  applyThemeBg(theme);
+}
+
+function applyThemeBg(theme){
+  const starsEl=document.getElementById('bg-stars');
+  const bubblesEl=document.getElementById('bg-bubbles');
+  if(!starsEl||!bubblesEl)return;
+  // Clear existing
+  starsEl.innerHTML='';bubblesEl.innerHTML='';
+  if(theme==='mgp'||theme==='standard'||theme==='vin'){
+    // Add stars
+    for(let i=0;i<35;i++){
+      const s=document.createElement('div');
+      s.className='bg-star';
+      const sz=Math.random()<0.3?2:1;
+      s.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;animation:twinkle ${1.5+Math.random()*2.5}s ${Math.random()*3}s ease-in-out infinite;opacity:${theme==='standard'?0.3:0.6};`;
+      starsEl.appendChild(s);
+    }
+  }
+  if(theme==='pub'){
+    // Add bubbles
+    for(let i=0;i<12;i++){
+      const b=document.createElement('div');
+      b.className='bg-bubble';
+      const sz=4+Math.random()*12;
+      b.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}%;bottom:${Math.random()*40}%;animation:bubble-r ${2+Math.random()*3}s ${Math.random()*4}s ease-in infinite;`;
+      bubblesEl.appendChild(b);
+    }
+  }
+  if(theme==='party'){
+    // Add confetti-like particles
+    for(let i=0;i<15;i++){
+      const c=document.createElement('div');
+      c.style.cssText=`position:absolute;width:${3+Math.random()*5}px;height:${3+Math.random()*5}px;border-radius:1px;background:var(--accent);left:${Math.random()*100}%;top:${Math.random()*100}%;animation:twinkle ${1+Math.random()*2}s ${Math.random()*2}s ease-in-out infinite;opacity:0.4;`;
+      starsEl.appendChild(c);
+    }
+  }
 }
 
 // ========== OFFLINE ==========
@@ -1160,7 +1213,9 @@ function showVotingScreen(session){
     lastShownSubjectIdx = idx;
     state.hasVotedCurrentSubject = false;
     state.lastFirstInSubject = null;
+    state.urgentSoundPlayed = false;
     eventQueue = []; // clear pending events
+    playSound('newSubject'); // play sound for new subject
   }
   updateProgressDots(idx,subjects.length,'progress-dots');
   updateProgressDots(idx,subjects.length,'submitted-dots');
@@ -1308,6 +1363,9 @@ function startTimer(session){
     if(session.paused)return;
     const now=Date.now();
     const secs=Math.max(0,Math.round((state.timerEnd-now)/1000));
+    // Urgent sound at 10 seconds
+    if(secs===10&&!state.urgentSoundPlayed){state.urgentSoundPlayed=true;playSound('urgent');}
+    if(secs>10)state.urgentSoundPlayed=false;
     // Auto-submit when timer hits 0
     if(secs===0&&!state.hasVotedCurrentSubject&&state.participantId){
       state.hasVotedCurrentSubject=true; // prevent multiple submits
