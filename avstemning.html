@@ -163,9 +163,10 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
 .toast.show{opacity:1;transform:translateX(-50%) translateY(-8px);}
 
 /* SKÅL TOAST */
-.skal-toast{position:fixed;top:80px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--accent);border-radius:16px;padding:16px 20px;font-size:15px;font-weight:500;z-index:300;box-shadow:0 8px 32px rgba(0,0,0,0.6);max-width:340px;text-align:center;opacity:0;transition:opacity 0.4s,transform 0.4s;pointer-events:none;color:var(--accent);}
-.skal-toast.show{opacity:1;transform:translateX(-50%) translateY(4px);}
-.skal-sender{font-size:12px;color:var(--muted);margin-top:6px;}
+.skal-toast{position:fixed;top:70px;left:50%;transform:translateX(-50%) scale(0.8);background:var(--surface);border:2px solid var(--accent);border-radius:20px;padding:18px 24px;font-size:16px;font-weight:600;z-index:300;box-shadow:0 8px 40px rgba(0,0,0,0.7),0 0 30px var(--accent-dim);max-width:360px;width:90%;text-align:center;opacity:0;transition:opacity 0.3s,transform 0.3s;pointer-events:none;color:var(--text);}
+.skal-toast::before{content:"🥂 SKÅL! 🥂";display:block;font-size:13px;color:var(--accent);font-weight:700;letter-spacing:2px;margin-bottom:8px;}
+.skal-toast.show{opacity:1;transform:translateX(-50%) scale(1);}
+.skal-sender{font-size:12px;color:var(--muted);margin-top:8px;font-style:italic;}
 
 /* REACTIONS */
 .reaction-bar{display:flex;gap:8px;justify-content:center;padding:12px 16px;border-top:1px solid var(--border);}
@@ -326,24 +327,22 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
 
 <!-- ===== SCREEN: VOTING ===== -->
 <div id="screen-voting" class="screen">
-  <div class="header">
-    <div>
-      <div class="header-title" id="voting-subject-name">Tuborg</div>
-      <div class="header-sub" id="voting-progress">Emne 1 av 5</div>
+  <div style="padding:12px 16px 8px;border-bottom:1px solid var(--border);background:var(--bg);position:sticky;top:0;z-index:20;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;" id="voting-progress">Emne 1 av 5</div>
+      <div style="display:flex;gap:8px;">
+        <div class="icon-btn" data-action="showQrSheet">📱</div>
+        <div class="icon-btn admin-only pause-btn" id="pause-btn" data-action="togglePause">⏸</div>
+        <div class="icon-btn admin-only" data-action="openGear">⚙️</div>
+      </div>
     </div>
-    <div class="header-right">
-      <div class="icon-btn" data-action="showQrSheet">📱</div>
-      <div class="icon-btn admin-only pause-btn" id="pause-btn" data-action="togglePause">⏸</div>
-      <div class="icon-btn admin-only" data-action="openGear">⚙️</div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:34px;color:var(--accent);letter-spacing:1px;line-height:1.1;margin-bottom:8px;" id="voting-subject-name">Tuborg</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div class="timer-display" id="timer-display" style="font-size:30px;">3:00</div>
+      <div class="voter-count" id="voter-count-voting" style="padding:0;">0 av 0 stemt</div>
     </div>
-  </div>
-  <div class="timer-wrap">
-    <div style="display:flex;justify-content:space-between;align-items:flex-end;">
-      <div class="timer-display" id="timer-display">3:00</div>
-      <div class="voter-count" id="voter-count-voting" style="padding:0;margin-bottom:6px;">0 av 0 stemt</div>
-    </div>
-    <div class="timer-bar-bg"><div class="timer-bar-fill" id="timer-bar" style="width:100%"></div></div>
-    <div class="progress-dots" id="progress-dots"></div>
+    <div class="timer-bar-bg" style="margin:6px 0 0;"><div class="timer-bar-fill" id="timer-bar" style="width:100%"></div></div>
+    <div class="progress-dots" id="progress-dots" style="padding:6px 0 0;margin:0;"></div>
   </div>
   <div class="content" style="padding-top:8px;" id="voting-categories"></div>
   <div class="reaction-bar" id="reaction-bar"></div>
@@ -377,7 +376,7 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
   <div class="submitted-center">
     <div style="font-size:56px;margin-bottom:16px;">✅</div>
     <div class="big-title">Sendt inn!</div>
-    <div class="text-muted mt-8">Venter på neste emne...</div>
+    <div class="text-muted mt-8">Venter på neste... ☕</div>
   </div>
   <div class="reaction-bar" id="reaction-bar2"></div>
 </div>
@@ -1443,10 +1442,23 @@ window.lockBlindtest=async function(){
 // ========== SKÅL ==========
 function showSkalToast(text,sender){
   document.getElementById('skal-text').textContent=text;
-  document.getElementById('skal-sender').textContent=sender?`🥂 ${sender}`:'🥂';
+  document.getElementById('skal-sender').textContent=sender?`— ${sender}`:'';
   const toast=document.getElementById('skal-toast');
   toast.classList.add('show');
-  setTimeout(()=>toast.classList.remove('show'),6000);
+  // Play clinking sound
+  try{
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    const osc=ctx.createOscillator();
+    const gain=ctx.createGain();
+    osc.connect(gain);gain.connect(ctx.destination);
+    osc.frequency.setValueAtTime(880,ctx.currentTime);
+    osc.frequency.setValueAtTime(1100,ctx.currentTime+0.1);
+    osc.frequency.setValueAtTime(880,ctx.currentTime+0.2);
+    gain.gain.setValueAtTime(0.3,ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.5);
+    osc.start(ctx.currentTime);osc.stop(ctx.currentTime+0.5);
+  }catch(e){}
+  setTimeout(()=>toast.classList.remove('show'),7000);
 }
 
 window.showAdminLoginSheet=function(){
@@ -1554,17 +1566,7 @@ function showLeaderboardSkal(session,idx){
 }
 
 function showDagsDommer(session,idx){
-  // Use state.session to get most current participants
-  const s=state.session||session;
-  const participants=s.participants?Object.entries(s.participants):[];
-  if(!participants.length)return;
-  // Pick random participant with actual votes this round
-  const votes=s.votes||{};
-  const voted=participants.filter(([pid])=>votes[idx]&&votes[idx][pid]);
-  const pool=voted.length?voted:participants;
-  const randomP=pool[Math.floor(Math.random()*pool.length)];
-  const name=randomP[1]?.name||randomP[1];
-  if(name)setTimeout(()=>showEvent('🎭','Dagens dommer',name),5000);
+  // Replaced by fun skål events - no longer used
 }
 
 // ========== PARTY EVENTS ==========
