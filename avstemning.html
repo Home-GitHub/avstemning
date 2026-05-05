@@ -427,7 +427,7 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
     <div class="voting-sidebar" id="voting-sidebar">
       <div class="sb-item sb-skal" data-action="openSkalSheet">🥂</div>
       <div class="sb-divider"></div>
-      <div class="sb-item sb-emoji-toggle" id="emoji-toggle-btn" onclick="toggleEmojiMenu()">😊</div>
+      <div class="sb-item sb-emoji-toggle" id="emoji-toggle-btn" data-action="toggleEmojiMenu">😊</div>
       <div class="sb-emoji-list" id="emoji-menu-list"></div>
       <div class="sb-admin-divider"></div>
       <div class="sb-item sb-admin-btn" id="pause-btn" data-action="togglePause">⏸</div>
@@ -827,6 +827,7 @@ let state = {
   lastFirstInSubject: null,
   reactionsStarted: false,
   lastLbKey: null,
+  finalShown: false,
 };
 
 function ls(k,v){if(v===undefined)return localStorage.getItem(k);if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v);}
@@ -1073,8 +1074,16 @@ function watchParticipantCountForJoin(){
 
 function setAdminUI(isAdmin){
   document.querySelectorAll('.admin-only').forEach(el=>el.style.display=isAdmin?'flex':'none');
-  if(isAdmin)document.body.classList.add('is-admin');
-  else document.body.classList.remove('is-admin');
+  if(isAdmin){
+    document.body.classList.add('is-admin');
+    // Show admin sidebar buttons
+    document.querySelectorAll('.sb-admin-btn').forEach(el=>el.style.display='flex');
+    document.querySelectorAll('.sb-admin-divider').forEach(el=>el.style.display='block');
+  } else {
+    document.body.classList.remove('is-admin');
+    document.querySelectorAll('.sb-admin-btn').forEach(el=>el.style.display='none');
+    document.querySelectorAll('.sb-admin-divider').forEach(el=>el.style.display='none');
+  }
 }
 
 // ========== JOIN ==========
@@ -1148,10 +1157,14 @@ function handleSessionState(session){
   }else{document.getElementById('pause-overlay').classList.remove('active');}
 
   if(session.status==='published'||session.status==='waiting'){showWaitingRoom(session);return;}
-  if(session.status==='ended'){showFinalLeaderboard(session);return;}
+  if(session.status==='ended'){if(!state.finalShown){state.finalShown=true;showFinalLeaderboard(session);}return;}
   if(session.status==='leaderboard'){
     const lbKey=`${state.sessionId}_lb_${session.currentSubjectIndex}`;
-    if(state.lastLbKey!==lbKey){state.lastLbKey=lbKey;showLeaderboardScreen(session);}
+    if(state.lastLbKey!==lbKey){
+      state.lastLbKey=lbKey;
+      state.finalShown=false; // reset for next session
+      showLeaderboardScreen(session);
+    }
     return;
   }
   if(session.status==='voting'){showVotingScreen(session);return;}
@@ -1274,16 +1287,16 @@ function buildVotingCategories(session){
   cats.forEach(cat=>{if(state.currentVotes[idx][cat.name]===undefined)state.currentVotes[idx][cat.name]=0;});
   container.innerHTML='';
   const card=document.createElement('div');
-  card.className='card';
+  card.className='voting-categories-inner';
   cats.forEach(cat=>{
     const row=document.createElement('div');
-    row.className='stepper-row';
+    row.className='cat-row';
     const val=state.currentVotes[idx][cat.name]||0;
     const catKey=safeKey(cat.name);
     row.innerHTML=`
-      <div class="stepper-info">
-        <div class="stepper-name">${cat.name}${cat.weight>1?` <span style="font-size:10px;color:var(--muted);">×${cat.weight}</span>`:''}</div>
-        <div class="step-val" id="v-${catKey}">${val}</div>
+      <div class="cat-header">
+        <div class="cat-name">${cat.name}${cat.weight>1?` <span style="font-size:10px;color:var(--muted);">×${cat.weight}</span>`:''}</div>
+        <div class="cat-val" id="v-${catKey}">${val}</div>
       </div>
       <div class="slider-wrap">
         <div class="slider-midmark"></div>
@@ -1558,6 +1571,8 @@ function renderLeaderboard(containerId,scores){
 
 // ========== FINAL LEADERBOARD ==========
 function showFinalLeaderboard(session){
+  if(finalShown)return;
+  finalShown=true;
   const subjects=session.subjects?Object.values(session.subjects):[];
   const cats=session.categories?Object.values(session.categories):[];
   const votes=session.votes||{};
@@ -1632,9 +1647,9 @@ function showFinalLeaderboard(session){
 
   showScreen('screen-final');
   setTimeout(() => {
-    if (rc.categories) buildCategoryBreakdown(session);
-    if (rc.judges) renderJudgeBreakdown('final-judge-breakdown', session);
-  }, 100);
+    try{ if (rc.categories) buildCategoryBreakdown(session); }catch(e){console.error('Category breakdown error:',e);}
+    try{ if (rc.judges) renderJudgeBreakdown('final-judge-breakdown', session); }catch(e){console.error('Judge breakdown error:',e);}
+  }, 200);
 }
 
 function animateCount(id,from,to,duration){
