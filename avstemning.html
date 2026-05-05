@@ -69,15 +69,16 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
 .emoji-opt.selected{border-color:var(--accent);background:var(--accent-dim);}
 
 /* STEPPER */
-.stepper-row{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--border);}
+.stepper-row{padding:12px 0;border-bottom:1px solid var(--border);}
 .stepper-row:last-child{border-bottom:none;}
-.stepper-info{flex:1;}
+.stepper-info{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
 .stepper-name{font-size:14px;font-weight:500;}
-.stepper-max{font-size:11px;color:var(--muted);margin-top:2px;}
-.stepper-controls{display:flex;align-items:center;gap:14px;}
-.step-btn{width:40px;height:40px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:22px;font-weight:300;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.1s;user-select:none;-webkit-user-select:none;}
-.step-btn:active{background:var(--border);transform:scale(0.88);}
-.step-val{font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--accent);min-width:36px;text-align:center;line-height:1;}
+.stepper-max{font-size:11px;color:var(--muted);}
+.stepper-controls{display:flex;align-items:center;gap:10px;}
+.step-val{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--accent);min-width:32px;text-align:center;line-height:1;}
+.slider-input{flex:1;-webkit-appearance:none;appearance:none;height:6px;border-radius:3px;background:var(--border);outline:none;cursor:pointer;}
+.slider-input::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:26px;height:26px;border-radius:50%;background:var(--accent);cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.3);}
+.slider-input::-moz-range-thumb{width:26px;height:26px;border-radius:50%;background:var(--accent);cursor:pointer;border:none;}
 
 /* TIMER */
 .timer-wrap{padding:0 16px;}
@@ -863,7 +864,11 @@ function handleSessionState(session){
 
   if(session.status==='published'||session.status==='waiting'){showWaitingRoom(session);return;}
   if(session.status==='ended'){showFinalLeaderboard(session);return;}
-  if(session.status==='leaderboard'){showLeaderboardScreen(session);return;}
+  if(session.status==='leaderboard'){
+    const lbKey=`${state.sessionId}_lb_${session.currentSubjectIndex}`;
+    if(state.lastLbKey!==lbKey){state.lastLbKey=lbKey;showLeaderboardScreen(session);}
+    return;
+  }
   if(session.status==='voting'){showVotingScreen(session);return;}
 }
 
@@ -978,28 +983,28 @@ function buildVotingCategories(session){
     const row=document.createElement('div');
     row.className='stepper-row';
     const val=state.currentVotes[idx][cat.name]||0;
+    const catKey=safeKey(cat.name);
     row.innerHTML=`
       <div class="stepper-info">
-        <div class="stepper-name">${cat.name}</div>
-        <div class="stepper-max">0–${cat.max} poeng${cat.weight>1?` · vekt ${cat.weight}x`:''}</div>
+        <div class="stepper-name">${cat.name}${cat.weight>1?` <span style="font-size:10px;color:var(--muted);">×${cat.weight}</span>`:''}</div>
+        <div class="step-val" id="v-${catKey}">${val}</div>
       </div>
-      <div class="stepper-controls">
-        <div class="step-btn" data-cat="${cat.name}" data-dir="-1">−</div>
-        <div class="step-val" id="v-${safeKey(cat.name)}">${val}</div>
-        <div class="step-btn" data-cat="${cat.name}" data-dir="1">+</div>
+      <input type="range" class="slider-input" id="s-${catKey}" 
+        min="0" max="${cat.max}" value="${val}" 
+        data-cat="${cat.name}" data-max="${cat.max}">
+      <div style="display:flex;justify-content:space-between;padding:2px 0;">
+        <span style="font-size:10px;color:var(--muted);">0</span>
+        <span style="font-size:10px;color:var(--muted);">${cat.max}</span>
       </div>`;
     card.appendChild(row);
   });
   container.appendChild(card);
-  container.querySelectorAll('.step-btn').forEach(btn=>{
-    btn.addEventListener('click',()=>{
-      const catName=btn.dataset.cat;
-      const dir=parseInt(btn.dataset.dir);
-      const cat=cats.find(c=>c.name===catName);if(!cat)return;
+  container.querySelectorAll('.slider-input').forEach(slider=>{
+    slider.addEventListener('input',()=>{
+      const catName=slider.dataset.cat;
+      const v=parseInt(slider.value);
       const si=session.currentSubjectIndex||0;
       if(!state.currentVotes[si])state.currentVotes[si]={};
-      let v=(state.currentVotes[si][catName]||0)+dir;
-      v=Math.max(0,Math.min(cat.max,v));
       state.currentVotes[si][catName]=v;
       document.getElementById(`v-${safeKey(catName)}`).textContent=v;
       saveDraft(si);
@@ -1049,6 +1054,15 @@ function startTimer(session){
     if(session.paused)return;
     const now=Date.now();
     const secs=Math.max(0,Math.round((state.timerEnd-now)/1000));
+    // Auto-submit when timer hits 0
+    if(secs===0&&!state.hasVotedCurrentSubject&&state.participantId){
+      state.hasVotedCurrentSubject=true; // prevent multiple submits
+      const idx=session.currentSubjectIndex||0;
+      const votes=state.currentVotes[idx]||{};
+      set(ref(db,`sessions/${state.sessionId}/votes/${idx}/${state.participantId}`),
+        {participantName:state.participantName,votes,submittedAt:Date.now(),autoSubmitted:true})
+        .catch(e=>console.error('Auto-submit failed:',e));
+    }
     const pct=Math.max(0,(secs/total)*100);
     const urgent=secs<=10&&secs>0;
     ['timer-display','submitted-timer'].forEach(id=>{
@@ -1413,8 +1427,8 @@ window.lockBlindtest=async function(){
 
 // ========== SKÅL ==========
 function showSkalToast(text,sender){
-  document.getElementById('skal-text').textContent='🥂 ' + text;
-  document.getElementById('skal-sender').textContent=sender?`— ${sender}`:'';
+  document.getElementById('skal-text').textContent=text;
+  document.getElementById('skal-sender').textContent=sender?`🥂 ${sender}`:'🥂';
   const toast=document.getElementById('skal-toast');
   toast.classList.add('show');
   setTimeout(()=>toast.classList.remove('show'),4000);
