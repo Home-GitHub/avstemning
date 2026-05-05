@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Avstemning – Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#080808;--surface:#111;--surface2:#1a1a1a;--surface3:#222;--border:#2a2a2a;--border2:#333;--gold:#e8c36a;--gold-glow:rgba(232,195,106,0.15);--text:#f0f0f0;--text2:#a0a0a0;--muted:#555;--danger:#e05555;--danger-dim:#2a1515;--success:#4caf50;}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;}
+body{background-image:radial-gradient(ellipse at 20% 0%,rgba(232,195,106,0.04) 0%,transparent 60%);}
+.topbar{background:rgba(17,17,17,0.95);border-bottom:1px solid var(--border);padding:0 32px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;backdrop-filter:blur(10px);}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--gold);letter-spacing:2px;display:flex;align-items:center;gap:10px;}
+.logo-dot{width:6px;height:6px;border-radius:50%;background:var(--gold);}
+.logo-sub{font-family:'DM Sans',sans-serif;font-size:11px;color:var(--muted);font-weight:400;letter-spacing:1px;text-transform:uppercase;}
+.topbar-right{display:flex;align-items:center;gap:16px;}
+.status-indicator{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--muted);}
+.status-dot.connected{background:var(--success);box-shadow:0 0 6px rgba(76,175,80,0.5);}
+.firebase-size{font-size:11px;color:var(--muted);background:var(--surface2);padding:4px 10px;border-radius:20px;border:1px solid var(--border);}
+.main{max-width:1100px;margin:0 auto;padding:32px 24px;}
+.tabs{display:flex;gap:2px;background:var(--surface2);border-radius:12px;padding:4px;margin-bottom:32px;border:1px solid var(--border);}
+.tab{flex:1;padding:10px 16px;text-align:center;font-size:13px;font-weight:500;border-radius:9px;cursor:pointer;color:var(--muted);transition:all 0.2s;}
+.tab.active{background:var(--surface);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,0.4);}
+.tab-content{display:none;}
+.tab-content.active{display:block;}
+.section-title{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--gold);letter-spacing:1px;margin-bottom:4px;}
+.section-sub{font-size:13px;color:var(--muted);margin-bottom:24px;}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+@media(max-width:750px){.grid-2{grid-template-columns:1fr;}}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:22px;margin-bottom:16px;}
+.card-title{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.card-title::after{content:'';flex:1;height:1px;background:var(--border);}
+label{font-size:11px;color:var(--text2);margin-bottom:5px;display:block;text-transform:uppercase;letter-spacing:0.5px;}
+input[type="text"],input[type="password"],input[type="number"],textarea,select{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;padding:11px 14px;outline:none;transition:border-color 0.2s;margin-bottom:14px;}
+input:focus,textarea:focus,select:focus{border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-glow);}
+input::placeholder,textarea::placeholder{color:var(--muted);}
+select{cursor:pointer;}
+select option{background:var(--surface2);}
+.field-hint{font-size:11px;color:var(--muted);margin-top:-10px;margin-bottom:14px;}
+.input-row{display:flex;gap:8px;}
+.input-row input{margin-bottom:0;}
+.btn{padding:12px 20px;border-radius:10px;border:none;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.15s;display:inline-flex;align-items:center;gap:6px;}
+.btn:active{transform:scale(0.97);}
+.btn-primary{background:var(--gold);color:#080808;}
+.btn-primary:hover{background:#f0d080;box-shadow:0 0 20px rgba(232,195,106,0.3);}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
+.btn-danger{background:var(--danger-dim);color:var(--danger);border:1px solid rgba(224,85,85,0.2);}
+.btn-full{width:100%;justify-content:center;}
+.btn-sm{padding:6px 14px;font-size:12px;border-radius:8px;}
+.chip-list{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;min-height:28px;}
+.chip{background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:4px 10px 4px 12px;font-size:12px;display:flex;align-items:center;gap:6px;color:var(--text2);}
+.chip-del{color:var(--muted);cursor:pointer;font-size:15px;line-height:1;}
+.chip-del:hover{color:var(--danger);}
+.chip-gold{border-color:rgba(232,195,106,0.3);color:var(--gold);background:rgba(232,195,106,0.05);}
+.import-area{border:2px dashed var(--border);border-radius:12px;padding:24px;text-align:center;cursor:pointer;transition:all 0.2s;margin-bottom:14px;}
+.import-area:hover,.import-area.drag{border-color:var(--gold);background:var(--gold-glow);}
+.import-area input{display:none;}
+.import-icon{font-size:32px;margin-bottom:8px;}
+.import-text{font-size:13px;color:var(--muted);}
+.import-preview{background:var(--surface2);border-radius:8px;padding:12px 14px;font-size:12px;color:var(--text2);margin-bottom:14px;display:none;border:1px solid var(--border);}
+.format-hint{background:var(--surface2);border-radius:8px;padding:12px 14px;font-size:12px;color:var(--muted);line-height:2;font-family:monospace;margin-bottom:14px;border:1px solid var(--border);}
+.format-hint strong{color:var(--text2);}
+.session-item{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:10px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:border-color 0.2s;}
+.session-item:hover{border-color:var(--border2);}
+.session-item.live-session{border-color:rgba(76,175,80,0.3);}
+.session-dot{width:8px;height:8px;border-radius:50%;background:var(--muted);flex-shrink:0;}
+.session-dot.live{background:var(--success);box-shadow:0 0 8px rgba(76,175,80,0.5);}
+.session-dot.ready{background:var(--gold);}
+.session-info{flex:1;}
+.session-name{font-size:15px;font-weight:500;}
+.session-meta{font-size:12px;color:var(--muted);margin-top:3px;}
+.badge{font-size:10px;padding:3px 10px;border-radius:20px;font-weight:500;}
+.badge-live{background:rgba(76,175,80,0.12);color:var(--success);border:1px solid rgba(76,175,80,0.25);}
+.badge-ready{background:rgba(232,195,106,0.12);color:var(--gold);border:1px solid rgba(232,195,106,0.25);}
+.badge-ended{background:var(--surface2);color:var(--muted);border:1px solid var(--border);}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:200;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px);}
+.modal-bg.open{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:28px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;}
+.modal-title{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--gold);margin-bottom:6px;letter-spacing:1px;}
+.modal-sub{font-size:13px;color:var(--muted);margin-bottom:20px;}
+.modal-actions{display:flex;gap:10px;margin-top:20px;}
+.modal-actions .btn{flex:1;justify-content:center;}
+.qr-container{background:#fff;border-radius:12px;padding:16px;display:flex;align-items:center;justify-content:center;margin:16px 0;}
+.url-copy{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--gold);word-break:break-all;margin-bottom:8px;cursor:pointer;}
+.url-copy:hover{border-color:var(--gold);}
+.copy-hint{font-size:11px;color:var(--muted);text-align:center;margin-bottom:16px;}
+.stats-row{display:flex;gap:12px;margin-bottom:24px;}
+.stat-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 18px;flex:1;}
+.stat-val{font-family:'Bebas Neue',sans-serif;font-size:30px;color:var(--gold);line-height:1;}
+.stat-label{font-size:11px;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;}
+.divider{height:1px;background:var(--border);margin:20px 0;}
+.err{color:var(--danger);font-size:13px;margin-top:8px;display:none;}
+.empty-state{text-align:center;padding:48px 20px;color:var(--muted);}
+.empty-icon{font-size:40px;margin-bottom:12px;}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);}
+.toggle-row:last-child{border-bottom:none;}
+.toggle-label{font-size:14px;}
+.toggle-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+.toggle{width:40px;height:22px;background:var(--border);border-radius:11px;position:relative;cursor:pointer;transition:background 0.2s;flex-shrink:0;}
+.toggle.on{background:var(--gold);}
+.toggle::after{content:'';position:absolute;width:16px;height:16px;border-radius:50%;background:#fff;top:3px;left:3px;transition:transform 0.2s;}
+.toggle.on::after{transform:translateX(18px);}
+.results-table{width:100%;border-collapse:collapse;font-size:13px;}
+.results-table th{text-align:left;padding:8px 12px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border);}
+.results-table td{padding:10px 12px;border-bottom:1px solid var(--border);}
+.results-table tr:last-child td{border-bottom:none;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">
+    <span class="logo-dot"></span>
+    Avstemning
+    <span class="logo-sub">Generator</span>
+  </div>
+  <div class="topbar-right">
+    <div class="firebase-size" id="firebase-size">Laster...</div>
+    <div class="status-indicator">
+      <div class="status-dot" id="status-dot"></div>
+      <span id="status-text">Kobler til...</span>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="tabs">
+    <div class="tab active" data-action="switchTab" data-arg="create">✦ Ny avstemning</div>
+    <div class="tab" data-action="switchTab" data-arg="manage">Mine avstemninger</div>
+    <div class="tab" data-action="switchTab" data-arg="themes">Temaer</div>
+  </div>
+
+  <!-- CREATE -->
+  <div id="tab-create" class="tab-content active">
+    <div class="section-title">Ny avstemning</div>
+    <div class="section-sub">Fyll inn detaljer og last opp emner fra Excel</div>
+    <div class="grid-2">
+      <div>
+        <div class="card">
+          <div class="card-title">Konfigurasjon</div>
+          <label>Navn på avstemningen</label>
+          <input type="text" id="cfg-name" placeholder="f.eks. Ølsmaking Juni 2025">
+          <label>Admin-passord</label>
+          <input type="password" id="cfg-password" value="mgp2026">
+          <label>Tema</label>
+          <select id="cfg-theme" style="margin-bottom:14px;">
+            <option value="standard">🖤 Standard</option>
+            <option value="pub">🍺 Pub / Ølsmaking</option>
+            <option value="vin">🍷 Vinsmaking</option>
+            <option value="mgp">🎵 MGP / Musikk</option>
+            <option value="mat">🍕 Mat / Restaurant</option>
+            <option value="party">🎉 Party / Generisk</option>
+          </select>
+          <label>Emnetid (minutter, 0 = manuell)</label>
+          <input type="number" id="cfg-minutes" value="3" min="0" max="60">
+          <label>Leaderboard-tid (sekunder, 0 = manuell)</label>
+          <input type="number" id="cfg-leaderboard" value="60" min="0" max="300">
+          <div class="toggle-row" style="margin-top:8px;">
+            <div>
+              <div class="toggle-label">Blindtest-modus</div>
+              <div class="toggle-sub">Stokker om emnerekkefølgen live</div>
+            </div>
+            <div class="toggle" id="blindtest-toggle" data-action="toggleBlindtest"></div>
+          </div>
+          <label style="margin-top:14px;">App-ID (brukes i URL)</label>
+          <input type="text" id="cfg-slug" placeholder="f.eks. olsmaking-juni" autocomplete="off">
+          <div class="field-hint" id="slug-hint">URL: ...</div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <div class="card-title">Emner og kategorier</div>
+          <div class="format-hint">
+            <strong>Fane 1 – "Emner":</strong><br>
+            Kolonne A: Tuborg, Hansa, Ringnes...<br><br>
+            <strong>Fane 2 – "Kategorier":</strong><br>
+            A: Navn &nbsp; B: Maks &nbsp; C: Vekting
+          </div>
+          <div class="import-area" id="drop-area" onclick="document.getElementById('file-input').click()">
+            <input type="file" id="file-input" accept=".xlsx,.xls">
+            <div class="import-icon">📊</div>
+            <div class="import-text">Klikk for å velge Excel-fil<br><span style="font-size:11px;">.xlsx eller .xls</span></div>
+          </div>
+          <div class="import-preview" id="import-preview"></div>
+          <div style="font-size:12px;color:var(--text2);font-weight:500;margin-bottom:6px;">Emner <span id="subject-count" style="color:var(--muted);font-weight:400;"></span></div>
+          <div class="chip-list" id="subjects-chips"></div>
+          <div class="input-row" style="margin-bottom:14px;">
+            <input type="text" id="manual-subject" placeholder="Legg til emne" style="margin-bottom:0;flex:1;">
+            <button class="btn btn-secondary btn-sm" data-action="addManualSubject">+ Legg til</button>
+          </div>
+          <div style="font-size:12px;color:var(--text2);font-weight:500;margin-bottom:6px;">Kategorier <span id="category-count" style="color:var(--muted);font-weight:400;"></span></div>
+          <div class="chip-list" id="categories-chips"></div>
+          <div class="input-row" style="margin-bottom:4px;">
+            <input type="text" id="manual-cat-name" placeholder="Navn" style="margin-bottom:0;flex:2;">
+            <input type="number" id="manual-cat-max" placeholder="Maks" min="1" style="margin-bottom:0;flex:1;">
+            <input type="number" id="manual-cat-weight" placeholder="Vekt" min="1" value="1" style="margin-bottom:0;flex:1;">
+            <button class="btn btn-secondary btn-sm" data-action="addManualCategory">+</button>
+          </div>
+          <div class="field-hint">Navn · Maks-poeng · Vekting (default 1)</div>
+        </div>
+        <button class="btn btn-primary btn-full" data-action="createSession">
+          <span id="create-btn-text">Publiser avstemning →</span>
+        </button>
+        <div class="err" id="create-error"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MANAGE -->
+  <div id="tab-manage" class="tab-content">
+    <div class="section-title">Mine avstemninger</div>
+    <div class="section-sub">Alle publiserte sesjoner</div>
+    <div class="stats-row">
+      <div class="stat-box"><div class="stat-val" id="stat-total">0</div><div class="stat-label">Totalt</div></div>
+      <div class="stat-box"><div class="stat-val" id="stat-active">0</div><div class="stat-label">Aktive</div></div>
+      <div class="stat-box"><div class="stat-val" id="stat-ended">0</div><div class="stat-label">Avsluttede</div></div>
+    </div>
+    <div id="session-list-container">
+      <div class="empty-state"><div class="empty-icon">🎯</div><div style="font-size:14px;color:var(--muted);">Ingen avstemninger ennå</div></div>
+    </div>
+  </div>
+
+  <!-- THEMES -->
+  <div id="tab-themes" class="tab-content">
+    <div class="section-title">Temaer</div>
+    <div class="section-sub">Aktiver eller deaktiver temaer</div>
+    <div class="card">
+      <div class="card-title">Tilgjengelige temaer</div>
+      <div id="theme-manager"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: SESSION -->
+<div class="modal-bg" id="session-modal">
+  <div class="modal">
+    <div class="modal-title" id="modal-name">Sesjon</div>
+    <div class="modal-sub" id="modal-meta"></div>
+    <div class="card-title">QR-kode og lenke</div>
+    <div class="qr-container"><div id="modal-qr"></div></div>
+    <div class="url-copy" id="modal-url" data-action="copyUrl">Laster...</div>
+    <div class="copy-hint">Trykk for å kopiere</div>
+    <div id="modal-results" style="display:none;">
+      <div class="divider"></div>
+      <div class="card-title">Resultater</div>
+      <div id="modal-results-content"></div>
+      <button class="btn btn-secondary btn-full" style="margin-top:12px;" data-action="exportResults">📊 Eksporter til Excel</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-danger" data-action="deleteSession">🗑 Slett</button>
+      <button class="btn btn-secondary" data-action="closeModal">Lukk</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: CONFIRM DELETE -->
+<div class="modal-bg" id="confirm-modal">
+  <div class="modal" style="max-width:360px;">
+    <div class="modal-title">Slett sesjon?</div>
+    <div class="modal-sub">Dette kan ikke angres. All data slettes fra Firebase.</div>
+    <div class="modal-actions">
+      <button class="btn btn-danger" data-action="confirmDelete">Ja, slett</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('confirm-modal').classList.remove('open')">Avbryt</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: SUCCESS -->
+<div class="modal-bg" id="success-modal">
+  <div class="modal" style="max-width:440px;text-align:center;">
+    <div style="font-size:48px;margin-bottom:12px;">🎉</div>
+    <div class="modal-title">Publisert!</div>
+    <div class="modal-sub" id="success-name"></div>
+    <div class="qr-container"><div id="success-qr"></div></div>
+    <div class="url-copy" id="success-url" data-action="copySuccessUrl"></div>
+    <div class="copy-hint">Trykk for å kopiere · Del med deltakerne</div>
+    <button class="btn btn-primary btn-full" style="margin-top:8px;" data-action="closeSuccess">Ferdig</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, set, get, onValue, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyBaIhaNT-4uCh5DOVErY6HEF88SE0nSAO4",
+  authDomain: "mgp-flatcity.firebaseapp.com",
+  databaseURL: "https://mgp-flatcity-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "mgp-flatcity",
+  storageBucket: "mgp-flatcity.firebasestorage.app",
+  messagingSenderId: "1068159426277",
+  appId: "1:1068159426277:web:c78aff67007dcc8ef1be0c"
+};
+
+const app = initializeApp(FIREBASE_CONFIG);
+const db = getDatabase(app);
+const APP_URL = "https://startling-lebkuchen-6ba25d.netlify.app/avstemning.html";
+
+let subjects = [], categories = [], blindtestEnabled = false;
+let sessions = {}, activeSessionId = null;
+let enabledThemes = {standard:true,pub:true,vin:true,mgp:true,mat:true,party:true};
+const THEMES = [
+  {id:'standard',name:'🖤 Standard',bg:'linear-gradient(135deg,#0a0a0a,#1a1a1a)'},
+  {id:'pub',name:'🍺 Pub / Ølsmaking',bg:'linear-gradient(135deg,#1a0f00,#2a1800)'},
+  {id:'vin',name:'🍷 Vinsmaking',bg:'linear-gradient(135deg,#120008,#1e0010)'},
+  {id:'mgp',name:'🎵 MGP / Musikk',bg:'linear-gradient(135deg,#0a0018,#180030)'},
+  {id:'mat',name:'🍕 Mat / Restaurant',bg:'linear-gradient(135deg,#f8f6f0,#e8e4dc)'},
+  {id:'party',name:'🎉 Party / Generisk',bg:'linear-gradient(135deg,#0a1a0a,#0f2810)'},
+];
+
+window.switchTab = t => {
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['create','manage','themes'][i]===t));
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  document.getElementById(`tab-${t}`).classList.add('active');
+};
+
+// FIREBASE
+onValue(ref(db,'sessions'), snap => {
+  sessions = snap.exists() ? snap.val() : {};
+  renderSessionList();
+  updateStats();
+  const bytes = new TextEncoder().encode(JSON.stringify(sessions)).length;
+  document.getElementById('firebase-size').textContent = `Firebase: ${(bytes/1024/1024).toFixed(2)} MB / 1 GB`;
+  document.getElementById('status-dot').classList.add('connected');
+  document.getElementById('status-text').textContent = 'Tilkoblet';
+});
+
+// SLUG
+document.getElementById('cfg-name').addEventListener('input', e => {
+  const slug = e.target.value.toLowerCase().replace(/æ/g,'ae').replace(/ø/g,'o').replace(/å/g,'a').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+  document.getElementById('cfg-slug').value = slug;
+  updateSlugHint();
+});
+document.getElementById('cfg-slug').addEventListener('input', updateSlugHint);
+function updateSlugHint() {
+  const s = document.getElementById('cfg-slug').value || '...';
+  document.getElementById('slug-hint').textContent = `URL: ${APP_URL}?s=${s}`;
+}
+
+// DROPZONE
+const dropArea = document.getElementById('drop-area');
+dropArea.addEventListener('dragover', e=>{e.preventDefault();dropArea.classList.add('drag');});
+dropArea.addEventListener('dragleave', ()=>dropArea.classList.remove('drag'));
+dropArea.addEventListener('drop', e=>{e.preventDefault();dropArea.classList.remove('drag');handleFile(e.dataTransfer.files[0]);});
+document.getElementById('file-input').addEventListener('change', e=>handleFile(e.target.files[0]));
+
+function handleFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb = XLSX.read(e.target.result, {type:'binary'});
+      const subSheet = wb.Sheets['Emner'] || wb.Sheets[wb.SheetNames[0]];
+      if (!subSheet) throw new Error("Finner ikke fanen 'Emner'");
+      const subData = XLSX.utils.sheet_to_json(subSheet, {header:1});
+      subjects = subData.map(r=>r[0]).filter(v=>v&&String(v).trim()).map(v=>String(v).trim());
+      if (!subjects.length) throw new Error("Ingen emner funnet i kolonne A");
+      const catSheet = wb.Sheets['Kategorier'] || wb.Sheets[wb.SheetNames[1]];
+      if (catSheet) {
+        const catData = XLSX.utils.sheet_to_json(catSheet, {header:1});
+        categories = catData.map(r=>({name:r[0]?String(r[0]).trim():null,max:parseInt(r[1])||10,weight:parseInt(r[2])||1})).filter(c=>c.name);
+      }
+      renderChips();
+      const prev = document.getElementById('import-preview');
+      prev.style.display = 'block';
+      prev.textContent = `✅ ${subjects.length} emner og ${categories.length} kategorier importert`;
+    } catch(err) { alert(`❌ ${err.message}`); }
+  };
+  reader.readAsBinaryString(file);
+}
+
+function renderChips() {
+  const sc = document.getElementById('subjects-chips');
+  const cc = document.getElementById('categories-chips');
+  sc.innerHTML = ''; cc.innerHTML = '';
+  subjects.forEach((s,i) => {
+    const c = document.createElement('div');
+    c.className = 'chip chip-gold';
+    c.innerHTML = `${s} <span class="chip-del" data-action="removeSubject" data-arg="${i}">×</span>`;
+    sc.appendChild(c);
+  });
+  categories.forEach((c,i) => {
+    const el = document.createElement('div');
+    el.className = 'chip';
+    el.innerHTML = `${c.name} /${c.max}${c.weight>1?` ×${c.weight}`:''} <span class="chip-del" data-action="removeCategory" data-arg="${i}">×</span>`;
+    cc.appendChild(el);
+  });
+  document.getElementById('subject-count').textContent = `(${subjects.length})`;
+  document.getElementById('category-count').textContent = `(${categories.length})`;
+}
+
+window.removeSubject = i => { subjects.splice(i,1); renderChips(); };
+window.removeCategory = i => { categories.splice(i,1); renderChips(); };
+window.addManualSubject = () => {
+  const inp = document.getElementById('manual-subject');
+  const v = inp.value.trim(); if (!v) return;
+  subjects.push(v); inp.value = ''; renderChips();
+};
+window.addManualCategory = () => {
+  const name = document.getElementById('manual-cat-name').value.trim();
+  const max = parseInt(document.getElementById('manual-cat-max').value)||10;
+  const weight = parseInt(document.getElementById('manual-cat-weight').value)||1;
+  if (!name) return;
+  categories.push({name,max,weight});
+  document.getElementById('manual-cat-name').value='';
+  document.getElementById('manual-cat-max').value='';
+  renderChips();
+};
+
+window.toggleBlindtest = () => {
+  blindtestEnabled = !blindtestEnabled;
+  document.getElementById('blindtest-toggle').classList.toggle('on', blindtestEnabled);
+};
+
+// CREATE SESSION
+window.createSession = async () => {
+  const name = document.getElementById('cfg-name').value.trim();
+  const password = document.getElementById('cfg-password').value.trim();
+  const minutes = parseFloat(document.getElementById('cfg-minutes').value)||0;
+  const lbSecs = parseInt(document.getElementById('cfg-leaderboard').value)||0;
+  const slug = document.getElementById('cfg-slug').value.trim();
+  const theme = document.getElementById('cfg-theme').value;
+  const errEl = document.getElementById('create-error');
+  errEl.style.display='none';
+  if (!name) return showErr(errEl,'Gi sesjonen et navn');
+  if (!password) return showErr(errEl,'Angi passord');
+  if (!slug) return showErr(errEl,'Angi app-ID');
+  if (!/^[a-z0-9-]+$/.test(slug)) return showErr(errEl,'App-ID kan bare inneholde bokstaver, tall og bindestrek');
+  if (subjects.length < 2) return showErr(errEl,'Legg til minst 2 emner');
+  if (categories.length < 1) return showErr(errEl,'Legg til minst 1 kategori');
+  const existing = await get(ref(db,`sessions/${slug}`));
+  if (existing.exists()) return showErr(errEl,'Denne app-ID-en er allerede i bruk');
+  document.getElementById('create-btn-text').textContent = 'Publiserer...';
+  const subjectsObj = {}; subjects.forEach((s,i)=>{subjectsObj[i]={name:s,originalIndex:i};});
+  const categoriesObj = {}; categories.forEach((c,i)=>{categoriesObj[i]=c;});
+  await set(ref(db,`sessions/${slug}`),{
+    name,password,theme,minutesPerSubject:minutes,leaderboardSeconds:lbSecs,
+    blindtest:blindtestEnabled,blindtestLocked:false,blindtestRevealed:false,
+    status:'published',currentSubjectIndex:0,subjects:subjectsObj,categories:categoriesObj,createdAt:Date.now()
+  });
+  document.getElementById('create-btn-text').textContent = 'Publiser avstemning →';
+  const url = `${APP_URL}?s=${slug}`;
+  document.getElementById('success-name').textContent = name;
+  document.getElementById('success-url').textContent = url;
+  document.getElementById('success-url').dataset.url = url;
+  document.getElementById('success-qr').innerHTML = '';
+  new QRCode(document.getElementById('success-qr'),{text:url,width:180,height:180,colorDark:'#000',colorLight:'#fff'});
+  document.getElementById('success-modal').classList.add('open');
+  subjects=[]; categories=[]; blindtestEnabled=false;
+  document.getElementById('blindtest-toggle').classList.remove('on');
+  document.getElementById('cfg-name').value=''; document.getElementById('cfg-slug').value='';
+  renderChips(); document.getElementById('import-preview').style.display='none';
+};
+
+// SESSION LIST
+function renderSessionList() {
+  const container = document.getElementById('session-list-container');
+  const arr = Object.entries(sessions).sort((a,b)=>(b[1].createdAt||0)-(a[1].createdAt||0));
+  if (!arr.length) { container.innerHTML='<div class="empty-state"><div class="empty-icon">🎯</div><div style="font-size:14px;color:var(--muted);">Ingen avstemninger ennå</div></div>'; return; }
+  container.innerHTML='';
+  arr.forEach(([id,s]) => {
+    const isLive = ['voting','leaderboard','waiting'].includes(s.status);
+    const isReady = s.status==='published';
+    const dotClass = isLive?'live':isReady?'ready':'';
+    const badgeClass = isLive?'badge-live':isReady?'badge-ready':'badge-ended';
+    const badgeText = {voting:'Aktiv',leaderboard:'Leaderboard',waiting:'Venterom',published:'Klar',ended:'Avsluttet'}[s.status]||s.status;
+    const pCount = s.participants?Object.keys(s.participants).length:0;
+    const sCount = s.subjects?Object.keys(s.subjects).length:0;
+    const date = s.createdAt?new Date(s.createdAt).toLocaleDateString('no-NO'):'';
+    const div = document.createElement('div');
+    div.className = `session-item${isLive?' live-session':''}`;
+    div.innerHTML = `<div class="session-dot ${dotClass}"></div><div class="session-info"><div class="session-name">${s.name}</div><div class="session-meta">${sCount} emner · ${pCount} deltakere · ${date}</div></div><span class="badge ${badgeClass}">${badgeText}</span>`;
+    div.onclick = () => openModal(id,s);
+    container.appendChild(div);
+  });
+}
+
+function updateStats() {
+  const arr = Object.values(sessions);
+  document.getElementById('stat-total').textContent = arr.length;
+  document.getElementById('stat-active').textContent = arr.filter(s=>['voting','waiting','leaderboard'].includes(s.status)).length;
+  document.getElementById('stat-ended').textContent = arr.filter(s=>s.status==='ended').length;
+}
+
+function openModal(id,s) {
+  activeSessionId=id;
+  document.getElementById('modal-name').textContent = s.name;
+  const pCount = s.participants?Object.keys(s.participants).length:0;
+  const sCount = s.subjects?Object.keys(s.subjects).length:0;
+  document.getElementById('modal-meta').textContent = `${sCount} emner · ${pCount} deltakere · ${s.status}`;
+  const url = `${APP_URL}?s=${id}`;
+  document.getElementById('modal-url').textContent = url;
+  document.getElementById('modal-url').dataset.url = url;
+  document.getElementById('modal-qr').innerHTML = '';
+  new QRCode(document.getElementById('modal-qr'),{text:url,width:180,height:180,colorDark:'#000',colorLight:'#fff'});
+  const resultsEl = document.getElementById('modal-results');
+  if (s.status==='ended'&&s.subjects) { resultsEl.style.display='block'; renderResults(s); }
+  else resultsEl.style.display='none';
+  document.getElementById('session-modal').classList.add('open');
+}
+
+function renderResults(session) {
+  const subjs = session.subjects?Object.values(session.subjects):[];
+  const cats = session.categories?Object.values(session.categories):[];
+  const votes = session.votes||{};
+  const participants = session.participants?Object.keys(session.participants):[];
+  const scores = subjs.map((sub,idx)=>{
+    let total=0;
+    participants.forEach(pid=>{const v=votes[idx]&&votes[idx][pid];if(!v)return;cats.forEach(cat=>{total+=((v.votes&&v.votes[cat.name])||0)*(cat.weight||1);});});
+    return {name:sub.name,total};
+  }).sort((a,b)=>b.total-a.total);
+  const medals=['🥇','🥈','🥉'];
+  let html='<table class="results-table"><thead><tr><th>#</th><th>Emne</th><th>Poeng</th></tr></thead><tbody>';
+  scores.forEach((s,i)=>{html+=`<tr><td>${medals[i]||`#${i+1}`}</td><td>${s.name}</td><td style="color:var(--gold);font-weight:600;">${Math.round(s.total)}</td></tr>`;});
+  html+='</tbody></table>';
+  document.getElementById('modal-results-content').innerHTML=html;
+}
+
+window.exportResults = () => {
+  if (!activeSessionId||!sessions[activeSessionId]) return;
+  const s=sessions[activeSessionId];
+  const subjs=s.subjects?Object.values(s.subjects):[];
+  const cats=s.categories?Object.values(s.categories):[];
+  const votes=s.votes||{};
+  const participants=s.participants?Object.entries(s.participants):[];
+  const wb=XLSX.utils.book_new();
+  const data=[['#','Emne','Total poeng']];
+  subjs.map((sub,idx)=>{let total=0;participants.forEach(([pid])=>{const v=votes[idx]&&votes[idx][pid];if(!v)return;cats.forEach(cat=>{total+=((v.votes&&v.votes[cat.name])||0)*(cat.weight||1);});});return{name:sub.name,total};}).sort((a,b)=>b.total-a.total).forEach((s,i)=>data.push([i+1,s.name,Math.round(s.total)]));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(data),'Resultater');
+  XLSX.writeFile(wb,`${s.name.replace(/\s+/g,'-')}-resultater.xlsx`);
+};
+
+window.deleteSession = () => { document.getElementById('session-modal').classList.remove('open'); document.getElementById('confirm-modal').classList.add('open'); };
+window.confirmDelete = async () => { if (!activeSessionId) return; await remove(ref(db,`sessions/${activeSessionId}`)); activeSessionId=null; document.getElementById('confirm-modal').classList.remove('open'); };
+window.closeModal = () => document.getElementById('session-modal').classList.remove('open');
+window.closeSuccess = () => { document.getElementById('success-modal').classList.remove('open'); switchTab('manage'); };
+window.copyUrl = () => { const u=document.getElementById('modal-url').dataset.url; navigator.clipboard.writeText(u).then(()=>{document.getElementById('modal-url').textContent='✅ Kopiert!';setTimeout(()=>document.getElementById('modal-url').textContent=u,2000);}); };
+window.copySuccessUrl = () => { const u=document.getElementById('success-url').dataset.url; navigator.clipboard.writeText(u).then(()=>{document.getElementById('success-url').textContent='✅ Kopiert!';setTimeout(()=>document.getElementById('success-url').textContent=u,2000);}); };
+
+// THEMES
+function initThemeManager() {
+  const stored=localStorage.getItem('enabledThemes');
+  if (stored) enabledThemes=JSON.parse(stored);
+  const container=document.getElementById('theme-manager');
+  THEMES.forEach(t=>{
+    const row=document.createElement('div');
+    row.className='toggle-row';
+    const isOn=enabledThemes[t.id]!==false;
+    row.innerHTML=`<div style="display:flex;align-items:center;gap:12px;"><div style="width:36px;height:36px;border-radius:8px;background:${t.bg};border:1px solid #333;flex-shrink:0;"></div><div class="toggle-label">${t.name}</div></div><div class="toggle${isOn?' on':''}" id="tt-${t.id}" data-action="toggleTheme" data-arg="${t.id}"></div>`;
+    container.appendChild(row);
+  });
+  updateThemeSelect();
+}
+
+window.toggleTheme = id => {
+  enabledThemes[id]=!enabledThemes[id];
+  document.getElementById(`tt-${id}`).classList.toggle('on',enabledThemes[id]);
+  localStorage.setItem('enabledThemes',JSON.stringify(enabledThemes));
+  updateThemeSelect();
+};
+
+function updateThemeSelect() {
+  const sel=document.getElementById('cfg-theme');
+  const cur=sel.value; sel.innerHTML='';
+  THEMES.filter(t=>enabledThemes[t.id]!==false).forEach(t=>{const o=document.createElement('option');o.value=t.id;o.textContent=t.name;sel.appendChild(o);});
+  if ([...sel.options].some(o=>o.value===cur)) sel.value=cur;
+}
+
+function showErr(el,msg){el.textContent=msg;el.style.display='block';}
+
+['session-modal','confirm-modal','success-modal'].forEach(id=>{
+  document.getElementById(id).addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');});
+});
+
+initThemeManager();
+</script>
+<script>
+document.addEventListener('click', function(e) {
+  var el = e.target.closest('[data-action]');
+  if (!el) return;
+  var action = el.getAttribute('data-action');
+  var arg = el.getAttribute('data-arg');
+  var fn = window[action];
+  if (typeof fn === 'function') {
+    if (arg !== null) fn(isNaN(arg) ? arg : Number(arg));
+    else fn();
+  } else {
+    console.warn('Action not found:', action);
+  }
+});
+</script>
+</body>
+</html>
