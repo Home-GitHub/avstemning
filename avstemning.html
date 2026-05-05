@@ -76,11 +76,12 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
 .stepper-max{font-size:11px;color:var(--muted);}
 .stepper-controls{display:flex;align-items:center;gap:10px;}
 .step-val{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--accent);min-width:32px;text-align:center;line-height:1;}
-.slider-wrap{position:relative;width:100%;margin:4px 0 8px;}
-.slider-input{width:100%;-webkit-appearance:none;appearance:none;height:8px;border-radius:4px;background:var(--border);outline:none;cursor:pointer;display:block;}
-.slider-input::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:32px;height:32px;border-radius:50%;background:var(--accent);cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,0.4);}
-.slider-input::-moz-range-thumb{width:32px;height:32px;border-radius:50%;background:var(--accent);cursor:pointer;border:none;}
-.slider-midmark{position:absolute;top:-4px;left:50%;transform:translateX(-50%);width:2px;height:16px;background:var(--muted);border-radius:1px;pointer-events:none;opacity:0.5;}
+.slider-wrap{position:relative;width:100%;margin:6px 0 10px;padding:8px 0;}
+.slider-input{width:100%;-webkit-appearance:none;appearance:none;height:10px;border-radius:5px;background:linear-gradient(to right,var(--accent) 0%,var(--border) 0%);outline:none;cursor:pointer;display:block;touch-action:manipulation;}
+.slider-input::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:38px;height:38px;border-radius:50%;background:var(--accent);cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,0.5);border:3px solid rgba(255,255,255,0.2);}
+.slider-input::-moz-range-thumb{width:38px;height:38px;border-radius:50%;background:var(--accent);cursor:pointer;border:3px solid rgba(255,255,255,0.2);}
+.slider-input::-webkit-slider-thumb:active{transform:scale(1.15);}
+.slider-midmark{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:2px;height:20px;background:var(--muted);border-radius:1px;pointer-events:none;opacity:0.4;}
 
 /* TIMER */
 .timer-wrap{padding:0 16px;}
@@ -204,6 +205,14 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
 .blindtest-arrow{font-size:16px;color:var(--muted);}
 .blindtest-to{font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--accent);}
 
+/* CATEGORY SPOTLIGHT */
+.cat-spot-item{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;}
+.cat-spot-rank{font-family:'Bebas Neue',sans-serif;font-size:20px;margin-right:10px;}
+.cat-spot-name{font-size:15px;font-weight:600;margin-bottom:6px;}
+.cat-spot-avg{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--accent);line-height:1;}
+.cat-spot-max{font-size:11px;color:var(--muted);}
+.cat-spot-top{font-size:12px;color:var(--text2);margin-top:6px;padding-top:6px;border-top:1px solid var(--border);}
+
 /* MISC */
 .divider{height:1px;background:var(--border);margin:16px 0;}
 .text-muted{color:var(--muted);font-size:13px;}
@@ -303,6 +312,7 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
     <div><div class="header-title" id="waiting-title">Ølsmaking</div><div class="header-sub" id="waiting-sub">Venterom</div></div>
     <div class="header-right">
       <div class="icon-btn" data-action="showQrSheet">📱</div>
+      <div class="icon-btn" data-action="openSkalSheet">🥂</div>
       <div class="icon-btn admin-only" data-action="openGear">⚙️</div>
     </div>
   </div>
@@ -354,24 +364,22 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
 
 <!-- ===== SCREEN: SUBMITTED ===== -->
 <div id="screen-submitted" class="screen">
-  <div class="header">
-    <div>
-      <div class="header-title" id="submitted-subject">Tuborg</div>
-      <div class="header-sub" id="submitted-progress-txt">Emne 1 av 5</div>
+  <div style="padding:12px 16px 8px;border-bottom:1px solid var(--border);background:var(--bg);position:sticky;top:0;z-index:20;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;" id="submitted-progress-txt">Emne 1 av 5</div>
+      <div style="display:flex;gap:8px;">
+        <div class="icon-btn" data-action="showQrSheet">📱</div>
+        <div class="icon-btn admin-only" id="pause-btn2" data-action="togglePause">⏸</div>
+        <div class="icon-btn admin-only" data-action="openGear">⚙️</div>
+      </div>
     </div>
-    <div class="header-right">
-      <div class="icon-btn" data-action="showQrSheet">📱</div>
-      <div class="icon-btn admin-only" id="pause-btn2" data-action="togglePause">⏸</div>
-      <div class="icon-btn admin-only" data-action="openGear">⚙️</div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:34px;color:var(--accent);letter-spacing:1px;line-height:1.1;margin-bottom:8px;" id="submitted-subject">Tuborg</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div class="timer-display" id="submitted-timer" style="font-size:30px;">0:00</div>
+      <div class="voter-count" id="submitted-voter-count" style="padding:0;color:var(--accent);"></div>
     </div>
-  </div>
-  <div class="timer-wrap">
-    <div style="display:flex;justify-content:space-between;align-items:flex-end;">
-      <div class="timer-display" id="submitted-timer">0:00</div>
-      <div class="voter-count" id="submitted-voter-count" style="padding:0;margin-bottom:6px;color:var(--accent);"></div>
-    </div>
-    <div class="timer-bar-bg"><div class="timer-bar-fill" id="submitted-bar" style="width:0%"></div></div>
-    <div class="progress-dots" id="submitted-dots"></div>
+    <div class="timer-bar-bg" style="margin:6px 0 0;"><div class="timer-bar-fill" id="submitted-bar" style="width:0%"></div></div>
+    <div class="progress-dots" id="submitted-dots" style="padding:6px 0 0;margin:0;"></div>
   </div>
   <div class="submitted-center">
     <div style="font-size:56px;margin-bottom:16px;">✅</div>
@@ -390,6 +398,7 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
     </div>
     <div class="header-right">
       <span class="badge badge-live"><span class="live-dot"></span>Live</span>
+      <div class="icon-btn" data-action="openSkalSheet">🥂</div>
       <div class="icon-btn admin-only" data-action="openGear">⚙️</div>
     </div>
   </div>
@@ -405,11 +414,34 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
   </div>
 </div>
 
+<!-- ===== SCREEN: CATEGORY SPOTLIGHT ===== -->
+<div id="screen-category-lb" class="screen">
+  <div class="header">
+    <div>
+      <div class="header-title" id="cat-lb-title">Kategori-spotlight</div>
+      <div class="header-sub" id="cat-lb-sub">Hva syntes dere?</div>
+    </div>
+    <div class="header-right">
+      <div class="icon-btn" data-action="openSkalSheet">🥂</div>
+      <div class="icon-btn admin-only" data-action="openGear">⚙️</div>
+    </div>
+  </div>
+  <div class="content">
+    <div style="font-size:12px;color:var(--muted);margin-bottom:16px;" id="cat-lb-voter-count"></div>
+    <div id="category-spotlight-list"></div>
+    <div class="text-muted text-center mt-16" id="cat-lb-next-msg"></div>
+    <div class="admin-only mt-16" style="flex-direction:column;">
+      <button class="btn btn-secondary" data-action="forceNext">Neste emne → (tving)</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===== SCREEN: FINAL ===== -->
 <div id="screen-final" class="screen">
   <div class="header">
     <div><div class="header-title">Endelig resultat</div><div class="header-sub" id="final-session-name"></div></div>
     <div class="header-right">
+      <div class="icon-btn" data-action="openSkalSheet">🥂</div>
       <div class="icon-btn admin-only" data-action="openGear">⚙️</div>
     </div>
   </div>
@@ -678,6 +710,8 @@ let state = {
   isPaused: false,
   reactionCooldown: false,
   lastFirstInSubject: null,
+  reactionsStarted: false,
+  lastLbKey: null,
 };
 
 function ls(k,v){if(v===undefined)return localStorage.getItem(k);if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v);}
@@ -1005,14 +1039,23 @@ function buildVotingCategories(session){
   });
   container.appendChild(card);
   container.querySelectorAll('.slider-input').forEach(slider=>{
-    slider.addEventListener('input',()=>{
-      const catName=slider.dataset.cat;
-      const v=parseInt(slider.value);
-      const si=session.currentSubjectIndex||0;
-      if(!state.currentVotes[si])state.currentVotes[si]={};
-      state.currentVotes[si][catName]=v;
-      document.getElementById(`v-${safeKey(catName)}`).textContent=v;
-      saveDraft(si);
+    function updateSlider(s){
+      const pct=(s.value/s.max)*100;
+      s.style.background=`linear-gradient(to right,var(--accent) ${pct}%,var(--border) ${pct}%)`;
+    }
+    updateSlider(slider);
+    ['input','change','touchmove'].forEach(evt=>{
+      slider.addEventListener(evt,(e)=>{
+        e.stopPropagation();
+        const catName=slider.dataset.cat;
+        const v=parseInt(slider.value);
+        const si=session.currentSubjectIndex||0;
+        if(!state.currentVotes[si])state.currentVotes[si]={};
+        state.currentVotes[si][catName]=v;
+        document.getElementById(`v-${safeKey(catName)}`).textContent=v;
+        updateSlider(slider);
+        saveDraft(si);
+      });
     });
   });
 }
@@ -1129,34 +1172,45 @@ function showLeaderboardScreen(session){
   const cats=session.categories?Object.values(session.categories):[];
   const votes=session.votes||{};
   const participants=session.participants?Object.keys(session.participants):[];
+  const lbSecs=session.leaderboardSeconds||60;
+  const isLast=session.isLastLeaderboard||false;
+  const halfMs=isLast?Math.min(lbSecs*250,4000):Math.floor(lbSecs/2)*1000;
+
+  // LB1: emne ranking
   document.getElementById('lb-sub').textContent=`Etter emne ${idx+1} av ${subjects.length}`;
   const scores=calcScores(dedupeSubjects(subjects),cats,votes,participants);
   renderLeaderboard('leaderboard-list',scores);
   const vCount=votes[idx]?Object.keys(votes[idx]).length:0;
   document.getElementById('lb-voter-count').textContent=`${vCount} av ${participants.length} stemte`;
-  startLbCountdown(session,idx,subjects,cats,votes,participants);
+
+  // Countdown first half
+  if(lbSecs>0){
+    let r1=Math.floor(lbSecs/2);
+    const el=document.getElementById('lb-countdown');
+    const iv1=setInterval(()=>{r1--;el.textContent=`Kategori-spotlight om ${formatTime(r1)}`;if(r1<=0)clearInterval(iv1);},1000);
+  }
+
   showScreen('screen-leaderboard');
   showLeaderboardSkal(session,idx);
-  showDagsDommer(session,idx);
+
+  // Switch to LB2 after half time
+  if(lbSecs>0){
+    setTimeout(()=>{
+      showCategorySpotlight(session,idx);
+      let r2=isLast?Math.min(Math.floor(lbSecs/2),8):Math.floor(lbSecs/2);
+      const el2=document.getElementById('cat-lb-next-msg');
+      if(el2){
+        const iv2=setInterval(()=>{
+          r2--;
+          el2.textContent=isLast?`🏆 Endelig resultat om ${formatTime(r2)}`:`Neste emne om ${formatTime(r2)}`;
+          if(r2<=0)clearInterval(iv2);
+        },1000);
+      }
+    },halfMs);
+  }
 }
 
-function startLbCountdown(session,idx,subjects,cats,votes,participants){
-  const lbSecs=session.leaderboardSeconds||0;
-  if(!lbSecs){document.getElementById('lb-countdown').textContent='Manuell';return;}
-  const isLast=session.isLastLeaderboard||false;
-  let remaining=isLast?Math.min(lbSecs/2,8):lbSecs;
-  const countdownEl=document.getElementById('lb-countdown');
-  if(isLast)countdownEl.style.color='var(--accent)';
-  const interval=setInterval(()=>{
-    remaining--;
-    if(isLast){
-      countdownEl.textContent=`🏆 Endelig resultat om ${formatTime(remaining)}`;
-    }else{
-      countdownEl.textContent=`Neste om ${formatTime(remaining)}`;
-    }
-    if(remaining<=0)clearInterval(interval);
-  },1000);
-}
+// startLbCountdown replaced by inline countdown in showLeaderboardScreen
 
 window.forceNext=async function(){
   if(!state.isAdmin||!state.session)return;
@@ -1483,8 +1537,11 @@ window.loginFromSheet=async function(){
 };
 window.openSkalSheet=function(){
   const now=Date.now();
-  const lbSecs=(state.session?.leaderboardSeconds||60)*1000;
-  if(now-state.lastSkalSentAt<lbSecs){showToast('Vent litt før du sender ny skål');return;}
+  const cooldown=30000; // 30 sec cooldown per person
+  if(now-state.lastSkalSentAt<cooldown){
+    const remaining=Math.ceil((cooldown-(now-state.lastSkalSentAt))/1000);
+    showToast(`Vent ${remaining} sek før neste skål`);return;
+  }
   document.getElementById('skal-sheet').classList.add('open');
 };
 
@@ -1585,6 +1642,67 @@ function processEventQueue(){
   document.getElementById('event-sub').textContent=e.sub;
   box.classList.add('show');
   setTimeout(()=>{box.classList.remove('show');setTimeout(processEventQueue,500);},4500);
+}
+
+// ========== CATEGORY SPOTLIGHT ==========
+function showCategorySpotlight(session, idx){
+  const cats = session.categories ? Object.values(session.categories) : [];
+  const votes = session.votes || {};
+  const participants = session.participants ? Object.keys(session.participants) : [];
+  const subjectName = session.subjects ? Object.values(session.subjects)[idx]?.name : '';
+
+  document.getElementById('cat-lb-title').textContent = subjectName || 'Kategori-spotlight';
+  document.getElementById('cat-lb-sub').textContent = `Hva syntes dere om ${subjectName}?`;
+
+  const vCount = votes[idx] ? Object.keys(votes[idx]).length : 0;
+  document.getElementById('cat-lb-voter-count').textContent = `${vCount} av ${participants.length} stemte`;
+
+  // Calculate avg per category and top scorer
+  const catStats = cats.map(cat => {
+    let total = 0, count = 0, topScore = -1, topName = '';
+    participants.forEach(pid => {
+      const v = votes[idx] && votes[idx][pid];
+      if (!v) return;
+      const pts = (v.votes && v.votes[cat.name]) || 0;
+      total += pts; count++;
+      if (pts > topScore) { topScore = pts; topName = v.participantName || pid; }
+    });
+    const avg = count > 0 ? (total / count) : 0;
+    return { name: cat.name, max: cat.max, avg, topScore, topName };
+  }).sort((a, b) => (b.avg / b.max) - (a.avg / a.max));
+
+  const container = document.getElementById('category-spotlight-list');
+  container.innerHTML = '';
+  const medals = ['🥇','🥈','🥉'];
+
+  catStats.forEach((cat, i) => {
+    const pct = cat.max > 0 ? (cat.avg / cat.max * 100) : 0;
+    const div = document.createElement('div');
+    div.className = 'cat-spot-item';
+    div.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <div class="cat-spot-rank">${medals[i] || `#${i+1}`}</div>
+        <div style="flex:1;">
+          <div class="cat-spot-name">${cat.name}</div>
+          <div style="display:flex;align-items:baseline;gap:6px;">
+            <div class="cat-spot-avg">${cat.avg.toFixed(1)}</div>
+            <div class="cat-spot-max">/ ${cat.max}</div>
+          </div>
+        </div>
+        <div style="width:60px;text-align:right;">
+          <div style="font-size:11px;color:var(--muted);">snitt</div>
+          <div style="font-size:13px;font-weight:600;color:var(--accent);">${Math.round(pct)}%</div>
+        </div>
+      </div>
+      <div style="height:4px;background:var(--border);border-radius:2px;margin-bottom:8px;">
+        <div style="height:4px;width:${pct}%;background:var(--accent);border-radius:2px;"></div>
+      </div>
+      ${cat.topName ? `<div class="cat-spot-top">🏆 Høyest: <strong>${cat.topName}</strong> ga ${cat.topScore} poeng</div>` : ''}
+    `;
+    container.appendChild(div);
+  });
+
+  showScreen('screen-category-lb');
 }
 
 // ========== QR CODE ==========
