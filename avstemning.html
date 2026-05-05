@@ -926,8 +926,8 @@ function showVotingScreen(session){
   document.getElementById('voter-count-voting').textContent=`${vCount} av ${pCount} stemt`;
   document.getElementById('submitted-voter-count').textContent=`${vCount} av ${pCount} stemt`;
   // First in event
-  if(vCount===1&&state.lastFirstInSubject!==idx){
-    const firstVoter=votes[idx]?Object.values(votes[idx])[0]:null;
+  if(vCount===1&&state.lastFirstInSubject!==idx&&idx===0){
+    const firstVoter=votes[voteKey]?Object.values(votes[voteKey])[0]:null;
     if(firstVoter){state.lastFirstInSubject=idx;showEvent('⚡','Første inn!',firstVoter.participantName||'Noen');}
   }
   // All agreed event
@@ -1014,13 +1014,25 @@ window.submitVote=async function(){
   const errEl=document.getElementById('vote-error');
   errEl.style.display='none';
   const votes=state.currentVotes[idx]||{};
-  await runTransaction(ref(db,`sessions/${state.sessionId}/votes/${idx}/${state.participantId}`),current=>{
-    if(current!==null)return;
-    return{participantName:state.participantName,votes,submittedAt:Date.now()};
-  });
-  ls(`draft_${state.sessionId}_${idx}`,null);
-  state.hasVotedCurrentSubject=true;
-  showScreen('screen-submitted');
+  // Check if already voted
+  const existing=await get(ref(db,`sessions/${state.sessionId}/votes/${idx}/${state.participantId}`));
+  if(existing.exists()){
+    ls(`draft_${state.sessionId}_${idx}`,null);
+    state.hasVotedCurrentSubject=true;
+    showScreen('screen-submitted');
+    return;
+  }
+  try{
+    await set(ref(db,`sessions/${state.sessionId}/votes/${idx}/${state.participantId}`),
+      {participantName:state.participantName,votes,submittedAt:Date.now()});
+    ls(`draft_${state.sessionId}_${idx}`,null);
+    state.hasVotedCurrentSubject=true;
+    showScreen('screen-submitted');
+  }catch(e){
+    errEl.textContent='Kunne ikke sende inn, prøv igjen';
+    errEl.style.display='block';
+    console.error('Submit vote error:',e);
+  }
 };
 
 // ========== TIMER ==========
@@ -1123,9 +1135,9 @@ window.forceNext=async function(){
 function dedupeSubjects(subjects){
   const seen=new Set();
   return subjects.filter(s=>{
-    const key=s.name;
-    if(seen.has(key))return false;
-    seen.add(key);return true;
+    if(!s||typeof s!=='object'||!s.name)return false;
+    if(seen.has(s.name))return false;
+    seen.add(s.name);return true;
   });
 }
 
@@ -1500,25 +1512,33 @@ window.sendAutoSkal=async function(){
 };
 
 function showLeaderboardSkal(session,idx){
-  if(Math.random()>0.6)return;
-  setTimeout(()=>sendAutoSkal(),2000);
+  if(Math.random()>0.4)return; // 40% sjanse
+  setTimeout(()=>sendAutoSkal(),3000);
 }
 
 function showDagsDommer(session,idx){
   const participants=session.participants?Object.entries(session.participants):[];
   if(!participants.length)return;
   const randomP=participants[Math.floor(Math.random()*participants.length)];
-  setTimeout(()=>showEvent('🎭','Dagens dommer',randomP[1].name),1500);
+  setTimeout(()=>showEvent('🎭','Dagens dommer',randomP[1].name),5000); // After skal
 }
 
 // ========== PARTY EVENTS ==========
+let eventQueue=[];let eventShowing=false;
 function showEvent(icon,title,sub){
+  eventQueue.push({icon,title,sub});
+  if(!eventShowing)processEventQueue();
+}
+function processEventQueue(){
+  if(!eventQueue.length){eventShowing=false;return;}
+  eventShowing=true;
+  const e=eventQueue.shift();
   const box=document.getElementById('event-box');
-  document.getElementById('event-icon').textContent=icon;
-  document.getElementById('event-title').textContent=title;
-  document.getElementById('event-sub').textContent=sub;
+  document.getElementById('event-icon').textContent=e.icon;
+  document.getElementById('event-title').textContent=e.title;
+  document.getElementById('event-sub').textContent=e.sub;
   box.classList.add('show');
-  setTimeout(()=>box.classList.remove('show'),3500);
+  setTimeout(()=>{box.classList.remove('show');setTimeout(processEventQueue,500);},3000);
 }
 
 // ========== QR CODE ==========
