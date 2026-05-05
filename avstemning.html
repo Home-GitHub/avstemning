@@ -428,7 +428,7 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
     </div>
     <div id="leaderboard-list"></div>
     <div class="admin-only mt-16" style="flex-direction:column;">
-      <button class="btn btn-secondary" data-action="forceNext">Neste emne → (tving)</button>
+      <button class="btn btn-secondary admin-only" style="display:none;" data-action="forceNext">Neste emne → (tving)</button>
     </div>
   </div>
 </div>
@@ -450,7 +450,7 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
     <div id="category-spotlight-list"></div>
     <div class="text-muted text-center mt-16" id="cat-lb-next-msg"></div>
     <div class="admin-only mt-16" style="flex-direction:column;">
-      <button class="btn btn-secondary" data-action="forceNext">Neste emne → (tving)</button>
+      <button class="btn btn-secondary admin-only" style="display:none;" data-action="forceNext">Neste emne → (tving)</button>
     </div>
   </div>
 </div>
@@ -471,7 +471,7 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
     <div id="judge-spotlight-list"></div>
     <div class="text-muted text-center mt-16" id="judge-lb-next-msg"></div>
     <div class="admin-only mt-16" style="flex-direction:column;">
-      <button class="btn btn-secondary" data-action="forceNext">Neste emne → (tving)</button>
+      <button class="btn btn-secondary admin-only" style="display:none;" data-action="forceNext">Neste emne → (tving)</button>
     </div>
   </div>
 </div>
@@ -1290,7 +1290,25 @@ function showLeaderboardScreen(session){
 window.forceNext=async function(){
   if(!state.isAdmin||!state.session)return;
   closeGear();
-  await advanceSubject(state.sessionId,state.session,state.session.currentSubjectIndex||0);
+  const session=state.session;
+  const idx=session.currentSubjectIndex||0;
+  const subjects=session.subjects?Object.values(session.subjects):[];
+  const nextIdx=idx+1;
+
+  // Go directly to next subject - skip remaining leaderboard time
+  if(nextIdx>=subjects.length){
+    // Last subject - go straight to final
+    await update(ref(db,`sessions/${state.sessionId}`),{status:'ended'});
+  } else {
+    // Jump straight to next voting with fresh timer
+    const timerEnd=session.minutesPerSubject>0?Date.now()+session.minutesPerSubject*60000:null;
+    await update(ref(db,`sessions/${state.sessionId}`),{
+      status:'voting',
+      currentSubjectIndex:nextIdx,
+      timerEnd:timerEnd||null
+    });
+    if(timerEnd)scheduleWatchdog(state.sessionId,timerEnd,session.minutesPerSubject,nextIdx);
+  }
 };
 
 function dedupeSubjects(subjects){
