@@ -646,7 +646,7 @@ const FIREBASE_CONFIG = {
 
 const app = initializeApp(FIREBASE_CONFIG);
 const db = getDatabase(app);
-const APP_URL = "https://startling-lebkuchen-6ba25d.netlify.app/avstemning.html";
+const APP_URL = "https://home-github.github.io/avstemning/avstemning.html";
 
 const EMOJIS = ["🍺","🎸","🦊","🌶️","🎯","🎲","🦁","🐉","🌊","🎭","🦋","🍕","🎪","🚀","🌈","🎵","🦅","🍀","⚡","🎨","🎻","🏆","🎬","🧠","🔥"];
 const REACTIONS = ["😍","🤢","🔥","😂","🤔","👏"];
@@ -918,10 +918,11 @@ function showVotingScreen(session){
   document.getElementById('submitted-subject').textContent=subject.name;
   document.getElementById('submitted-progress-txt').textContent=`Emne ${idx+1} av ${subjects.length}`;
   const votes=session.votes||{};
-  const hasVoted=votes[idx]&&votes[idx][state.participantId];
+  const voteKey=subject.originalIndex!==undefined?subject.originalIndex:idx;
+  const hasVoted=votes[voteKey]&&votes[voteKey][state.participantId];
   state.hasVotedCurrentSubject=!!hasVoted;
   const pCount=session.participants?Object.keys(session.participants).length:0;
-  const vCount=votes[idx]?Object.keys(votes[idx]).length:0;
+  const vCount=votes[voteKey]?Object.keys(votes[voteKey]).length:0;
   document.getElementById('voter-count-voting').textContent=`${vCount} av ${pCount} stemt`;
   document.getElementById('submitted-voter-count').textContent=`${vCount} av ${pCount} stemt`;
   // First in event
@@ -1092,7 +1093,7 @@ function showLeaderboardScreen(session){
   const votes=session.votes||{};
   const participants=session.participants?Object.keys(session.participants):[];
   document.getElementById('lb-sub').textContent=`Etter emne ${idx+1} av ${subjects.length}`;
-  const scores=calcScores(subjects,cats,votes,participants);
+  const scores=calcScores(dedupeSubjects(subjects),cats,votes,participants);
   renderLeaderboard('leaderboard-list',scores);
   const vCount=votes[idx]?Object.keys(votes[idx]).length:0;
   document.getElementById('lb-voter-count').textContent=`${vCount} av ${participants.length} stemte`;
@@ -1119,14 +1120,25 @@ window.forceNext=async function(){
   await advanceSubject(state.sessionId,state.session,state.session.currentSubjectIndex||0);
 };
 
+function dedupeSubjects(subjects){
+  const seen=new Set();
+  return subjects.filter(s=>{
+    const key=s.name;
+    if(seen.has(key))return false;
+    seen.add(key);return true;
+  });
+}
+
 function calcScores(subjects,cats,votes,participants){
   return subjects.map((sub,idx)=>{
     let total=0;let hasVotes=false;
+    // Use the subject's original key index for vote lookup
+    const voteKey=sub.originalIndex!==undefined?sub.originalIndex:idx;
     participants.forEach(pid=>{
-      const v=votes[idx]&&votes[idx][pid];if(!v)return;hasVotes=true;
+      const v=votes[voteKey]&&votes[voteKey][pid];if(!v)return;hasVotes=true;
       cats.forEach(cat=>{total+=((v.votes&&v.votes[cat.name])||0)*(cat.weight||1);});
     });
-    return{name:sub.name,total,hasVotes,idx};
+    return{name:sub.name,total,hasVotes,idx:voteKey};
   }).sort((a,b)=>b.total-a.total);
 }
 
@@ -1153,7 +1165,7 @@ function showFinalLeaderboard(session){
   const cats=session.categories?Object.values(session.categories):[];
   const votes=session.votes||{};
   const participants=session.participants?Object.keys(session.participants):[];
-  const scores=calcScores(subjects,cats,votes,participants);
+  const scores=calcScores(dedupeSubjects(subjects),cats,votes,participants);
   document.getElementById('final-session-name').textContent=session.name;
   const container=document.getElementById('final-leaderboard');
   container.innerHTML='';
