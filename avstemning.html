@@ -782,7 +782,7 @@ import { getDatabase, ref, set, get, update, onValue, onChildAdded, remove, runT
 // Make all window functions available immediately
 Object.defineProperty(window, '__moduleReady', { value: true });
 
-const VERSION = 'Avstemning v1.2';
+const VERSION = 'Avstemning v1.3';
 console.log(VERSION);
 
 const FIREBASE_CONFIG = {
@@ -1107,7 +1107,7 @@ function showFloatingReaction(emoji,x,y){
   const el=document.createElement('div');
   el.className='floating-reaction';
   el.textContent=emoji;
-  el.style.cssText=`left:${x||Math.random()*80+10}%;bottom:120px;`;
+  el.style.cssText=`position:fixed;left:${x||Math.random()*80+10}%;bottom:120px;z-index:9999;pointer-events:none;`;
   document.body.appendChild(el);
   setTimeout(()=>el.remove(),2500);
 }
@@ -1356,9 +1356,14 @@ function showVotingScreen(session){
   if(pCount>=2&&vCount>=pCount&&state.timerEnd&&!state.allVotedAdvanced){
     state.allVotedAdvanced=true;
     const remainingSecs=Math.max(0,Math.round((state.timerEnd-Date.now())/1000));
+    // Clear local timer so submitted screen doesn't keep counting
+    if(state.timerInterval){clearInterval(state.timerInterval);state.timerInterval=null;}
     if(remainingSecs>3){
-      const sessionWithBonus=Object.assign({},session,{leaderboardSeconds:(session.leaderboardSeconds||60)+remainingSecs});
+      const bonusLbSecs=(session.leaderboardSeconds||60)+remainingSecs;
+      const sessionWithBonus=Object.assign({},session,{leaderboardSeconds:bonusLbSecs});
       advanceSubject(state.sessionId,sessionWithBonus,idx);
+    } else {
+      advanceSubject(state.sessionId,session,idx);
     }
   }
   // First in event
@@ -1557,8 +1562,14 @@ async function advanceSubject(sessionId,session,idx){
       const viewCount=[rc.toplist!==false,rc.categories,rc.judges].filter(Boolean).length||1;
       const sliceMs=Math.floor(lbSecs/viewCount)*1000;
       const lastLbTime=sliceMs*viewCount; // matches actual showView rotation time
-      await update(ref(db,`sessions/${sessionId}`),{status:'leaderboard',currentSubjectIndex:idx,isLastLeaderboard:true});
-      setTimeout(async()=>await update(ref(db,`sessions/${sessionId}`),{status:'ended'}),lastLbTime);
+      const lbTimerEnd=Date.now()+lastLbTime;
+      await update(ref(db,`sessions/${sessionId}`),{status:'leaderboard',currentSubjectIndex:idx,isLastLeaderboard:true,lbTimerEnd});
+      setTimeout(async()=>{
+        // Verify we're still on leaderboard before ending
+        const snap=await get(ref(db,`sessions/${sessionId}`));
+        if(snap.exists()&&snap.val().status==='leaderboard')
+          await update(ref(db,`sessions/${sessionId}`),{status:'ended'});
+      },lastLbTime);
     }else{await update(ref(db,`sessions/${sessionId}`),{status:'ended'});}
     return;
   }
@@ -1594,7 +1605,7 @@ function showLeaderboardScreen(session){
   if(rc.judges) views.push('judges');
   if(!views.length) views.push('toplist');
 
-  const sliceMs=lbSecs>0?(isLast?Math.min(lbSecs*1000/views.length,6000):Math.floor(lbSecs/views.length)*1000):0;
+  const sliceMs=lbSecs>0?Math.floor(lbSecs/views.length)*1000:0;
 
   // Prep leaderboard data
   const scores=calcScores(dedupeSubjects(subjects),cats,votes,participants);
@@ -1630,6 +1641,14 @@ function showLeaderboardScreen(session){
       }
       if(!isLastView){
         setTimeout(()=>showView(viewIdx+1),sliceMs);
+      } else if(isLast&&session.lbTimerEnd){
+        // All clients watch for end - whoever fires first checks status
+        const msLeft=Math.max(0,session.lbTimerEnd-Date.now());
+        setTimeout(async()=>{
+          const snap=await get(ref(db,`sessions/${state.sessionId}`));
+          if(snap.exists()&&snap.val().status==='leaderboard')
+            await update(ref(db,`sessions/${state.sessionId}`),{status:'ended'});
+        },msLeft);
       }
     }
   }
@@ -1641,26 +1660,32 @@ function showLeaderboardScreen(session){
 // startLbCountdown replaced by inline countdown in showLeaderboardScreen
 
 window.forceNext=async function(){
-  if(!state.isAdmin||!state.session)return;
-  closeGear();
-  const session=state.session;
+  if(!state.isAdmin||!state.sessionId)return;
+  const snap=await get(ref(db,`sessions/${state.sessionId}`));
+  if(!snap.exists())return;
+  const session=snap.val();
   const idx=session.currentSubjectIndex||0;
   const subjects=session.subjects?Object.values(session.subjects):[];
   const nextIdx=idx+1;
 
-  // Go directly to next subject - skip remaining leaderboard time
-  if(nextIdx>=subjects.length){
-    // Last subject - go straight to final
-    await update(ref(db,`sessions/${state.sessionId}`),{status:'ended'});
-  } else {
-    // Jump straight to next voting with fresh timer
-    const timerEnd=session.minutesPerSubject>0?Date.now()+session.minutesPerSubject*60000:null;
-    await update(ref(db,`sessions/${state.sessionId}`),{
-      status:'voting',
-      currentSubjectIndex:nextIdx,
-      timerEnd:timerEnd||null
-    });
-    if(timerEnd)scheduleWatchdog(state.sessionId,timerEnd,session.minutesPerSubject,nextIdx);
+  if(session.status==='leaderboard'||session.status==='voting'){
+    if(nextIdx>=subjects.length){
+      // Last subject - go to final
+      await update(ref(db,`sessions/${state.sessionId}`),{status:'ended'});
+    } else {
+      // Jump to next voting with fresh timer
+      const timerEnd=session.minutesPerSubject>0?Date.now()+session.minutesPerSubject*60000:null;
+      await update(ref(db,`sessions/${state.sessionId}`),{
+        status:'voting',
+        currentSubjectIndex:nextIdx,
+        timerEnd:timerEnd||null,
+        isLastLeaderboard:false,
+        lbTimerEnd:null
+      });
+      if(timerEnd)scheduleWatchdog(state.sessionId,timerEnd,session.minutesPerSubject,nextIdx);
+    }
+  } else if(session.status==='ended'){
+    // Already at end - nothing to do
   }
 };
 
