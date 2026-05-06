@@ -90,7 +90,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .voting-body{display:flex;flex:1;overflow:hidden;}
 
 /* SIDEBAR */
-/* voting-sidebar removed */
+
 .sb-item{width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;transition:all 0.15s;}
 .sb-item:active{transform:scale(0.88);}
 .sb-skal{border-color:rgba(255,255,255,0.15);background:var(--accent-dim);}
@@ -174,8 +174,8 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
 .btn-sm{padding:8px 16px;width:auto;font-size:13px;border-radius:8px;}
 
 /* EMOJI PICKER (join screen) */
-/* emoji-grid removed - random assignment */
-/* emoji-opt removed */
+
+
 .emoji-opt.selected{border-color:var(--accent);background:var(--accent-dim);}
 
 /* LEADERBOARD */
@@ -793,7 +793,7 @@ var _proxyHandler = function(name) {
 var _fns = ['showAdminLoginSheet','loginFromSheet','openSkalSheet','joinSession','submitVote','toggleEmojiMenu','toggleGlobalEmoji','sendReaction',
   'openGear','closeGear','showQrSheet','startSession','togglePause','togglePauseWithMessage',
   'forceNext','goBack','jumpToSubject','updateMinutes','updateLbSecs','addTime',
-  'sendUserSkal','shuffleBlindtest','lockBlindtest','revealBlindtest',
+  'shuffleBlindtest','lockBlindtest','revealBlindtest',
   'endSession','adminLogin','kickParticipant','removeVote','addManualParticipant'];
 _fns.forEach(function(n) { window[n] = _proxyHandler(n); });
 </script>
@@ -804,7 +804,7 @@ import { getDatabase, ref, set, get, update, onValue, onChildAdded, remove, runT
 // Make all window functions available immediately
 Object.defineProperty(window, '__moduleReady', { value: true });
 
-const VERSION = 'Avstemning v1.7';
+const VERSION = 'Avstemning v1.8';
 console.log(VERSION);
 
 const FIREBASE_CONFIG = {
@@ -822,7 +822,7 @@ const db = getDatabase(app);
 const APP_URL = "https://home-github.github.io/avstemning/avstemning.html";
 
 const EMOJIS = ["🍺","🎸","🦊","🌶️","🎯","🎲","🦁","🐉","🌊","🎭","🦋","🍕","🎪","🚀","🌈","🎵","🦅","🍀","⚡","🎨","🎻","🏆","🎬","🧠","🔥"];
-const REACTIONS = ["😍","🤢","🔥","😂","🤔","👏"];
+
 
 const SKAL_TEXTS = [
   { text: "Skål for [navn] – som ser kvaliteter ingen andre ser!", type: "avvikende" },
@@ -984,18 +984,7 @@ function scaleSubjectFont(elementId){
 }
 
 // ========== EMOJI SIDEBAR MENU ==========
-function initEmojiMenu(){
-  const list=document.getElementById('emoji-menu-list');
-  if(!list)return;
-  list.innerHTML='';
-  REACTIONS.forEach(r=>{
-    const btn=document.createElement('div');
-    btn.className='sb-e';
-    btn.textContent=r;
-    btn.onclick=()=>window.sendReaction(r);
-    list.appendChild(btn);
-  });
-}
+
 
 window.toggleGlobalEmoji=function(){
   const list=document.getElementById('global-emoji-list');
@@ -1049,7 +1038,7 @@ function initGlobalEmojiMenu(){
   });
 }
 
-// toggleEmojiMenu removed - voting-sidebar merged into global-sidebar
+
 
 // ========== SOUNDS ==========
 let _audioCtx=null;
@@ -1112,26 +1101,7 @@ function playSound(type){
 function updateJoinPreview(){const n=(document.getElementById('join-name')?.value||'').trim();document.getElementById('join-preview').textContent=n?`Du vises som: ${state.selectedEmoji} ${n}`:'';}
 
 // ========== REACTION BAR ==========
-function initReactionBar(){
-  ['reaction-bar','reaction-bar2'].forEach(id=>{
-    const bar=document.getElementById(id);
-    if(!bar)return;
-    bar.innerHTML='';
-    REACTIONS.forEach(r=>{
-      const btn=document.createElement('div');
-      btn.className='reaction-btn';
-      btn.textContent=r;
-      btn.onclick=()=>sendReaction(r);
-      bar.appendChild(btn);
-    });
-    // Add skål button
-    const skal=document.createElement('div');
-    skal.className='reaction-btn';
-    skal.textContent='🥂';
-    skal.onclick=()=>openSkalSheet();
-    bar.appendChild(skal);
-  });
-}
+
 
 window.sendReaction = async function sendReaction(emoji){
   if(state.reactionCooldown||!state.sessionId)return;
@@ -1181,7 +1151,6 @@ function showFloatingReaction(emoji,senderName){
 // ========== INIT ==========
 async function init(){
   initEmojiPicker();
-  initReactionBar();
   // join-name input listener set in initEmojiPicker
 
   const urlParams=new URLSearchParams(window.location.search);
@@ -1200,18 +1169,16 @@ async function init(){
   const session=snap.val();
   applyTheme(session.theme);
 
-  // If session is ended, show final results to anyone (even without saved state)
-  if(session.status==='ended'){
-    if(savedSessionId===slug&&savedParticipantId&&savedParticipantName){
-      state.participantId=savedParticipantId;state.participantName=savedParticipantName;
-    }
-    showFinalLeaderboard(session);
-    return;
+  // Restore saved participant state
+  if(savedSessionId===slug&&savedParticipantId&&savedParticipantName){
+    state.participantId=savedParticipantId;state.participantName=savedParticipantName;
   }
 
-  if(savedSessionId===slug&&savedParticipantId&&savedParticipantName){
-    const pSnap=await get(ref(db,`sessions/${slug}/participants/${savedParticipantId}`));
-    if(pSnap.exists()){state.participantId=savedParticipantId;state.participantName=savedParticipantName;startSessionListener();return;}
+  // Always start session listener - handleSessionState routes to correct screen
+  // This ensures reconnect works for ALL statuses including 'ended'
+  if(state.participantId||(savedIsAdmin&&savedSessionId===slug)||session.status==='ended'){
+    startSessionListener();
+    return;
   }
 
   document.getElementById('join-session-name').textContent=session.name;
@@ -1638,9 +1605,12 @@ function scheduleWatchdog(sessionId,timerEnd,minutes,subjectIndex){
 }
 
 async function advanceSubject(sessionId,session,idx){
-  // Optimistic advance - write directly, Firebase will ignore if already advanced
-  // We use a transaction-like approach: only update if status is still 'voting'
-  
+  // Idempotency: only advance if still on this subject in voting state
+  const current=await get(ref(db,`sessions/${sessionId}`));
+  if(!current.exists())return;
+  const cur=current.val();
+  if(cur.status!=='voting'||cur.currentSubjectIndex!==idx)return;
+
   const subjects=session.subjects?Object.values(session.subjects):[];
   const nextIdx=idx+1;
   const lbSecs=session.leaderboardSeconds||0;
@@ -1755,25 +1725,41 @@ window.forceNext=async function(){
   const idx=session.currentSubjectIndex||0;
   const subjects=session.subjects?Object.values(session.subjects):[];
   const nextIdx=idx+1;
+  const lbSecs=session.leaderboardSeconds||0;
 
-  if(session.status==='leaderboard'||session.status==='voting'){
+  if(session.status==='voting'){
+    // voting → leaderboard (skip remaining voting time)
     if(nextIdx>=subjects.length){
-      // Last subject - go to final
+      if(lbSecs>0){
+        await update(ref(db,`sessions/${state.sessionId}`),{status:'leaderboard',currentSubjectIndex:idx,isLastLeaderboard:true,lbTimerEnd:Date.now()+lbSecs*1000,leaderboardSeconds:lbSecs});
+        setTimeout(async()=>{
+          const s=await get(ref(db,`sessions/${state.sessionId}`));
+          if(s.exists()&&s.val().status==='leaderboard')
+            await update(ref(db,`sessions/${state.sessionId}`),{status:'ended'});
+        },lbSecs*1000);
+      } else {
+        await update(ref(db,`sessions/${state.sessionId}`),{status:'ended'});
+      }
+    } else {
+      await update(ref(db,`sessions/${state.sessionId}`),{status:'leaderboard',currentSubjectIndex:idx,leaderboardSeconds:lbSecs});
+      setTimeout(async()=>{
+        const timerEnd=session.minutesPerSubject>0?Date.now()+session.minutesPerSubject*60000:null;
+        await update(ref(db,`sessions/${state.sessionId}`),{status:'voting',currentSubjectIndex:nextIdx,timerEnd:timerEnd||null});
+        if(timerEnd)scheduleWatchdog(state.sessionId,timerEnd,session.minutesPerSubject,nextIdx);
+      },lbSecs*1000);
+    }
+  } else if(session.status==='leaderboard'){
+    // leaderboard → next voting (skip remaining leaderboard time)
+    if(nextIdx>=subjects.length){
       await update(ref(db,`sessions/${state.sessionId}`),{status:'ended'});
     } else {
-      // Jump to next voting with fresh timer
       const timerEnd=session.minutesPerSubject>0?Date.now()+session.minutesPerSubject*60000:null;
       await update(ref(db,`sessions/${state.sessionId}`),{
-        status:'voting',
-        currentSubjectIndex:nextIdx,
-        timerEnd:timerEnd||null,
-        isLastLeaderboard:false,
-        lbTimerEnd:null
+        status:'voting',currentSubjectIndex:nextIdx,
+        timerEnd:timerEnd||null,isLastLeaderboard:false,lbTimerEnd:null
       });
       if(timerEnd)scheduleWatchdog(state.sessionId,timerEnd,session.minutesPerSubject,nextIdx);
     }
-  } else if(session.status==='ended'){
-    // Already at end - nothing to do
   }
 };
 
@@ -1930,6 +1916,7 @@ function showFinalLeaderboard(session){
     if (firstPanel) firstPanel.classList.add('active');
   }
 
+  state.session=session; // ensure session is set before showScreen calls initGlobalEmojiMenu
   showScreen('screen-final');
   setTimeout(() => {
     try{ if (rc.categories) buildCategoryBreakdown(session); }catch(e){console.error('Category breakdown error:',e);}
@@ -2280,16 +2267,13 @@ window.sendCategorySkal=async function(catName,emoji){
   document.getElementById('skal-sheet').classList.remove('open');
 };
 
-// Keep sendUserSkal as alias for backwards compat
-window.sendUserSkal=window.sendCategorySkal;
 
-// sendAutoSkal removed
 
-// showLeaderboardSkal removed
 
-function showDagsDommer(session,idx){
-  // Replaced by fun skål events - no longer used
-}
+
+
+
+
 
 // ========== PARTY EVENTS ==========
 let eventQueue=[];let eventShowing=false;
