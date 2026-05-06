@@ -102,6 +102,11 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .sb-e{width:40px;height:36px;border-radius:9px;font-size:18px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.03);cursor:pointer;transition:all 0.1s;}
 .sb-e:active{transform:scale(0.85);}
 .final-fans{display:flex;justify-content:center;gap:24px;margin-top:10px;flex-wrap:wrap;}
+.act-item{display:flex;align-items:center;gap:6px;font-size:12px;}
+.act-name{color:rgba(255,255,255,0.8);white-space:nowrap;max-width:120px;overflow:hidden;text-overflow:ellipsis;}
+.act-bar-bg{width:60px;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;flex-shrink:0;}
+.act-bar-fill{height:4px;border-radius:2px;background:var(--accent);transition:width 0.4s ease;}
+.act-score{color:var(--accent);font-weight:600;white-space:nowrap;}
 .final-fans-col{display:flex;flex-direction:column;align-items:center;gap:4px;}
 .fan-name{font-size:12px;color:rgba(255,255,255,0.6);background:rgba(255,255,255,0.06);padding:3px 10px;border-radius:20px;display:flex;align-items:center;gap:6px;}
 .fan-score{color:var(--accent);font-weight:600;font-size:11px;}
@@ -788,7 +793,7 @@ var _proxyHandler = function(name) {
 var _fns = ['showAdminLoginSheet','loginFromSheet','openSkalSheet','joinSession','submitVote','toggleEmojiMenu','toggleGlobalEmoji','sendReaction',
   'openGear','closeGear','showQrSheet','startSession','togglePause','togglePauseWithMessage',
   'forceNext','goBack','jumpToSubject','updateMinutes','updateLbSecs','addTime',
-  'sendUserSkal','sendAutoSkal','shuffleBlindtest','lockBlindtest','revealBlindtest',
+  'sendUserSkal','shuffleBlindtest','lockBlindtest','revealBlindtest',
   'endSession','adminLogin','kickParticipant','removeVote','addManualParticipant'];
 _fns.forEach(function(n) { window[n] = _proxyHandler(n); });
 </script>
@@ -799,7 +804,7 @@ import { getDatabase, ref, set, get, update, onValue, onChildAdded, remove, runT
 // Make all window functions available immediately
 Object.defineProperty(window, '__moduleReady', { value: true });
 
-const VERSION = 'Avstemning v1.6';
+const VERSION = 'Avstemning v1.7';
 console.log(VERSION);
 
 const FIREBASE_CONFIG = {
@@ -851,6 +856,11 @@ let state = {
 
 function ls(k,v){if(v===undefined)return localStorage.getItem(k);if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v);}
 function showScreen(id){
+  // Clean up final roll interval when leaving final screen
+  if(id!=='screen-final'&&state.finalRollInterval){
+    clearInterval(state.finalRollInterval);
+    state.finalRollInterval=null;
+  }
   document.querySelectorAll('.screen').forEach(s=>{s.classList.remove('active');s.classList.remove('screens-with-sidebar');});
   const el=document.getElementById(id);
   if(!el)return;
@@ -1281,27 +1291,52 @@ function startSessionListener(){
 
 let lastShownSkalAt=0;
 function watchReactions(){
-  // onChildAdded fires once per new reaction - no need for time filter
   onChildAdded(ref(db,`sessions/${state.sessionId}/reactions`),snap=>{
     if(!snap.exists())return;
     const r=snap.val();
-    if(Date.now()-r.at>5000)return; // skip old reactions on load
+    if(Date.now()-r.at>5000)return;
     showFloatingReaction(r.emoji,r.participantName);
+    trackActivity(r.participantName,'emoji');
   });
 }
 
+// ========== ACTIVITY BAR ==========
+const _activityScores={};
+
+function trackActivity(name,type){
+  if(!name)return;
+  const pts=type==='skal'?10:1;
+  _activityScores[name]=(_activityScores[name]||0)+pts;
+  renderActivityBar();
+}
+
+function renderActivityBar(){
+  const bar=document.getElementById('activity-bar');
+  if(!bar)return;
+  const sorted=Object.entries(_activityScores).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  if(!sorted.length){bar.style.display='none';return;}
+  bar.style.display='flex';
+  const max=sorted[0][1]||1;
+  bar.innerHTML=sorted.map(([name,score],i)=>{
+    const pct=Math.round(score/max*100);
+    const medal=i===0?'🥇':i===1?'🥈':'🥉';
+    return `<div class="act-item"><div class="act-name">${medal} ${name}</div><div class="act-bar-bg"><div class="act-bar-fill" style="width:${pct}%"></div></div><div class="act-score">${score}p</div></div>`;
+  }).join('');
+}
+
 function watchSkals(){
-  onValue(ref(db,`sessions/${state.sessionId}/skals`),snap=>{
+  // onChildAdded fires once per new skål - no need to sort or filter
+  onChildAdded(ref(db,`sessions/${state.sessionId}/skals`),snap=>{
     if(!snap.exists())return;
-    const skals=snap.val();
-    const arr=Object.values(skals).sort((a,b)=>b.at-a.at);
-    if(!arr.length)return;
-    const latest=arr[0];
-    // Only show if new and not already shown
-    if(latest.at>lastShownSkalAt&&Date.now()-latest.at<5000){
-      lastShownSkalAt=latest.at;
-      showSkalToast(latest.text,latest.participantName);
-    }
+    const skål=snap.val();
+    if(Date.now()-skål.at>8000)return; // skip old skåls on load
+    if(skål.at<=lastShownSkalAt)return;
+    lastShownSkalAt=skål.at;
+    // Store emoji for burst (works for all clients now)
+    if(skål.emoji)window._skalBurstEmoji=skål.emoji;
+    showSkalToast(skål.text,skål.participantName);
+    // Track skål activity
+    trackActivity(skål.participantName,'skal');
   });
 }
 
@@ -1415,6 +1450,8 @@ function showVotingScreen(session){
     if(state.timerInterval){clearInterval(state.timerInterval);state.timerInterval=null;}
     if(remainingSecs>3){
       const bonusLbSecs=(session.leaderboardSeconds||60)+remainingSecs;
+      // Write bonus to Firebase first so all clients get it
+      await update(ref(db,`sessions/${state.sessionId}`),{leaderboardSeconds:bonusLbSecs});
       const sessionWithBonus=Object.assign({},session,{leaderboardSeconds:bonusLbSecs});
       advanceSubject(state.sessionId,sessionWithBonus,idx);
     } else {
@@ -1628,7 +1665,7 @@ async function advanceSubject(sessionId,session,idx){
     return;
   }
   if(lbSecs>0){
-    await update(ref(db,`sessions/${sessionId}`),{status:'leaderboard',currentSubjectIndex:idx});
+    await update(ref(db,`sessions/${sessionId}`),{status:'leaderboard',currentSubjectIndex:idx,leaderboardSeconds:lbSecs});
     setTimeout(async()=>{
       const timerEnd=session.minutesPerSubject>0?Date.now()+session.minutesPerSubject*60000:null;
       await update(ref(db,`sessions/${sessionId}`),{status:'voting',currentSubjectIndex:nextIdx,timerEnd:timerEnd||null});
@@ -1708,7 +1745,6 @@ function showLeaderboardScreen(session){
   }
 
   showView(0);
-  showLeaderboardSkal(session,idx);
 }
 
 // startLbCountdown replaced by inline countdown in showLeaderboardScreen
@@ -2141,14 +2177,16 @@ function showSkalToast(text,sender){
       src.start(ctx.currentTime);src.stop(ctx.currentTime+0.5);
     }
   }catch(e){}
-  // Trigger emoji burst from toast position
-  requestAnimationFrame(()=>{
+  // Trigger emoji burst from toast position (emoji set by watchSkals for all clients)
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
     const rect=toast.getBoundingClientRect();
     const cx=rect.left+rect.width/2;
     const cy=rect.top+rect.height/2;
-    if(window._skalBurstEmoji)showSkalBurst(window._skalBurstEmoji,cx,cy);
-    window._skalBurstEmoji=null;
-  });
+    if(window._skalBurstEmoji){
+      showSkalBurst(window._skalBurstEmoji,cx,cy);
+      window._skalBurstEmoji=null;
+    }
+  }));
   setTimeout(()=>toast.classList.remove('show'),7000);
 }
 
@@ -2239,8 +2277,7 @@ window.sendCategorySkal=async function(catName,emoji){
   if(!state.sessionId)return;
   const text=`${emoji} Skål for ${catName}!`;
   const sender=state.participantName||'En deltaker';
-  window._skalBurstEmoji=emoji; // store for burst after toast shows
-  await set(ref(db,`sessions/${state.sessionId}/skals/${generateId()}`),{text,participantName:sender,at:Date.now()});
+  await set(ref(db,`sessions/${state.sessionId}/skals/${generateId()}`),{text,participantName:sender,emoji,at:Date.now()});
   state.lastSkalSentAt=Date.now();
   document.getElementById('skal-sheet').classList.remove('open');
 };
@@ -2248,73 +2285,9 @@ window.sendCategorySkal=async function(catName,emoji){
 // Keep sendUserSkal as alias for backwards compat
 window.sendUserSkal=window.sendCategorySkal;
 
-window.sendAutoSkal=async function(){
-  if(!state.session)return;
-  const session=state.session;
-  const idx=session.currentSubjectIndex||0;
-  const votes=session.votes||{};
-  const participants=session.participants?Object.entries(session.participants):[];
-  const subjects=session.subjects?Object.values(session.subjects):[];
-  const cats=session.categories?Object.values(session.categories):[];
-  let text='Skål for alle! 🥂';
-  let name='';
-  // Pick random type
-  const types=['avvikende','leder','sist'];
-  const type=types[Math.floor(Math.random()*types.length)];
-  if(type==='leder'){
-    const scores=calcScores(subjects,cats,votes,participants.map(([pid])=>pid));
-    const leader=scores[0];
-    if(leader){
-      const leaderVote=votes[idx]&&Object.values(votes[idx]).find(v=>subjects.find(s=>s.name===leader.name));
-      const texts=SKAL_TEXTS.filter(s=>s.type==='leder');
-      const t=texts[Math.floor(Math.random()*texts.length)];
-      // Find participant with highest score
-      let bestPid=null,bestScore=-1;
-      participants.forEach(([pid])=>{
-        let score=0;
-        subjects.forEach((sub,si)=>{const v=votes[si]&&votes[si][pid];if(!v)return;cats.forEach(cat=>{score+=((v.votes&&v.votes[cat.name])||0)*(cat.weight||1);});});
-        if(score>bestScore){bestScore=score;bestPid=pid;}
-      });
-      const pName=session.participants&&bestPid?session.participants[bestPid]?.name:null;
-      if(pName){name=pName;text=t.text.replace('[navn]',pName);}
-    }
-  }else if(type==='sist'){
-    const subVotes=votes[idx]||{};
-    const lastVote=Object.values(subVotes).sort((a,b)=>b.submittedAt-a.submittedAt)[0];
-    if(lastVote&&lastVote.participantName!==state.lastSkalReceiver){
-      const texts=SKAL_TEXTS.filter(s=>s.type==='sist');
-      const t=texts[Math.floor(Math.random()*texts.length)];
-      name=lastVote.participantName;text=t.text.replace('[navn]',name);
-      state.lastSkalReceiver=name;
-    }
-  }else{
-    // Most avvikende - find who voted most differently
-    const pScores={};
-    participants.forEach(([pid])=>{
-      let score=0;
-      subjects.forEach((sub,si)=>{const v=votes[si]&&votes[si][pid];if(!v)return;cats.forEach(cat=>{score+=((v.votes&&v.votes[cat.name])||0)*(cat.weight||1);});});
-      pScores[pid]=score;
-    });
-    const avg=Object.values(pScores).reduce((a,b)=>a+b,0)/Math.max(Object.keys(pScores).length,1);
-    let mostDiff=null,maxDiff=0;
-    Object.entries(pScores).forEach(([pid,score])=>{
-      const diff=Math.abs(score-avg);
-      if(diff>maxDiff&&session.participants?.[pid]?.name!==state.lastSkalReceiver){maxDiff=diff;mostDiff=pid;}
-    });
-    if(mostDiff){
-      const texts=SKAL_TEXTS.filter(s=>s.type==='avvikende');
-      const t=texts[Math.floor(Math.random()*texts.length)];
-      name=session.participants[mostDiff]?.name;
-      if(name){text=t.text.replace('[navn]',name);state.lastSkalReceiver=name;}
-    }
-  }
-  await set(ref(db,`sessions/${state.sessionId}/skals/${generateId()}`),{text,participantName:session.name||'🥂',at:Date.now()});
-};
+// sendAutoSkal removed
 
-function showLeaderboardSkal(session,idx){
-  if(Math.random()>0.4)return; // 40% sjanse
-  setTimeout(()=>sendAutoSkal(),3000);
-}
+// showLeaderboardSkal removed
 
 function showDagsDommer(session,idx){
   // Replaced by fun skål events - no longer used
@@ -2699,6 +2672,9 @@ init().then(() => {
 });
 
 </script>
+<!-- ACTIVITY BAR -->
+<div id="activity-bar" style="display:none;position:fixed;bottom:0;left:56px;right:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);border-top:0.5px solid rgba(255,255,255,0.06);padding:6px 12px;gap:12px;z-index:190;align-items:center;justify-content:center;flex-wrap:wrap;"></div>
+
 <script>
 // Global event delegator - handles all data-action clicks
 document.addEventListener('click', function(e) {
