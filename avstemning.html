@@ -501,6 +501,7 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
     </div>
   </div>
   <div class="content">
+    <div id="lb-tabs" style="display:flex;gap:2px;background:rgba(255,255,255,0.04);border-radius:10px;padding:3px;margin-bottom:14px;border:0.5px solid rgba(255,255,255,0.06);"></div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
       <div class="text-muted" id="lb-voter-count"></div>
       <div class="text-muted" id="lb-countdown"></div>
@@ -804,7 +805,7 @@ import { getDatabase, ref, set, get, update, onValue, onChildAdded, remove, runT
 // Make all window functions available immediately
 Object.defineProperty(window, '__moduleReady', { value: true });
 
-const VERSION = 'Avstemning v1.8';
+const VERSION = 'Avstemning v2.0';
 console.log(VERSION);
 
 const FIREBASE_CONFIG = {
@@ -1114,13 +1115,13 @@ window.sendReaction = async function sendReaction(emoji){
 function showFloatingReaction(emoji,senderName){
   const count=10;
   const container=document.createElement('div');
-  container.style.cssText='position:fixed;left:50%;bottom:0;z-index:9999;pointer-events:none;transform:translateX(-50%);';
+  container.style.cssText='position:fixed;left:50%;bottom:60px;z-index:9999;pointer-events:none;transform:translateX(-50%);';
   // Sender name label
   if(senderName){
     const lbl=document.createElement('div');
     lbl.className='fr-name-label';
     lbl.textContent=senderName;
-    lbl.style.cssText='position:absolute;bottom:8px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:13px;font-weight:600;color:rgba(255,255,255,0.9);text-shadow:0 2px 6px rgba(0,0,0,0.9);background:rgba(0,0,0,0.5);padding:3px 10px;border-radius:20px;';
+    lbl.style.cssText='position:absolute;bottom:-4px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:15px;font-weight:700;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,1);background:rgba(0,0,0,0.6);padding:4px 12px;border-radius:20px;';
     container.appendChild(lbl);
   }
   // Confetti particles
@@ -1254,6 +1255,7 @@ function startSessionListener(){
     watchReactions(session);
     watchSkals(session);
   });
+  watchActivity();
 }
 
 let lastShownSkalAt=0;
@@ -1268,26 +1270,35 @@ function watchReactions(){
 }
 
 // ========== ACTIVITY BAR ==========
-const _activityScores={};
-
+// Activity scores backed by Firebase - same on all screens
 function trackActivity(name,type){
-  if(!name)return;
+  if(!name||!state.sessionId)return;
   const pts=type==='skal'?10:1;
-  _activityScores[name]=(_activityScores[name]||0)+pts;
-  renderActivityBar();
+  const key=safeKey(name);
+  // Use runTransaction to safely increment
+  runTransaction(ref(db,`sessions/${state.sessionId}/activity/${key}`),cur=>{
+    if(cur===null)return{name,pts};
+    return{name:cur.name||name,pts:(cur.pts||0)+pts};
+  }).catch(()=>{});
 }
 
-function renderActivityBar(){
+function watchActivity(){
+  onValue(ref(db,`sessions/${state.sessionId}/activity`),snap=>{
+    renderActivityBar(snap.exists()?snap.val():{});
+  });
+}
+
+function renderActivityBar(data){
   const bar=document.getElementById('activity-bar');
   if(!bar)return;
-  const sorted=Object.entries(_activityScores).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  const sorted=Object.values(data||{}).sort((a,b)=>b.pts-a.pts).slice(0,3);
   if(!sorted.length){bar.style.display='none';return;}
   bar.style.display='flex';
-  const max=sorted[0][1]||1;
-  bar.innerHTML=sorted.map(([name,score],i)=>{
-    const pct=Math.round(score/max*100);
+  const max=sorted[0].pts||1;
+  bar.innerHTML=sorted.map((entry,i)=>{
+    const pct=Math.round(entry.pts/max*100);
     const medal=i===0?'🥇':i===1?'🥈':'🥉';
-    return `<div class="act-item"><div class="act-name">${medal} ${name}</div><div class="act-bar-bg"><div class="act-bar-fill" style="width:${pct}%"></div></div><div class="act-score">${score}p</div></div>`;
+    return `<div class="act-item"><div class="act-name">${medal} ${entry.name}</div><div class="act-bar-bg"><div class="act-bar-fill" style="width:${pct}%"></div></div><div class="act-score">${entry.pts}p</div></div>`;
   }).join('');
 }
 
@@ -1550,12 +1561,17 @@ window.submitVote=async function(){
 
 // ========== TIMER ==========
 function startTimer(session){
-  if(state.timerInterval)clearInterval(state.timerInterval);
-  state.timerEnd=session.timerEnd||Date.now();
-  const total=(session.minutesPerSubject||3)*60;
-  // ALL clients schedule watchdog so advance always happens even if admin refreshes
   const idx=session.currentSubjectIndex||0;
-  if(state.lastWatchdogSubject!==idx){
+  const newTimerEnd=session.timerEnd||Date.now();
+  const total=(session.minutesPerSubject||3)*60;
+  // Only reset timer if subject changed OR timerEnd changed significantly (>5s diff)
+  const timerChanged=Math.abs(newTimerEnd-(state.timerEnd||0))>5000;
+  const subjectChanged=state.lastWatchdogSubject!==idx;
+  if(subjectChanged||timerChanged){
+    if(state.timerInterval)clearInterval(state.timerInterval);
+    state.timerEnd=newTimerEnd;
+  }
+  if(subjectChanged){
     state.lastWatchdogSubject=idx;
     scheduleWatchdog(state.sessionId,state.timerEnd,session.minutesPerSubject,idx);
   }
@@ -1568,6 +1584,8 @@ function startTimer(session){
     if(secs===7&&!state.tick7Played){state.tick7Played=true;playSound('tick7');}
     if(secs===1&&!state.tick1Played){state.tick1Played=true;playSound('tick1');}
     if(secs>10)state.urgentSoundPlayed=false;
+    if(secs>7)state.tick7Played=false;
+    if(secs>1)state.tick1Played=false;
     // Auto-submit when timer hits 0
     if(secs===0&&!state.hasVotedCurrentSubject&&state.participantId){
       state.hasVotedCurrentSubject=true; // prevent multiple submits
@@ -1587,7 +1605,9 @@ function startTimer(session){
     });
   }
   tick();
-  state.timerInterval=setInterval(tick,500);
+  if(!state.timerInterval){
+    state.timerInterval=setInterval(tick,500);
+  }
 }
 
 // ========== WATCHDOG ==========
@@ -1670,14 +1690,31 @@ function showLeaderboardScreen(session){
   const scores=calcScores(dedupeSubjects(subjects),cats,votes,participants);
   const vCount=votes[idx]?Object.keys(votes[idx]).length:0;
 
+  // Build tab bar
+  const tabBar=document.getElementById('lb-tabs');
+  if(tabBar){
+    tabBar.innerHTML='';
+    const tabLabels={'toplist':'🏆 Topp','categories':'📊 Kategori','judges':'🎯 Dommere'};
+    views.forEach((v,i)=>{
+      const btn=document.createElement('div');
+      btn.className='result-tab';
+      btn.id=`lb-tab-${v}`;
+      btn.textContent=tabLabels[v]||v;
+      btn.onclick=()=>showView(i);
+      tabBar.appendChild(btn);
+    });
+  }
+
   function showView(viewIdx){
     const view=views[viewIdx];
     const isLastView=viewIdx===views.length-1;
     const nextLabel=isLastView?(isLast?'🏆 Endelig resultat':'Neste emne'):views[viewIdx+1]==='categories'?'Kategori-detaljer':views[viewIdx+1]==='judges'?'Dommer-detaljer':'Topp-liste';
+    // Update active tab
+    views.forEach(v=>{const t=document.getElementById(`lb-tab-${v}`);if(t)t.classList.toggle('active',v===view);});
 
     if(view==='toplist'){
       document.getElementById('lb-sub').textContent=`Etter emne ${idx+1} av ${subjects.length}`;
-      renderLeaderboard('leaderboard-list',scores);
+      renderLeaderboard('leaderboard-list',scores,session);
       document.getElementById('lb-voter-count').textContent=`${vCount} av ${participants.length} stemte`;
       showScreen('screen-leaderboard');
     } else if(view==='categories'){
@@ -1785,19 +1822,27 @@ function calcScores(subjects,cats,votes,participants){
   }).sort((a,b)=>b.total-a.total);
 }
 
-function renderLeaderboard(containerId,scores){
+function renderLeaderboard(containerId,scores,session){
   const container=document.getElementById(containerId);if(!container)return;
   container.innerHTML='';
+  container.style.cssText='text-align:center;';
   const max=scores[0]?scores[0].total:1;
   const classes=['gold','silver','bronze'];
   const medals=['🥇','🥈','🥉'];
+  const btMap=session&&session.blindtestRevealed&&session.blindtestMap?session.blindtestMap:null;
   scores.forEach((item,i)=>{
     const cls=i<3?classes[i]:'other';
     const medal=i<3?medals[i]:`#${i+1}`;
     const pct=max>0?(item.total/max*100):0;
+    // If blindtest revealed, show real name below letter
+    const realInfo=btMap?Object.values(btMap).find(m=>m.realName===item.name||(item.name.length===1&&btMap[item.name])):null;
+    const realName=realInfo?realInfo.realName:null;
+    const nameHtml=realName
+      ?`<div class="lb-name"><span style="color:var(--muted);font-size:12px;">${item.name}</span> <span style="color:var(--accent);">→ ${realName}</span></div>`
+      :`<div class="lb-name">${item.name}</div>`;
     const div=document.createElement('div');
     div.className=`lb-item ${cls}`;
-    div.innerHTML=`<div class="lb-row"><div class="lb-rank">${medal}</div><div class="lb-name">${item.name}</div><div class="lb-score">${Math.round(item.total)}</div></div><div class="lb-bar-bg"><div class="lb-bar-inner" style="width:${pct}%"></div></div>`;
+    div.innerHTML=`<div class="lb-row"><div class="lb-rank">${medal}</div>${nameHtml}<div class="lb-score">${Math.round(item.total)}</div></div><div class="lb-bar-bg"><div class="lb-bar-inner" style="width:${pct}%"></div></div>`;
     container.appendChild(div);
   });
 }
@@ -1817,6 +1862,15 @@ function showFinalLeaderboard(session){
   const votes=session.votes||{};
   const participants=session.participants?Object.keys(session.participants):[];
   const scores=calcScores(dedupeSubjects(subjects),cats,votes,participants);
+  // Blindtest reveal helper
+  const btMap=session.blindtestRevealed&&session.blindtestMap?session.blindtestMap:null;
+  const resolveBlindName=(name)=>{
+    if(!btMap)return{display:name,real:null};
+    const entry=btMap[name]||Object.values(btMap).find(m=>m.realName===name);
+    if(entry&&entry.realName!==name)return{display:name,real:entry.realName};
+    if(btMap[name])return{display:name,real:btMap[name].realName};
+    return{display:name,real:null};
+  };
   document.getElementById('final-session-name').textContent=session.name;
   const container=document.getElementById('final-leaderboard');
   container.innerHTML='';
@@ -1824,6 +1878,8 @@ function showFinalLeaderboard(session){
   // Animated reveal
   scores.forEach((item,i)=>{
     setTimeout(()=>{
+      const bn=resolveBlindName(item.name);
+      const displayName=bn.real?`<span style="font-size:13px;color:var(--muted);">${bn.display}</span> <span style="color:var(--accent);">→ ${bn.real}</span>`:bn.display;
       if(i===0){
         const div=document.createElement('div');
         div.className='final-winner';
@@ -1859,7 +1915,7 @@ function showFinalLeaderboard(session){
         const halfL=fanDetails.slice(0,Math.ceil(fanDetails.length/2));
         const halfR=fanDetails.slice(Math.ceil(fanDetails.length/2));
         const fanHtml=fanDetails.length>0?`<div class="final-fans"><div class="final-fans-col">${halfL.map(f=>`<div class="fan-name">${f.name} <span class="fan-score">${f.score}p</span></div>`).join('')}</div><div class="final-fans-col">${halfR.map(f=>`<div class="fan-name">${f.name} <span class="fan-score">${f.score}p</span></div>`).join('')}</div></div>`:'';
-        div.innerHTML=`<div class="final-winner-emoji">🥇</div><div class="final-winner-name">${item.name}</div><div class="final-winner-score" id="final-score-0">0</div><div style="font-size:12px;color:var(--muted);margin-top:4px;">poeng totalt</div>${fanHtml}`;
+        div.innerHTML=`<div class="final-winner-emoji">🥇</div><div class="final-winner-name">${displayName}</div><div class="final-winner-score" id="final-score-0">0</div><div style="font-size:12px;color:var(--muted);margin-top:4px;">poeng totalt</div>${fanHtml}`;
         container.appendChild(div);
         animateCount('final-score-0',0,Math.round(item.total),1200);
       }else if(i===1||i===2){
@@ -1868,7 +1924,7 @@ function showFinalLeaderboard(session){
         const pct=max>0?(item.total/max*100):0;
         const div=document.createElement('div');
         div.style.cssText=`background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:12px;`;
-        div.innerHTML=`<div style="font-size:24px;">${medal}</div><div style="flex:1;font-size:15px;font-weight:500;">${item.name}</div><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--${cls==='silver'?'silver':'bronze'});" id="final-score-${i}">0</div>`;
+        div.innerHTML=`<div style="font-size:24px;">${medal}</div><div style="flex:1;font-size:15px;font-weight:500;">${displayName}</div><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--${cls==='silver'?'silver':'bronze'});" id="final-score-${i}">0</div>`;
         container.appendChild(div);
         animateCount(`final-score-${i}`,0,Math.round(item.total),800);
       }else{
@@ -2092,12 +2148,15 @@ window.endSession=async function(){
 window.shuffleBlindtest=async function(){
   const session=state.session;if(!session||!session.subjects)return;
   const subjects=Object.values(session.subjects);
-  const letters='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  const shuffled=[...subjects].sort(()=>Math.random()-0.5);
+  const n=subjects.length;
+  // Shuffle both subjects AND letters independently for true randomness
+  const allLetters='ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+  const shuffledLetters=allLetters.slice(0,n).sort(()=>Math.random()-0.5);
+  const shuffledSubjects=[...subjects].sort(()=>Math.random()-0.5);
   const map={};
-  shuffled.forEach((sub,i)=>{map[letters[i]]={realName:sub.name,originalIndex:sub.originalIndex};});
+  shuffledSubjects.forEach((sub,i)=>{map[shuffledLetters[i]]={realName:sub.name,originalIndex:sub.originalIndex};});
   const newSubjects={};
-  shuffled.forEach((sub,i)=>{newSubjects[i]={name:letters[i],originalIndex:sub.originalIndex,realName:sub.name};});
+  shuffledSubjects.forEach((sub,i)=>{newSubjects[i]={name:shuffledLetters[i],originalIndex:sub.originalIndex,realName:sub.name};});
   await update(ref(db,`sessions/${state.sessionId}`),{subjects:newSubjects,blindtestMap:map});
   // Show instruction
   const instrEl=document.getElementById('blindtest-instruction');
@@ -2331,13 +2390,17 @@ function renderJudgeBreakdown(containerId, session) {
     const div = document.createElement('div');
     div.style.cssText = 'background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;max-width:480px;margin-left:auto;margin-right:auto;';
     const medal = i < 3 ? medals[i] : `#${i+1}`;
-    const topStr = judge.subjectScores.slice(0, 3).map((s, si) =>
-      `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-top:1px solid var(--border);">
+    const btMap2=session.blindtestRevealed&&session.blindtestMap?session.blindtestMap:null;
+    const topStr = judge.subjectScores.slice(0, 3).map((s, si) => {
+      const btEntry=btMap2?(btMap2[s.name]||Object.values(btMap2).find(m=>m.realName===s.name)):null;
+      const realN=btEntry&&btEntry.realName!==s.name?btEntry.realName:(btMap2&&btMap2[s.name]?btMap2[s.name].realName:null);
+      const nameDisplay=realN?`<span style="font-size:11px;color:var(--muted);">${s.name}</span> → ${realN}`:s.name;
+      return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-top:1px solid var(--border);">
         <div style="font-size:11px;color:var(--muted);width:20px;">${si+1}.</div>
-        <div style="flex:1;font-size:13px;">${s.name}</div>
+        <div style="flex:1;font-size:13px;">${nameDisplay}</div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--text2);">${Math.round(s.total)}</div>
-      </div>`
-    ).join('');
+      </div>`;
+    }).join('');
     div.innerHTML = `
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:${i===0?'var(--gold)':i===1?'var(--silver)':i===2?'var(--bronze)':'var(--muted)'};">${medal}</div>
