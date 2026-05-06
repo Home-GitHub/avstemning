@@ -809,6 +809,9 @@ import { getDatabase, ref, set, get, update, onValue, remove, runTransaction, of
 // Make all window functions available immediately
 Object.defineProperty(window, '__moduleReady', { value: true });
 
+const VERSION = 'Avstemning v1.1';
+console.log(VERSION);
+
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyBaIhaNT-4uCh5DOVErY6HEF88SE0nSAO4",
   authDomain: "mgp-flatcity.firebaseapp.com",
@@ -1107,6 +1110,7 @@ window.sendReaction = async function sendReaction(emoji){
   if(state.reactionCooldown||!state.sessionId)return;
   state.reactionCooldown=true;
   setTimeout(()=>state.reactionCooldown=false,5000);
+  showFloatingReaction(emoji); // local feedback for sender
   await set(ref(db,`sessions/${state.sessionId}/reactions/${generateId()}`),{emoji,participantName:state.participantName,at:Date.now()});
 }
 
@@ -1543,8 +1547,8 @@ async function advanceSubject(sessionId,session,idx){
   const lbSecs=session.leaderboardSeconds||0;
   if(nextIdx>=subjects.length){
     if(lbSecs>0){
-      // Last leaderboard - show for half the time then transition
-      const lastLbTime=Math.min(lbSecs*500, 8000); // max 8 sec, or half normal
+      // Last leaderboard - show for full leaderboard duration then transition
+      const lastLbTime=lbSecs*1000;
       await update(ref(db,`sessions/${sessionId}`),{status:'leaderboard',currentSubjectIndex:idx,isLastLeaderboard:true});
       setTimeout(async()=>await update(ref(db,`sessions/${sessionId}`),{status:'ended'}),lastLbTime);
     }else{await update(ref(db,`sessions/${sessionId}`),{status:'ended'});}
@@ -1695,6 +1699,7 @@ function renderLeaderboard(containerId,scores){
 function showFinalLeaderboard(session){
   if(state.finalShown)return;
   state.finalShown=true;
+  setAdminUI(state.isAdmin);
   const subjects=session.subjects?Object.values(session.subjects):[];
   const cats=session.categories?Object.values(session.categories):[];
   const votes=session.votes||{};
