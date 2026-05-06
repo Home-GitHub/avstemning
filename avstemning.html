@@ -113,7 +113,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 }
 .floating-reaction{animation:floatUp 3s ease-out forwards;text-align:center;}
 .fr-emoji{font-size:36px;line-height:1;}
-.fr-name{font-size:11px;color:rgba(255,255,255,0.8);margin-top:2px;font-weight:500;white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,0.8);}
+.fr-name{font-size:15px;color:#fff;margin-top:4px;font-weight:700;white-space:nowrap;text-shadow:0 2px 8px rgba(0,0,0,1);letter-spacing:0.3px;}
 .sb-admin-divider{width:22px;height:0.5px;background:rgba(255,255,255,0.08);margin:6px 0;display:none;}
 .is-admin .sb-admin-divider{display:block;}
 .sb-admin-btn{display:none;}
@@ -135,7 +135,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .cat-row{margin-bottom:12px;}
 .cat-row:last-child{margin-bottom:4px;}
 .cat-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;}
-.cat-name{font-size:12px;color:rgba(255,255,255,0.45);font-weight:400;}
+.cat-name{font-size:15px;color:rgba(255,255,255,0.65);font-weight:500;}
 .cat-val{font-size:22px;font-weight:700;color:var(--accent);font-family:monospace;line-height:1;}
 .slider-wrap{position:relative;padding:4px 0;}
 .slider-input{
@@ -175,11 +175,11 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
 
 /* LEADERBOARD */
 .lb-item{margin-bottom:10px;}
-.lb-row{display:flex;align-items:center;gap:10px;margin-bottom:3px;}
-.lb-rank{font-family:'Bebas Neue',sans-serif;font-size:20px;width:28px;text-align:center;line-height:1;}
-.lb-name{flex:1;font-size:14px;font-weight:500;}
-.lb-score{font-family:'Bebas Neue',sans-serif;font-size:24px;line-height:1;}
-.lb-bar-bg{height:3px;background:rgba(255,255,255,0.06);border-radius:2px;margin:0 0 3px 38px;}
+.lb-row{display:flex;align-items:center;gap:10px;margin-bottom:3px;max-width:480px;margin-left:auto;margin-right:auto;}
+.lb-rank{font-family:'Bebas Neue',sans-serif;font-size:22px;width:32px;text-align:center;line-height:1;}
+.lb-name{flex:1;font-size:15px;font-weight:500;}
+.lb-score{font-family:'Bebas Neue',sans-serif;font-size:26px;line-height:1;}
+.lb-bar-bg{height:3px;background:rgba(255,255,255,0.06);border-radius:2px;margin:0 auto 3px;max-width:480px;}
 .lb-bar-fill{height:3px;border-radius:2px;transition:width 0.8s cubic-bezier(0.4,0,0.2,1);}
 .lb-item.gold .lb-rank,.lb-item.gold .lb-score{color:var(--gold);}
 .lb-item.gold .lb-bar-fill{background:var(--gold);}
@@ -229,13 +229,14 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
 .participant-name{flex:1;font-size:14px;}
 
 /* FINAL */
-.final-winner{background:linear-gradient(135deg,var(--accent-dim),transparent);border:0.5px solid rgba(255,255,255,0.1);border-radius:16px;padding:22px;margin-bottom:12px;text-align:center;}
-.final-winner-name{font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--accent);line-height:1;margin-bottom:2px;}
-.final-winner-score{font-family:'Bebas Neue',sans-serif;font-size:52px;color:var(--accent);line-height:1;}
+.final-winner{background:linear-gradient(135deg,var(--accent-dim),transparent);border:0.5px solid rgba(255,255,255,0.1);border-radius:16px;padding:24px;margin-bottom:12px;text-align:center;max-width:480px;margin-left:auto;margin-right:auto;}
+.final-winner-emoji{font-size:56px;margin-bottom:4px;}
+.final-winner-name{font-family:'Bebas Neue',sans-serif;font-size:34px;color:var(--accent);line-height:1;margin-bottom:2px;}
+.final-winner-score{font-family:'Bebas Neue',sans-serif;font-size:64px;color:var(--accent);line-height:1;}
 
 /* RESULT TABS */
 .result-tabs{display:flex;gap:2px;background:rgba(255,255,255,0.04);border-radius:10px;padding:3px;margin-bottom:18px;border:0.5px solid rgba(255,255,255,0.06);}
-.result-tab{flex:1;padding:9px;text-align:center;font-size:12px;font-weight:500;border-radius:8px;cursor:pointer;color:var(--muted);transition:all 0.2s;}
+.result-tab{flex:1;padding:14px 9px;text-align:center;font-size:13px;font-weight:500;border-radius:8px;cursor:pointer;color:var(--muted);transition:all 0.2s;}
 .result-tab.active{background:rgba(255,255,255,0.07);color:var(--text);}
 .result-panel{display:none;}
 .result-panel.active{display:block;}
@@ -244,8 +245,12 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
 .cat-spot-item{background:var(--surface);border:0.5px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;}
 
 /* CAT BREAKDOWN */
-.cat-breakdown-item{background:var(--surface);border:0.5px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;}
-.cat-breakdown-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.cat-breakdown-item{background:var(--surface);border:0.5px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;max-width:480px;margin-left:auto;margin-right:auto;}
+.cat-breakdown-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:nowrap;}
+.cat-breakdown-avg{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--text);}
+.cat-breakdown-max{font-size:11px;color:var(--muted);}
+.cat-breakdown-name{flex:1;font-size:14px;font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.cat-breakdown-rank{font-size:18px;width:28px;flex-shrink:0;}
 .cat-breakdown-bar{height:4px;background:rgba(255,255,255,0.07);border-radius:2px;margin-bottom:10px;}
 .cat-breakdown-fill{height:4px;border-radius:2px;}
 .cat-person-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-top:0.5px solid rgba(255,255,255,0.05);}
@@ -794,7 +799,7 @@ import { getDatabase, ref, set, get, update, onValue, onChildAdded, remove, runT
 // Make all window functions available immediately
 Object.defineProperty(window, '__moduleReady', { value: true });
 
-const VERSION = 'Avstemning v1.5';
+const VERSION = 'Avstemning v1.6';
 console.log(VERSION);
 
 const FIREBASE_CONFIG = {
@@ -1004,10 +1009,27 @@ function hideGlobalSidebar(){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('screens-with-sidebar'));
 }
 
+// Fallback emojis grouped by type for filling up to 6
+const EMOJI_FILL_POOL=['🔥','⚡','💥','🎉','👏','😍','🤩','💫','✨','🎵','🎶','🎤','🎭','🏆','💃','🌟'];
+
+function getReactionsForSession(){
+  const cats=state.session&&state.session.categories?Object.values(state.session.categories):[];
+  const catEmojis=cats.map(c=>getCatEmoji(c.name));
+  // Deduplicate
+  const unique=[...new Set(catEmojis)];
+  // Fill up to 6 with pool emojis not already included
+  const pool=EMOJI_FILL_POOL.filter(e=>!unique.includes(e));
+  while(unique.length<6&&pool.length)unique.push(pool.shift());
+  return unique.slice(0,6);
+}
+
 function initGlobalEmojiMenu(){
   const list=document.getElementById('global-emoji-list');
-  if(!list||list.children.length)return;
-  REACTIONS.forEach(r=>{
+  if(!list)return;
+  // Always rebuild so it reflects current session categories
+  list.innerHTML='';
+  const reactions=getReactionsForSession();
+  reactions.forEach(r=>{
     const btn=document.createElement('div');
     btn.className='sb-e';
     btn.textContent=r;
@@ -1039,48 +1061,42 @@ function playSound(type){
     const gain=ctx.createGain();
     osc.connect(gain);gain.connect(ctx.destination);
     if(type==='tick10'){
-      // Soft tick at 10 seconds
+      osc.type='sine';
       osc.frequency.setValueAtTime(660,ctx.currentTime);
-      gain.gain.setValueAtTime(0.2,ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.15);
-      osc.start();osc.stop(ctx.currentTime+0.15);
+      gain.gain.setValueAtTime(0.25,ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.12);
+      osc.start(ctx.currentTime);osc.stop(ctx.currentTime+0.12);
     } else if(type==='tick7'){
-      // Medium tick at 7 seconds
+      osc.type='sine';
       osc.frequency.setValueAtTime(880,ctx.currentTime);
-      gain.gain.setValueAtTime(0.35,ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.2);
-      osc.start();osc.stop(ctx.currentTime+0.2);
+      gain.gain.setValueAtTime(0.4,ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.15);
+      osc.start(ctx.currentTime);osc.stop(ctx.currentTime+0.15);
     } else if(type==='tick1'){
-      // Loud urgent tick at 1 second
+      osc.type='square';
       osc.frequency.setValueAtTime(1320,ctx.currentTime);
-      osc.frequency.setValueAtTime(1760,ctx.currentTime+0.08);
-      gain.gain.setValueAtTime(0.6,ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.3);
-      osc.start();osc.stop(ctx.currentTime+0.3);
+      gain.gain.setValueAtTime(0.5,ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.25);
+      osc.start(ctx.currentTime);osc.stop(ctx.currentTime+0.25);
     } else if(type==='newSubject'){
-      // Fun fanfare for new subject - 4 ascending notes
       const freqs=[523,659,784,1047];
       freqs.forEach((f,i)=>{
         const o=ctx.createOscillator();
         const g=ctx.createGain();
+        o.type='triangle';
         o.connect(g);g.connect(ctx.destination);
-        o.frequency.setValueAtTime(f,ctx.currentTime+i*0.12);
-        g.gain.setValueAtTime(0,ctx.currentTime+i*0.12);
-        g.gain.linearRampToValueAtTime(0.3,ctx.currentTime+i*0.12+0.05);
-        g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+i*0.12+0.25);
-        o.start(ctx.currentTime+i*0.12);
-        o.stop(ctx.currentTime+i*0.12+0.25);
+        o.frequency.setValueAtTime(f,ctx.currentTime+i*0.13);
+        g.gain.setValueAtTime(0,ctx.currentTime+i*0.13);
+        g.gain.linearRampToValueAtTime(0.35,ctx.currentTime+i*0.13+0.04);
+        g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+i*0.13+0.28);
+        o.start(ctx.currentTime+i*0.13);
+        o.stop(ctx.currentTime+i*0.13+0.3);
       });
-      return; // early return since we used multiple oscs
-    } else if(type==='skal'){
-      osc.frequency.setValueAtTime(880,ctx.currentTime);
-      osc.frequency.setValueAtTime(1100,ctx.currentTime+0.1);
-      osc.frequency.setValueAtTime(880,ctx.currentTime+0.2);
-      gain.gain.setValueAtTime(0.25,ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.5);
-      osc.start();osc.stop(ctx.currentTime+0.5);
+      return;
+    } else {
+      // Unknown type - no sound
+      return;
     }
-    osc.start();osc.stop(ctx.currentTime+0.5);
   }catch(e){console.log('Sound error:',e);}
 }
 function updateJoinPreview(){const n=(document.getElementById('join-name')?.value||'').trim();document.getElementById('join-preview').textContent=n?`Du vises som: ${state.selectedEmoji} ${n}`:'';}
@@ -2090,36 +2106,49 @@ function showSkalToast(text,sender){
   document.getElementById('skal-text').textContent=text;
   document.getElementById('skal-sender').textContent=sender?`— ${sender}`:'';
   const toast=document.getElementById('skal-toast');
-  // Random position on screen
-  const top=15+Math.random()*55; // 15% to 70% from top
-  const left=5+Math.random()*50; // 5% to 55% from left (keeping it mostly visible)
-  toast.style.top=`${top}vh`;
-  toast.style.left=`${left}vw`;
+  // Random position clamped so toast always stays on screen
+  // Toast is max 300px wide, ~80px tall
+  const toastW=300,toastH=90;
+  const vw=window.innerWidth,vh=window.innerHeight;
+  const maxLeft=Math.max(0,vw-toastW-16);
+  const maxTop=Math.max(0,vh-toastH-16);
+  const left=Math.floor(8+Math.random()*Math.min(maxLeft-8,vw*0.55));
+  const top=Math.floor(60+Math.random()*Math.min(maxTop-60,vh*0.5));
+  toast.style.top=`${top}px`;
+  toast.style.left=`${left}px`;
   toast.style.transform='scale(0.85)';
   toast.classList.add('show');
-  // Bruse-lyd (white noise burst)
+  // Bruse-lyd (white noise fizz) using shared AudioContext
   try{
-    const ctx=new(window.AudioContext||window.webkitAudioContext)();
-    // White noise burst
-    const bufSize=ctx.sampleRate*0.4;
-    const buf=ctx.createBuffer(1,bufSize,ctx.sampleRate);
-    const data=buf.getChannelData(0);
-    for(let i=0;i<bufSize;i++)data[i]=(Math.random()*2-1);
-    const src=ctx.createBufferSource();
-    src.buffer=buf;
-    // Bandpass filter for fizz character
-    const bpf=ctx.createBiquadFilter();
-    bpf.type='bandpass';
-    bpf.frequency.setValueAtTime(800,ctx.currentTime);
-    bpf.frequency.linearRampToValueAtTime(3000,ctx.currentTime+0.15);
-    bpf.Q.value=0.5;
-    const gain=ctx.createGain();
-    gain.gain.setValueAtTime(0,ctx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.7,ctx.currentTime+0.05);
-    gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.4);
-    src.connect(bpf);bpf.connect(gain);gain.connect(ctx.destination);
-    src.start(ctx.currentTime);src.stop(ctx.currentTime+0.4);
+    const ctx=getAudioCtx();
+    if(ctx){
+      const bufSize=Math.floor(ctx.sampleRate*0.5);
+      const buf=ctx.createBuffer(1,bufSize,ctx.sampleRate);
+      const data=buf.getChannelData(0);
+      for(let i=0;i<bufSize;i++)data[i]=(Math.random()*2-1);
+      const src=ctx.createBufferSource();
+      src.buffer=buf;
+      const bpf=ctx.createBiquadFilter();
+      bpf.type='bandpass';
+      bpf.frequency.setValueAtTime(600,ctx.currentTime);
+      bpf.frequency.linearRampToValueAtTime(4000,ctx.currentTime+0.2);
+      bpf.Q.value=0.4;
+      const gain=ctx.createGain();
+      gain.gain.setValueAtTime(0,ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(1.0,ctx.currentTime+0.04);
+      gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.5);
+      src.connect(bpf);bpf.connect(gain);gain.connect(ctx.destination);
+      src.start(ctx.currentTime);src.stop(ctx.currentTime+0.5);
+    }
   }catch(e){}
+  // Trigger emoji burst from toast position
+  requestAnimationFrame(()=>{
+    const rect=toast.getBoundingClientRect();
+    const cx=rect.left+rect.width/2;
+    const cy=rect.top+rect.height/2;
+    if(window._skalBurstEmoji)showSkalBurst(window._skalBurstEmoji,cx,cy);
+    window._skalBurstEmoji=null;
+  });
   setTimeout(()=>toast.classList.remove('show'),7000);
 }
 
@@ -2185,10 +2214,32 @@ window.openSkalSheet=function(){
   document.getElementById('skal-sheet').classList.add('open');
 };
 
+// Burst particles from a screen position
+function showSkalBurst(emoji,cx,cy){
+  const count=12;
+  for(let i=0;i<count;i++){
+    const p=document.createElement('div');
+    const angle=(i/count)*360+(Math.random()-0.5)*20;
+    const dist=60+Math.random()*80;
+    const dur=0.8+Math.random()*0.6;
+    const size=18+Math.random()*16;
+    p.textContent=emoji;
+    p.style.cssText=`position:fixed;left:${cx}px;top:${cy}px;font-size:${size}px;z-index:9999;pointer-events:none;transform:translate(-50%,-50%);transition:transform ${dur}s ease-out,opacity ${dur*0.5}s ease-in ${dur*0.5}s;`;
+    document.body.appendChild(p);
+    const rad=angle*Math.PI/180;
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      p.style.transform=`translate(calc(-50% + ${Math.cos(rad)*dist}px),calc(-50% + ${Math.sin(rad)*dist}px))`;
+      p.style.opacity='0';
+    }));
+    setTimeout(()=>p.remove(),(dur+0.1)*1000);
+  }
+}
+
 window.sendCategorySkal=async function(catName,emoji){
   if(!state.sessionId)return;
   const text=`${emoji} Skål for ${catName}!`;
   const sender=state.participantName||'En deltaker';
+  window._skalBurstEmoji=emoji; // store for burst after toast shows
   await set(ref(db,`sessions/${state.sessionId}/skals/${generateId()}`),{text,participantName:sender,at:Date.now()});
   state.lastSkalSentAt=Date.now();
   document.getElementById('skal-sheet').classList.remove('open');
@@ -2323,7 +2374,7 @@ function renderJudgeBreakdown(containerId, session) {
 
   stats.forEach((judge, i) => {
     const div = document.createElement('div');
-    div.style.cssText = 'background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;';
+    div.style.cssText = 'background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;max-width:480px;margin-left:auto;margin-right:auto;';
     const medal = i < 3 ? medals[i] : `#${i+1}`;
     const topStr = judge.subjectScores.slice(0, 3).map((s, si) =>
       `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-top:1px solid var(--border);">
@@ -2418,9 +2469,8 @@ function buildCategoryBreakdown(session) {
       <div class="cat-breakdown-header">
         <div class="cat-breakdown-rank" style="color:${i===0?'var(--gold)':i===1?'var(--silver)':i===2?'var(--bronze)':'var(--muted)'}">${rankMedal}</div>
         <div class="cat-breakdown-name">${cat.name}</div>
-        <div>
-          <div class="cat-breakdown-avg">${cat.avg.toFixed(1)}</div>
-          <div class="cat-breakdown-max">/ ${cat.max} snitt</div>
+        <div style="white-space:nowrap;text-align:right;">
+          <span class="cat-breakdown-avg">${cat.avg.toFixed(1)}</span><span class="cat-breakdown-max"> / ${cat.max} snitt</span>
         </div>
       </div>
       <div class="cat-breakdown-bar">
