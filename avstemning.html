@@ -1328,15 +1328,13 @@ function watchSkals(){
   // onChildAdded fires once per new skål - no need to sort or filter
   onChildAdded(ref(db,`sessions/${state.sessionId}/skals`),snap=>{
     if(!snap.exists())return;
-    const skål=snap.val();
-    if(Date.now()-skål.at>8000)return; // skip old skåls on load
-    if(skål.at<=lastShownSkalAt)return;
-    lastShownSkalAt=skål.at;
-    // Store emoji for burst (works for all clients now)
-    if(skål.emoji)window._skalBurstEmoji=skål.emoji;
-    showSkalToast(skål.text,skål.participantName);
-    // Track skål activity
-    trackActivity(skål.participantName,'skal');
+    const skalData=snap.val();
+    if(Date.now()-skalData.at>8000)return;
+    if(skalData.at<=lastShownSkalAt)return;
+    lastShownSkalAt=skalData.at;
+    if(skalData.emoji)window._skalBurstEmoji=skalData.emoji;
+    showSkalToast(skalData.text,skalData.participantName);
+    trackActivity(skalData.participantName,'skal');
   });
 }
 
@@ -1450,10 +1448,10 @@ function showVotingScreen(session){
     if(state.timerInterval){clearInterval(state.timerInterval);state.timerInterval=null;}
     if(remainingSecs>3){
       const bonusLbSecs=(session.leaderboardSeconds||60)+remainingSecs;
-      // Write bonus to Firebase first so all clients get it
-      await update(ref(db,`sessions/${state.sessionId}`),{leaderboardSeconds:bonusLbSecs});
+      // Write bonus to Firebase then advance
       const sessionWithBonus=Object.assign({},session,{leaderboardSeconds:bonusLbSecs});
-      advanceSubject(state.sessionId,sessionWithBonus,idx);
+      update(ref(db,`sessions/${state.sessionId}`),{leaderboardSeconds:bonusLbSecs})
+        .then(()=>advanceSubject(state.sessionId,sessionWithBonus,idx));
     } else {
       advanceSubject(state.sessionId,session,idx);
     }
