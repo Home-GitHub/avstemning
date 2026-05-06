@@ -175,8 +175,8 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
 .btn-sm{padding:8px 16px;width:auto;font-size:13px;border-radius:8px;}
 
 /* EMOJI PICKER (join screen) */
-.emoji-grid{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
-.emoji-opt{width:46px;height:46px;border-radius:12px;background:rgba(255,255,255,0.04);border:1.5px solid transparent;display:flex;align-items:center;justify-content:center;font-size:24px;cursor:pointer;transition:all 0.15s;}
+/* emoji-grid removed - random assignment */
+/* emoji-opt removed */
 .emoji-opt.selected{border-color:var(--accent);background:var(--accent-dim);}
 
 /* LEADERBOARD */
@@ -388,13 +388,11 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
   </div>
   <div class="content">
     <div class="big-title" style="margin-bottom:6px;">Hvem er du?</div>
-    <div class="text-muted" style="margin-bottom:20px;">Velg emoji og skriv inn ditt navn</div>
+    <div class="text-muted" style="margin-bottom:20px;">Skriv inn navnet ditt for å delta</div>
     <div class="card">
-      <label>Velg emoji</label>
-      <div class="emoji-grid" id="emoji-grid"></div>
       <label>Navn</label>
       <input type="text" id="join-name" placeholder="Ditt navn" maxlength="20" autocomplete="off">
-      <div id="join-preview" style="font-size:13px;color:var(--muted);margin-top:-8px;margin-bottom:4px;height:18px;"></div>
+      <div id="join-preview" style="font-size:15px;color:var(--text);margin-top:4px;margin-bottom:4px;height:22px;font-weight:500;"></div>
     </div>
     <button class="btn btn-primary mt-16" data-action="joinSession">Bli med →</button>
     <div id="join-error" style="color:var(--danger);font-size:13px;text-align:center;margin-top:10px;display:none;"></div>
@@ -926,15 +924,15 @@ window.addEventListener('offline',()=>document.getElementById('offline-banner').
 
 // ========== EMOJI PICKER ==========
 function initEmojiPicker(){
-  const grid=document.getElementById('emoji-grid');
-  grid.innerHTML='';
-  EMOJIS.forEach(e=>{
-    const el=document.createElement('div');
-    el.className='emoji-opt'+(e===state.selectedEmoji?' selected':'');
-    el.textContent=e;
-    el.onclick=()=>{state.selectedEmoji=e;document.querySelectorAll('.emoji-opt').forEach(x=>x.classList.remove('selected'));el.classList.add('selected');updateJoinPreview();};
-    grid.appendChild(el);
-  });
+  // Assign a preview emoji when join screen loads (changes on each load)
+  state.selectedEmoji=EMOJIS[Math.floor(Math.random()*EMOJIS.length)];
+  updateJoinPreview();
+  // Live preview as user types
+  const nameInput=document.getElementById('join-name');
+  if(nameInput){
+    nameInput.oninput=updateJoinPreview;
+    nameInput.value='';
+  }
 }
 
 // ========== BACKGROUND ==========
@@ -989,7 +987,7 @@ function initEmojiMenu(){
     const btn=document.createElement('div');
     btn.className='sb-e';
     btn.textContent=r;
-    btn.onclick=()=>sendReaction(r);
+    btn.onclick=()=>window.sendReaction(r);
     list.appendChild(btn);
   });
 }
@@ -1081,7 +1079,7 @@ function playSound(type){
     }
   }catch(e){console.log('Sound error:',e);}
 }
-function updateJoinPreview(){const n=document.getElementById('join-name').value.trim();document.getElementById('join-preview').textContent=n?`Du vises som: ${state.selectedEmoji} ${n}`:'';}
+function updateJoinPreview(){const n=(document.getElementById('join-name')?.value||'').trim();document.getElementById('join-preview').textContent=n?`Du vises som: ${state.selectedEmoji} ${n}`:'';}
 
 // ========== REACTION BAR ==========
 function initReactionBar(){
@@ -1125,7 +1123,7 @@ function showFloatingReaction(emoji,x,y){
 async function init(){
   initEmojiPicker();
   initReactionBar();
-  document.getElementById('join-name').addEventListener('input',updateJoinPreview);
+  // join-name input listener set in initEmojiPicker
 
   const urlParams=new URLSearchParams(window.location.search);
   const slug=urlParams.get('s');
@@ -1142,6 +1140,15 @@ async function init(){
   if(!snap.exists()){showScreen('screen-no-session');return;}
   const session=snap.val();
   applyTheme(session.theme);
+
+  // If session is ended, show final results to anyone (even without saved state)
+  if(session.status==='ended'){
+    if(savedSessionId===slug&&savedParticipantId&&savedParticipantName){
+      state.participantId=savedParticipantId;state.participantName=savedParticipantName;
+    }
+    showFinalLeaderboard(session);
+    return;
+  }
 
   if(savedSessionId===slug&&savedParticipantId&&savedParticipantName){
     const pSnap=await get(ref(db,`sessions/${slug}/participants/${savedParticipantId}`));
@@ -1183,15 +1190,23 @@ window.joinSession=async function(){
   const errEl=document.getElementById('join-error');
   errEl.style.display='none';
   if(!name){errEl.textContent='Skriv inn et navn';errEl.style.display='block';return;}
-  const displayName=`${state.selectedEmoji} ${name}`;
-  const participantId=safeKey(displayName);
-  try{
-    const result=await runTransaction(ref(db,`sessions/${state.sessionId}/participants/${participantId}`),current=>{
-      if(current!==null)return;
-      return{name:displayName,joinedAt:Date.now()};
-    });
-    if(!result.committed){errEl.textContent='Dette navnet er allerede tatt – prøv en annen kombinasjon';errEl.style.display='block';return;}
-  }catch(e){errEl.textContent='Noe gikk galt, prøv igjen';errEl.style.display='block';return;}
+  // Try up to 8 random emojis to avoid collisions
+  let committed=false;
+  let displayName='';
+  const shuffled=[...EMOJIS].sort(()=>Math.random()-0.5);
+  for(let i=0;i<Math.min(8,shuffled.length);i++){
+    const emoji=shuffled[i];
+    displayName=`${emoji} ${name}`;
+    const participantId=safeKey(displayName);
+    try{
+      const result=await runTransaction(ref(db,`sessions/${state.sessionId}/participants/${participantId}`),current=>{
+        if(current!==null)return; // abort if taken
+        return{name:displayName,joinedAt:Date.now()};
+      });
+      if(result.committed){committed=true;break;}
+    }catch(e){continue;}
+  }
+  if(!committed){errEl.textContent='Noe gikk galt, prøv igjen med et annet navn';errEl.style.display='block';return;}
   state.participantId=participantId;state.participantName=displayName;
   ls('sessionId',state.sessionId);ls('participantId',participantId);ls('participantName',displayName);
   startSessionListener();
@@ -1320,6 +1335,7 @@ function showVotingScreen(session){
     state.urgentSoundPlayed = false;
     eventQueue = []; // clear pending events
     playSound('newSubject'); // play sound for new subject
+    initEmojiMenu(); // populate emoji sidebar for this screen
   }
   updateProgressDots(idx,subjects.length,'progress-dots');
   updateProgressDots(idx,subjects.length,'submitted-dots');
@@ -1588,7 +1604,7 @@ function showLeaderboardScreen(session){
     // Countdown
     if(sliceMs>0){
       let r=Math.floor(sliceMs/1000);
-      const countEl=view==='toplist'?document.getElementById('lb-countdown'):document.getElementById('cat-lb-next-msg');
+      const countEl=view==='toplist'?document.getElementById('lb-countdown'):view==='judges'?document.getElementById('judge-lb-next-msg'):document.getElementById('cat-lb-next-msg');
       if(countEl){
         countEl.textContent=`${nextLabel} om ${formatTime(r)}`;
         const iv=setInterval(()=>{
@@ -1674,8 +1690,8 @@ function renderLeaderboard(containerId,scores){
 
 // ========== FINAL LEADERBOARD ==========
 function showFinalLeaderboard(session){
-  if(finalShown)return;
-  finalShown=true;
+  if(state.finalShown)return;
+  state.finalShown=true;
   const subjects=session.subjects?Object.values(session.subjects):[];
   const cats=session.categories?Object.values(session.categories):[];
   const votes=session.votes||{};
