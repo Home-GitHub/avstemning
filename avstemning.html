@@ -1190,20 +1190,23 @@ window.joinSession=async function(){
   const errEl=document.getElementById('join-error');
   errEl.style.display='none';
   if(!name){errEl.textContent='Skriv inn et navn';errEl.style.display='block';return;}
-  // Try up to 8 random emojis to avoid collisions
+  // participantId uses only the name (no emoji) as Firebase key
+  // emoji is stored in displayName only
+  const baseKey=safeKey(name);
+  const shuffled=[...EMOJIS].sort(()=>Math.random()-0.5);
   let committed=false;
   let displayName='';
-  const shuffled=[...EMOJIS].sort(()=>Math.random()-0.5);
+  let participantId='';
   for(let i=0;i<Math.min(8,shuffled.length);i++){
     const emoji=shuffled[i];
-    displayName=`${emoji} ${name}`;
-    const participantId=safeKey(displayName);
+    const candidateId=`${baseKey}_${emoji.codePointAt(0).toString(36)}`;
+    const candidateName=`${emoji} ${name}`;
     try{
-      const result=await runTransaction(ref(db,`sessions/${state.sessionId}/participants/${participantId}`),current=>{
+      const result=await runTransaction(ref(db,`sessions/${state.sessionId}/participants/${candidateId}`),current=>{
         if(current!==null)return; // abort if taken
-        return{name:displayName,joinedAt:Date.now()};
+        return{name:candidateName,joinedAt:Date.now()};
       });
-      if(result.committed){committed=true;break;}
+      if(result.committed){committed=true;displayName=candidateName;participantId=candidateId;break;}
     }catch(e){continue;}
   }
   if(!committed){errEl.textContent='Noe gikk galt, prøv igjen med et annet navn';errEl.style.display='block';return;}
