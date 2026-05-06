@@ -797,7 +797,7 @@ var _proxyHandler = function(name) {
     }
   };
 };
-var _fns = ['showAdminLoginSheet','loginFromSheet','openSkalSheet','joinSession','submitVote','toggleEmojiMenu','toggleGlobalEmoji',
+var _fns = ['showAdminLoginSheet','loginFromSheet','openSkalSheet','joinSession','submitVote','toggleEmojiMenu','toggleGlobalEmoji','sendReaction',
   'openGear','closeGear','showQrSheet','startSession','togglePause','togglePauseWithMessage',
   'forceNext','goBack','jumpToSubject','updateMinutes','updateLbSecs','addTime',
   'sendUserSkal','sendAutoSkal','shuffleBlindtest','lockBlindtest','revealBlindtest',
@@ -1023,7 +1023,8 @@ function initGlobalEmojiMenu(){
     const btn=document.createElement('div');
     btn.className='sb-e';
     btn.textContent=r;
-    btn.onclick=()=>sendReaction(r);
+    btn.setAttribute('data-emoji',r);
+    btn.onclick=()=>{ if(window.sendReaction)window.sendReaction(r); };
     list.appendChild(btn);
   });
 }
@@ -1104,7 +1105,7 @@ function initReactionBar(){
   });
 }
 
-async function sendReaction(emoji){
+window.sendReaction = async function sendReaction(emoji){
   if(state.reactionCooldown||!state.sessionId)return;
   state.reactionCooldown=true;
   setTimeout(()=>state.reactionCooldown=false,5000);
@@ -1462,6 +1463,12 @@ function startTimer(session){
   if(state.timerInterval)clearInterval(state.timerInterval);
   state.timerEnd=session.timerEnd||Date.now();
   const total=(session.minutesPerSubject||3)*60;
+  // ALL clients schedule watchdog so advance always happens even if admin refreshes
+  const idx=session.currentSubjectIndex||0;
+  if(state.lastWatchdogSubject!==idx){
+    state.lastWatchdogSubject=idx;
+    scheduleWatchdog(state.sessionId,state.timerEnd,session.minutesPerSubject,idx);
+  }
   function tick(){
     if(session.paused)return;
     const now=Date.now();
@@ -1506,6 +1513,12 @@ function scheduleWatchdog(sessionId,timerEnd,minutes,subjectIndex){
 }
 
 async function advanceSubject(sessionId,session,idx){
+  // Guard: only advance if we're still on this subject in voting state
+  const current=await get(ref(db,`sessions/${sessionId}`));
+  if(!current.exists())return;
+  const cur=current.val();
+  if(cur.status!=='voting'||cur.currentSubjectIndex!==idx)return; // another client already advanced
+  
   const subjects=session.subjects?Object.values(session.subjects):[];
   const nextIdx=idx+1;
   const lbSecs=session.leaderboardSeconds||0;
