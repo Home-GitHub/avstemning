@@ -103,7 +103,8 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .sb-e:active{transform:scale(0.85);}
 .final-fans{display:flex;justify-content:center;gap:24px;margin-top:10px;flex-wrap:wrap;}
 .final-fans-col{display:flex;flex-direction:column;align-items:center;gap:4px;}
-.fan-name{font-size:12px;color:rgba(255,255,255,0.6);background:rgba(255,255,255,0.06);padding:3px 10px;border-radius:20px;}
+.fan-name{font-size:12px;color:rgba(255,255,255,0.6);background:rgba(255,255,255,0.06);padding:3px 10px;border-radius:20px;display:flex;align-items:center;gap:6px;}
+.fan-score{color:var(--accent);font-weight:600;font-size:11px;}
 @keyframes floatUp{
   0%{opacity:0;transform:translateX(-50%) translateY(0) scale(0.5);}
   15%{opacity:1;transform:translateX(-50%) translateY(-20px) scale(1.1);}
@@ -261,9 +262,9 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
 .toast.show{opacity:1;transform:translateX(-50%) translateY(-8px);}
 
 /* SKÅL TOAST */
-.skal-toast{position:fixed;top:70px;left:50%;transform:translateX(-50%) scale(0.85);background:rgba(0,0,0,0.95);border:1.5px solid var(--accent);border-radius:18px;padding:16px 20px;font-size:15px;font-weight:500;z-index:300;box-shadow:0 8px 40px rgba(0,0,0,0.7),0 0 30px var(--accent-dim);max-width:340px;width:90%;text-align:center;opacity:0;transition:opacity 0.3s,transform 0.3s;pointer-events:none;color:var(--text);}
+.skal-toast{position:fixed;top:70px;left:10%;transform:scale(0.85);background:rgba(0,0,0,0.95);border:1.5px solid var(--accent);border-radius:18px;padding:16px 20px;font-size:15px;font-weight:500;z-index:300;box-shadow:0 8px 40px rgba(0,0,0,0.7),0 0 30px var(--accent-dim);max-width:300px;width:80%;text-align:center;opacity:0;transition:opacity 0.3s,transform 0.3s;pointer-events:none;color:var(--text);}
 .skal-toast::before{content:"🥂 SKÅL! 🥂";display:block;font-size:12px;color:var(--accent);font-weight:700;letter-spacing:2px;margin-bottom:8px;}
-.skal-toast.show{opacity:1;transform:translateX(-50%) scale(1);}
+.skal-toast.show{opacity:1;transform:scale(1);}
 .skal-sender{font-size:12px;color:var(--muted);margin-top:8px;font-style:italic;}
 
 /* EVENT OVERLAY */
@@ -732,11 +733,10 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
 <div class="sheet-bg" id="skal-sheet">
   <div class="sheet">
     <div class="sheet-handle"></div>
-    <div class="sheet-title">🥂 Send en skål</div>
-    <input class="manual-add-input" type="text" id="skal-input" placeholder="Skriv din skål her..." maxlength="100">
-    <div style="font-size:11px;color:var(--muted);margin-bottom:14px;">Vises for alle deltakere</div>
-    <button class="btn btn-primary" data-action="sendUserSkal">Send skål 🥂</button>
-    <button class="btn btn-secondary mt-8" onclick="document.getElementById('skal-sheet').classList.remove('open')">Avbryt</button>
+    <div class="sheet-title">🥂 Skål for...</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:14px;">Velg en kategori</div>
+    <div id="skal-category-list" style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;"></div>
+    <button class="btn btn-secondary" onclick="document.getElementById('skal-sheet').classList.remove('open')">Avbryt</button>
   </div>
 </div>
 
@@ -794,7 +794,7 @@ import { getDatabase, ref, set, get, update, onValue, onChildAdded, remove, runT
 // Make all window functions available immediately
 Object.defineProperty(window, '__moduleReady', { value: true });
 
-const VERSION = 'Avstemning v1.4';
+const VERSION = 'Avstemning v1.5';
 console.log(VERSION);
 
 const FIREBASE_CONFIG = {
@@ -1116,13 +1116,40 @@ window.sendReaction = async function sendReaction(emoji){
 }
 
 function showFloatingReaction(emoji,senderName){
-  const spread=(Math.random()-0.5)*60; // -30% to +30% spread from center
-  const el=document.createElement('div');
-  el.className='floating-reaction';
-  el.style.cssText=`position:fixed;left:calc(50% + ${spread}vw);bottom:80px;z-index:9999;pointer-events:none;transform:translateX(-50%);`;
-  el.innerHTML=`<div class="fr-emoji">${emoji}</div>${senderName?`<div class="fr-name">${senderName}</div>`:''}`;
-  document.body.appendChild(el);
-  setTimeout(()=>el.remove(),3000);
+  const count=10;
+  const container=document.createElement('div');
+  container.style.cssText='position:fixed;left:50%;bottom:0;z-index:9999;pointer-events:none;transform:translateX(-50%);';
+  // Sender name label
+  if(senderName){
+    const lbl=document.createElement('div');
+    lbl.className='fr-name-label';
+    lbl.textContent=senderName;
+    lbl.style.cssText='position:absolute;bottom:8px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:13px;font-weight:600;color:rgba(255,255,255,0.9);text-shadow:0 2px 6px rgba(0,0,0,0.9);background:rgba(0,0,0,0.5);padding:3px 10px;border-radius:20px;';
+    container.appendChild(lbl);
+  }
+  // Confetti particles
+  for(let i=0;i<count;i++){
+    const p=document.createElement('div');
+    const angle=-90+(Math.random()-0.5)*120; // mostly upward, spread 60deg each side
+    const distance=40+Math.random()*55; // vw units
+    const duration=1.8+Math.random()*1.2;
+    const delay=Math.random()*0.3;
+    const size=24+Math.random()*20;
+    p.textContent=emoji;
+    p.style.cssText=`position:absolute;bottom:40px;left:0;font-size:${size}px;opacity:1;`;
+    p.style.transition=`transform ${duration}s ease-out ${delay}s, opacity ${duration*0.4}s ease-in ${delay+duration*0.6}s`;
+    container.appendChild(p);
+    // Trigger animation after paint
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      const rad=angle*(Math.PI/180);
+      const dx=Math.cos(rad)*distance;
+      const dy=Math.sin(rad)*distance;
+      p.style.transform=`translate(${dx}vw,${-Math.abs(dy)}vh) rotate(${(Math.random()-0.5)*360}deg)`;
+      p.style.opacity='0';
+    }));
+  }
+  document.body.appendChild(container);
+  setTimeout(()=>container.remove(),3500);
 }
 
 // ========== INIT ==========
@@ -1378,11 +1405,7 @@ function showVotingScreen(session){
       advanceSubject(state.sessionId,session,idx);
     }
   }
-  // First in event
-  if(vCount===1&&state.lastFirstInSubject!==idx){
-    const firstVoter=votes[voteKey]?Object.values(votes[voteKey])[0]:null;
-    if(firstVoter){state.lastFirstInSubject=idx;showEvent('⚡','Første inn!',firstVoter.participantName||'Noen');}
-  }
+  // First in event removed
   // All agreed event
   checkAllAgreed(session,idx);
   if(session.minutesPerSubject>0){
@@ -1394,12 +1417,10 @@ function showVotingScreen(session){
     document.getElementById('submitted-bar').style.width='100%';
   }
   if(hasVoted){
-    // If all voted, leaderboard is imminent - skip submitted screen
+    // If all voted, leaderboard is imminent - show transition
+    showScreen('screen-submitted');
     if(pCount>=2&&vCount>=pCount){
-      showScreen('screen-submitted');
-      document.getElementById('submitted-voter-count').textContent='Går til leaderboard...';
-    } else {
-      showScreen('screen-submitted');
+      document.getElementById('submitted-voter-count').textContent='⚡ Alle har stemt!';
     }
   }
   else{loadDraft(idx,session);buildVotingCategories(session);showScreen('screen-voting');}
@@ -1566,11 +1587,8 @@ function scheduleWatchdog(sessionId,timerEnd,minutes,subjectIndex){
 }
 
 async function advanceSubject(sessionId,session,idx){
-  // Guard: only advance if we're still on this subject in voting state
-  const current=await get(ref(db,`sessions/${sessionId}`));
-  if(!current.exists())return;
-  const cur=current.val();
-  if(cur.status!=='voting'||cur.currentSubjectIndex!==idx)return; // another client already advanced
+  // Optimistic advance - write directly, Firebase will ignore if already advanced
+  // We use a transaction-like approach: only update if status is still 'voting'
   
   const subjects=session.subjects?Object.values(session.subjects):[];
   const nextIdx=idx+1;
@@ -1791,9 +1809,20 @@ function showFinalLeaderboard(session){
           });
           return bestSubjectIdx===winnerVoteKey&&bestScore>0;
         }).map(([pid,p])=>p.name||pid);
-        const halfL=fans.slice(0,Math.ceil(fans.length/2));
-        const halfR=fans.slice(Math.ceil(fans.length/2));
-        const fanHtml=fans.length>0?`<div class="final-fans"><div class="final-fans-col">${halfL.map(n=>`<div class="fan-name">${n}</div>`).join('')}</div><div class="final-fans-col">${halfR.map(n=>`<div class="fan-name">${n}</div>`).join('')}</div></div>`:'';
+        // Add score for each fan
+        const fanDetails=fans.map(name=>{
+          const pid=Object.keys(session.participants||{}).find(p=>session.participants[p].name===name);
+          if(!pid)return{name,score:0};
+          let score=0;
+          catList.forEach(cat=>{
+            const v=votes[winnerVoteKey]&&votes[winnerVoteKey][pid];
+            if(v)score+=((v.votes&&v.votes[cat.name])||0)*(cat.weight||1);
+          });
+          return{name,score:Math.round(score)};
+        });
+        const halfL=fanDetails.slice(0,Math.ceil(fanDetails.length/2));
+        const halfR=fanDetails.slice(Math.ceil(fanDetails.length/2));
+        const fanHtml=fanDetails.length>0?`<div class="final-fans"><div class="final-fans-col">${halfL.map(f=>`<div class="fan-name">${f.name} <span class="fan-score">${f.score}p</span></div>`).join('')}</div><div class="final-fans-col">${halfR.map(f=>`<div class="fan-name">${f.name} <span class="fan-score">${f.score}p</span></div>`).join('')}</div></div>`:'';
         div.innerHTML=`<div class="final-winner-emoji">🥇</div><div class="final-winner-name">${item.name}</div><div class="final-winner-score" id="final-score-0">0</div><div style="font-size:12px;color:var(--muted);margin-top:4px;">poeng totalt</div>${fanHtml}`;
         container.appendChild(div);
         animateCount('final-score-0',0,Math.round(item.total),1200);
@@ -2061,19 +2090,35 @@ function showSkalToast(text,sender){
   document.getElementById('skal-text').textContent=text;
   document.getElementById('skal-sender').textContent=sender?`— ${sender}`:'';
   const toast=document.getElementById('skal-toast');
+  // Random position on screen
+  const top=15+Math.random()*55; // 15% to 70% from top
+  const left=5+Math.random()*50; // 5% to 55% from left (keeping it mostly visible)
+  toast.style.top=`${top}vh`;
+  toast.style.left=`${left}vw`;
+  toast.style.transform='scale(0.85)';
   toast.classList.add('show');
-  // Play clinking sound
+  // Bruse-lyd (white noise burst)
   try{
     const ctx=new(window.AudioContext||window.webkitAudioContext)();
-    const osc=ctx.createOscillator();
+    // White noise burst
+    const bufSize=ctx.sampleRate*0.4;
+    const buf=ctx.createBuffer(1,bufSize,ctx.sampleRate);
+    const data=buf.getChannelData(0);
+    for(let i=0;i<bufSize;i++)data[i]=(Math.random()*2-1);
+    const src=ctx.createBufferSource();
+    src.buffer=buf;
+    // Bandpass filter for fizz character
+    const bpf=ctx.createBiquadFilter();
+    bpf.type='bandpass';
+    bpf.frequency.setValueAtTime(800,ctx.currentTime);
+    bpf.frequency.linearRampToValueAtTime(3000,ctx.currentTime+0.15);
+    bpf.Q.value=0.5;
     const gain=ctx.createGain();
-    osc.connect(gain);gain.connect(ctx.destination);
-    osc.frequency.setValueAtTime(880,ctx.currentTime);
-    osc.frequency.setValueAtTime(1100,ctx.currentTime+0.1);
-    osc.frequency.setValueAtTime(880,ctx.currentTime+0.2);
-    gain.gain.setValueAtTime(0.3,ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.5);
-    osc.start(ctx.currentTime);osc.stop(ctx.currentTime+0.5);
+    gain.gain.setValueAtTime(0,ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.7,ctx.currentTime+0.05);
+    gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.4);
+    src.connect(bpf);bpf.connect(gain);gain.connect(ctx.destination);
+    src.start(ctx.currentTime);src.stop(ctx.currentTime+0.4);
   }catch(e){}
   setTimeout(()=>toast.classList.remove('show'),7000);
 }
@@ -2098,24 +2143,59 @@ window.loginFromSheet=async function(){
   document.getElementById("admin-login-btn-wrap").style.display="none";
   showToast("Innlogget som admin ✓");
 };
+// Map category names to emojis
+function getCatEmoji(name){
+  const n=name.toLowerCase();
+  if(/sang|vokal|musikk|melodi|låt/.test(n))return'🎵';
+  if(/dans|koreografi|beveg/.test(n))return'💃';
+  if(/antrekk|kostyme|klær|dress/.test(n))return'👗';
+  if(/scene|show|fremf|perform/.test(n))return'🎭';
+  if(/lys|effekt|pyro|glitter/.test(n))return'✨';
+  if(/tekst|lyrik|ord/.test(n))return'📝';
+  if(/humor|moro|gøy|latter/.test(n))return'😂';
+  if(/trykk|energi|kraft|power/.test(n))return'⚡';
+  if(/total|helhet|overall/.test(n))return'🏆';
+  if(/mgp|euro|finale/.test(n))return'🎤';
+  return'🥂';
+}
+
 window.openSkalSheet=function(){
   const now=Date.now();
-  const cooldown=30000; // 30 sec cooldown per person
+  const cooldown=30000;
   if(now-state.lastSkalSentAt<cooldown){
     const remaining=Math.ceil((cooldown-(now-state.lastSkalSentAt))/1000);
     showToast(`Vent ${remaining} sek før neste skål`);return;
   }
+  // Build category buttons from session
+  const cats=state.session&&state.session.categories?Object.values(state.session.categories):[];
+  const list=document.getElementById('skal-category-list');
+  list.innerHTML='';
+  cats.forEach(cat=>{
+    const emoji=getCatEmoji(cat.name);
+    const btn=document.createElement('button');
+    btn.className='btn btn-primary';
+    btn.style.cssText='font-size:16px;padding:14px;';
+    btn.textContent=`${emoji} ${cat.name}`;
+    btn.onclick=()=>window.sendCategorySkal(cat.name,emoji);
+    list.appendChild(btn);
+  });
+  if(!cats.length){
+    list.innerHTML='<div style="color:var(--muted);text-align:center;">Ingen kategorier tilgjengelig</div>';
+  }
   document.getElementById('skal-sheet').classList.add('open');
 };
 
-window.sendUserSkal=async function(){
-  const text=document.getElementById('skal-input').value.trim();
-  if(!text)return;
-  await set(ref(db,`sessions/${state.sessionId}/skals/${generateId()}`),{text,participantName:state.participantName,at:Date.now()});
+window.sendCategorySkal=async function(catName,emoji){
+  if(!state.sessionId)return;
+  const text=`${emoji} Skål for ${catName}!`;
+  const sender=state.participantName||'En deltaker';
+  await set(ref(db,`sessions/${state.sessionId}/skals/${generateId()}`),{text,participantName:sender,at:Date.now()});
   state.lastSkalSentAt=Date.now();
-  document.getElementById('skal-input').value='';
   document.getElementById('skal-sheet').classList.remove('open');
 };
+
+// Keep sendUserSkal as alias for backwards compat
+window.sendUserSkal=window.sendCategorySkal;
 
 window.sendAutoSkal=async function(){
   if(!state.session)return;
@@ -2177,7 +2257,7 @@ window.sendAutoSkal=async function(){
       if(name){text=t.text.replace('[navn]',name);state.lastSkalReceiver=name;}
     }
   }
-  await set(ref(db,`sessions/${state.sessionId}/skals/${generateId()}`),{text,participantName:'🤖 Auto-skål',at:Date.now()});
+  await set(ref(db,`sessions/${state.sessionId}/skals/${generateId()}`),{text,participantName:session.name||'🥂',at:Date.now()});
 };
 
 function showLeaderboardSkal(session,idx){
