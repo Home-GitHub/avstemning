@@ -82,35 +82,16 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .content{flex:1;padding:18px 14px;overflow-y:auto;}
 
 /* GLOBAL SIDEBAR - visible on all screens except waiting */
-.global-sidebar{
-  position:fixed;
-  left:0;top:0;bottom:0;
-  width:48px;
-  background:rgba(0,0,0,0.4);
-  border-right:0.5px solid rgba(255,255,255,0.06);
-  display:none;
-  flex-direction:column;
-  align-items:center;
-  padding:10px 0;
-  z-index:15;
-  backdrop-filter:blur(8px);
-}
+.global-sidebar{position:fixed;left:0;top:0;bottom:0;width:56px;display:none;flex-direction:column;align-items:center;padding:20px 0 12px;gap:6px;background:rgba(0,0,0,0.35);border-right:0.5px solid rgba(255,255,255,0.05);z-index:200;}
 .global-sidebar.visible{display:flex;}
-.screens-with-sidebar{padding-left:48px;}
+.screens-with-sidebar{padding-left:56px;}
 
 /* VOTING BODY: sidebar + categories */
 .voting-body{display:flex;flex:1;overflow:hidden;}
 
 /* SIDEBAR */
-.voting-sidebar{
-  width:44px;
-  background:rgba(0,0,0,0.25);
-  border-right:0.5px solid rgba(255,255,255,0.05);
-  display:flex;flex-direction:column;align-items:center;
-  padding:10px 0;
-  flex-shrink:0;
-}
-.sb-item{width:32px;height:32px;border-radius:10px;background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;transition:all 0.15s;}
+/* voting-sidebar removed */
+.sb-item{width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;transition:all 0.15s;}
 .sb-item:active{transform:scale(0.88);}
 .sb-skal{border-color:rgba(255,255,255,0.15);background:var(--accent-dim);}
 .sb-divider{width:22px;height:0.5px;background:rgba(255,255,255,0.08);margin:6px 0;}
@@ -118,20 +99,20 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .sb-emoji-toggle.open{background:var(--accent-dim);border-color:rgba(255,255,255,0.15);}
 .sb-emoji-list{display:flex;flex-direction:column;gap:3px;overflow:hidden;max-height:0;transition:max-height 0.25s ease,opacity 0.25s;opacity:0;}
 .sb-emoji-list.open{max-height:200px;opacity:1;}
-.sb-e{width:30px;height:26px;border-radius:7px;font-size:13px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.03);cursor:pointer;transition:all 0.1s;}
+.sb-e{width:40px;height:36px;border-radius:9px;font-size:18px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.03);cursor:pointer;transition:all 0.1s;}
 .sb-e:active{transform:scale(0.85);}
 .sb-admin-divider{width:22px;height:0.5px;background:rgba(255,255,255,0.08);margin:6px 0;display:none;}
 .is-admin .sb-admin-divider{display:block;}
 .sb-admin-btn{display:none;}
 .is-admin .sb-admin-btn{display:flex;}
 .sb-send{
-  width:32px;margin-top:auto;margin-bottom:4px;
-  border-radius:10px;
+  width:44px;margin-top:auto;margin-bottom:8px;
+  border-radius:12px;
   background:var(--accent);color:#080808;
-  font-size:8px;font-weight:700;
+  font-size:9px;font-weight:700;
   writing-mode:vertical-rl;letter-spacing:0.8px;
-  padding:12px 0;
-  display:flex;align-items:center;justify-content:center;
+  padding:14px 0;
+  display:none;align-items:center;justify-content:center;
   cursor:pointer;transition:all 0.15s;
 }
 .sb-send:active{transform:scale(0.95);}
@@ -337,8 +318,10 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
   <div class="sb-item sb-emoji-toggle" id="global-emoji-toggle" data-action="toggleGlobalEmoji">😊</div>
   <div class="sb-emoji-list" id="global-emoji-list"></div>
   <div class="sb-admin-divider"></div>
-  <div class="sb-item sb-admin-btn" id="global-pause-btn" data-action="togglePause">⏸</div>
   <div class="sb-item sb-admin-btn" data-action="openGear">⚙️</div>
+  <div class="sb-item sb-admin-btn" id="global-pause-btn" data-action="togglePause">⏸</div>
+  <div class="sb-item sb-admin-btn sb-next" data-action="forceNext">➡️</div>
+  <div class="sb-send" id="submit-vote-btn" data-action="submitVote">✓<br>SEND</div>
 </div>
 
 <!-- TOAST -->
@@ -383,7 +366,7 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
     </div>
     <div class="header-right">
       <div class="icon-btn" data-action="showQrSheet">📱</div>
-      <div class="icon-btn admin-only" id="gear-join" data-action="openGear">⚙️</div>
+      
     </div>
   </div>
   <div class="content">
@@ -403,7 +386,7 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
 <div id="screen-waiting" class="screen">
   <div class="header">
     <div class="header-left" style="display:flex;align-items:center;gap:10px;">
-      <div class="icon-btn" data-action="openSkalSheet" style="flex-shrink:0;">🥂</div>
+      
       <div>
         <div class="header-title" id="waiting-title">Ølsmaking</div>
         <div class="header-sub" id="waiting-sub">Venterom</div>
@@ -411,7 +394,7 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
     </div>
     <div class="header-right">
       <div class="icon-btn" data-action="showQrSheet">📱</div>
-      <div class="icon-btn admin-only" data-action="openGear">⚙️</div>
+      
     </div>
   </div>
   <div class="content">
@@ -450,16 +433,6 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
     <div class="voting-dots" id="progress-dots"></div>
   </div>
   <div class="voting-body">
-    <div class="voting-sidebar" id="voting-sidebar">
-      <div class="sb-item sb-skal" data-action="openSkalSheet">🥂</div>
-      <div class="sb-divider"></div>
-      <div class="sb-item sb-emoji-toggle" id="emoji-toggle-btn" data-action="toggleEmojiMenu">😊</div>
-      <div class="sb-emoji-list" id="emoji-menu-list"></div>
-      <div class="sb-admin-divider"></div>
-      <div class="sb-item sb-admin-btn" id="pause-btn" data-action="togglePause">⏸</div>
-      <div class="sb-item sb-admin-btn" data-action="openGear">⚙️</div>
-      <div class="sb-send" id="submit-vote-btn" data-action="submitVote">✓<br>SEND</div>
-    </div>
     <div class="voting-categories" id="voting-categories"></div>
   </div>
   <div id="vote-error" style="color:var(--danger);font-size:13px;text-align:center;padding:8px;display:none;"></div>
@@ -493,7 +466,7 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
 <div id="screen-leaderboard" class="screen">
   <div class="header">
     <div class="header-left" style="display:flex;align-items:center;gap:10px;">
-      <div class="icon-btn" data-action="openSkalSheet" style="flex-shrink:0;">🥂</div>
+      
       <div>
         <div class="header-title">Resultater</div>
         <div class="header-sub" id="lb-sub">Etter emne 1</div>
@@ -501,7 +474,7 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
     </div>
     <div class="header-right">
       <span class="badge badge-live"><span class="live-dot"></span>Live</span>
-      <div class="icon-btn admin-only" data-action="openGear">⚙️</div>
+      
     </div>
   </div>
   <div class="content">
@@ -511,7 +484,7 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
     </div>
     <div id="leaderboard-list"></div>
     <div class="admin-only mt-16" style="flex-direction:column;">
-      <button class="btn btn-secondary admin-only" style="display:none;" data-action="forceNext">Neste emne → (tving)</button>
+      
     </div>
   </div>
 </div>
@@ -520,14 +493,14 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
 <div id="screen-category-lb" class="screen">
   <div class="header">
     <div class="header-left" style="display:flex;align-items:center;gap:10px;">
-      <div class="icon-btn" data-action="openSkalSheet" style="flex-shrink:0;">🥂</div>
+      
       <div>
         <div class="header-title" id="cat-lb-title">Kategori-spotlight</div>
         <div class="header-sub" id="cat-lb-sub">Hva syntes dere?</div>
       </div>
     </div>
     <div class="header-right">
-      <div class="icon-btn admin-only" data-action="openGear">⚙️</div>
+      
     </div>
   </div>
   <div class="content">
@@ -535,7 +508,7 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
     <div id="category-spotlight-list"></div>
     <div class="text-muted text-center mt-16" id="cat-lb-next-msg"></div>
     <div class="admin-only mt-16" style="flex-direction:column;">
-      <button class="btn btn-secondary admin-only" style="display:none;" data-action="forceNext">Neste emne → (tving)</button>
+      
     </div>
   </div>
 </div>
@@ -544,21 +517,21 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
 <div id="screen-judge-lb" class="screen">
   <div class="header">
     <div class="header-left" style="display:flex;align-items:center;gap:10px;">
-      <div class="icon-btn" data-action="openSkalSheet" style="flex-shrink:0;">🥂</div>
+      
       <div>
         <div class="header-title" id="judge-lb-title">Dommer-detaljer</div>
         <div class="header-sub" id="judge-lb-sub">Hvem likte hva?</div>
       </div>
     </div>
     <div class="header-right">
-      <div class="icon-btn admin-only" data-action="openGear">⚙️</div>
+      
     </div>
   </div>
   <div class="content">
     <div id="judge-spotlight-list"></div>
     <div class="text-muted text-center mt-16" id="judge-lb-next-msg"></div>
     <div class="admin-only mt-16" style="flex-direction:column;">
-      <button class="btn btn-secondary admin-only" style="display:none;" data-action="forceNext">Neste emne → (tving)</button>
+      
     </div>
   </div>
 </div>
@@ -567,14 +540,14 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
 <div id="screen-final" class="screen">
   <div class="header">
     <div class="header-left" style="display:flex;align-items:center;gap:10px;">
-      <div class="icon-btn" data-action="openSkalSheet" style="flex-shrink:0;">🥂</div>
+      
       <div>
         <div class="header-title">Endelig resultat</div>
         <div class="header-sub" id="final-session-name"></div>
       </div>
     </div>
     <div class="header-right">
-      <div class="icon-btn admin-only" data-action="openGear">⚙️</div>
+      
     </div>
   </div>
   <div class="content">
@@ -804,12 +777,12 @@ _fns.forEach(function(n) { window[n] = _proxyHandler(n); });
 </script>
 <script type="module" id="main-module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, set, get, update, onValue, remove, runTransaction, off } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getDatabase, ref, set, get, update, onValue, onChildAdded, remove, runTransaction, off } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
 // Make all window functions available immediately
 Object.defineProperty(window, '__moduleReady', { value: true });
 
-const VERSION = 'Avstemning v1.1';
+const VERSION = 'Avstemning v1.2';
 console.log(VERSION);
 
 const FIREBASE_CONFIG = {
@@ -866,14 +839,16 @@ function showScreen(id){
   if(!el)return;
   el.classList.add('active');
   const noSidebar=['screen-waiting','screen-join','screen-no-session','screen-admin-login'];
-  const ownSidebar=['screen-voting','screen-submitted'];
-  if(noSidebar.includes(id)||ownSidebar.includes(id)){
+  if(noSidebar.includes(id)){
     hideGlobalSidebar();
   } else {
     showGlobalSidebar();
     el.classList.add('screens-with-sidebar');
     initGlobalEmojiMenu();
   }
+  // Show/hide SEND button only on voting screen
+  const sendBtn=document.getElementById('submit-vote-btn');
+  if(sendBtn)sendBtn.style.display=(id==='screen-voting')?'flex':'none';
 }
 function formatTime(s){if(s<0)s=0;return`${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`;}
 function safeKey(s){return s.replace(/[.#$/\[\]\s]/g,'_');}
@@ -1030,15 +1005,7 @@ function initGlobalEmojiMenu(){
   });
 }
 
-window.toggleEmojiMenu=function(){
-  const list=document.getElementById('emoji-menu-list');
-  const toggle=document.getElementById('emoji-toggle-btn');
-  if(!list)return;
-  const isOpen=list.classList.contains('open');
-  list.classList.toggle('open',!isOpen);
-  list.classList.toggle('closed',isOpen);
-  if(toggle)toggle.classList.toggle('open',!isOpen);
-};
+// toggleEmojiMenu removed - voting-sidebar merged into global-sidebar
 
 // ========== SOUNDS ==========
 let _audioCtx=null;
@@ -1059,19 +1026,40 @@ function playSound(type){
     const osc=ctx.createOscillator();
     const gain=ctx.createGain();
     osc.connect(gain);gain.connect(ctx.destination);
-    if(type==='urgent'){
-      osc.frequency.setValueAtTime(440,ctx.currentTime);
-      osc.frequency.setValueAtTime(880,ctx.currentTime+0.1);
-      gain.gain.setValueAtTime(0.3,ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.4);
-      osc.start();osc.stop(ctx.currentTime+0.4);
-    } else if(type==='newSubject'){
-      osc.frequency.setValueAtTime(523,ctx.currentTime);
-      osc.frequency.setValueAtTime(659,ctx.currentTime+0.1);
-      osc.frequency.setValueAtTime(784,ctx.currentTime+0.2);
+    if(type==='tick10'){
+      // Soft tick at 10 seconds
+      osc.frequency.setValueAtTime(660,ctx.currentTime);
       gain.gain.setValueAtTime(0.2,ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.5);
-      osc.start();osc.stop(ctx.currentTime+0.5);
+      gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.15);
+      osc.start();osc.stop(ctx.currentTime+0.15);
+    } else if(type==='tick7'){
+      // Medium tick at 7 seconds
+      osc.frequency.setValueAtTime(880,ctx.currentTime);
+      gain.gain.setValueAtTime(0.35,ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.2);
+      osc.start();osc.stop(ctx.currentTime+0.2);
+    } else if(type==='tick1'){
+      // Loud urgent tick at 1 second
+      osc.frequency.setValueAtTime(1320,ctx.currentTime);
+      osc.frequency.setValueAtTime(1760,ctx.currentTime+0.08);
+      gain.gain.setValueAtTime(0.6,ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.3);
+      osc.start();osc.stop(ctx.currentTime+0.3);
+    } else if(type==='newSubject'){
+      // Fun fanfare for new subject - 4 ascending notes
+      const freqs=[523,659,784,1047];
+      freqs.forEach((f,i)=>{
+        const o=ctx.createOscillator();
+        const g=ctx.createGain();
+        o.connect(g);g.connect(ctx.destination);
+        o.frequency.setValueAtTime(f,ctx.currentTime+i*0.12);
+        g.gain.setValueAtTime(0,ctx.currentTime+i*0.12);
+        g.gain.linearRampToValueAtTime(0.3,ctx.currentTime+i*0.12+0.05);
+        g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+i*0.12+0.25);
+        o.start(ctx.currentTime+i*0.12);
+        o.stop(ctx.currentTime+i*0.12+0.25);
+      });
+      return; // early return since we used multiple oscs
     } else if(type==='skal'){
       osc.frequency.setValueAtTime(880,ctx.currentTime);
       osc.frequency.setValueAtTime(1100,ctx.currentTime+0.1);
@@ -1080,6 +1068,7 @@ function playSound(type){
       gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.5);
       osc.start();osc.stop(ctx.currentTime+0.5);
     }
+    osc.start();osc.stop(ctx.currentTime+0.5);
   }catch(e){console.log('Sound error:',e);}
 }
 function updateJoinPreview(){const n=(document.getElementById('join-name')?.value||'').trim();document.getElementById('join-preview').textContent=n?`Du vises som: ${state.selectedEmoji} ${n}`:'';}
@@ -1197,7 +1186,8 @@ window.joinSession=async function(){
   // participantId uses only the name (no emoji) as Firebase key
   // emoji is stored in displayName only
   const baseKey=safeKey(name);
-  const shuffled=[...EMOJIS].sort(()=>Math.random()-0.5);
+  const offset=Date.now()%EMOJIS.length;
+const shuffled=[...EMOJIS.slice(offset),...EMOJIS.slice(0,offset)].sort(()=>Math.random()-0.5);
   let committed=false;
   let displayName='';
   let participantId='';
@@ -1235,11 +1225,13 @@ function startSessionListener(){
 
 let lastShownSkalAt=0;
 function watchReactions(){
-  onValue(ref(db,`sessions/${state.sessionId}/reactions`),snap=>{
+  // onChildAdded fires once per new reaction - no need for time filter
+  onChildAdded(ref(db,`sessions/${state.sessionId}/reactions`),snap=>{
     if(!snap.exists())return;
-    const reactions=snap.val();
-    const recent=Object.values(reactions).filter(r=>Date.now()-r.at<3000);
-    recent.forEach(r=>{if(r.participantName!==state.participantName)showFloatingReaction(r.emoji);});
+    const r=snap.val();
+    // Skip reactions older than 5 seconds (e.g. on page load)
+    if(Date.now()-r.at>5000)return;
+    showFloatingReaction(r.emoji);
   });
 }
 
@@ -1340,9 +1332,11 @@ function showVotingScreen(session){
     state.hasVotedCurrentSubject = false;
     state.lastFirstInSubject = null;
     state.urgentSoundPlayed = false;
+    state.tick7Played = false;
+    state.tick1Played = false;
+    state.allVotedAdvanced = false;
     eventQueue = []; // clear pending events
     playSound('newSubject'); // play sound for new subject
-    initEmojiMenu(); // populate emoji sidebar for this screen
   }
   updateProgressDots(idx,subjects.length,'progress-dots');
   updateProgressDots(idx,subjects.length,'submitted-dots');
@@ -1358,6 +1352,15 @@ function showVotingScreen(session){
   const vCount=votes[voteKey]?Object.keys(votes[voteKey]).length:0;
   document.getElementById('voter-count-voting').textContent=`${vCount} av ${pCount} stemt`;
   document.getElementById('submitted-voter-count').textContent=`${vCount} av ${pCount} stemt`;
+  // All voted early - advance immediately with remaining time added to leaderboard
+  if(pCount>=2&&vCount>=pCount&&state.timerEnd&&!state.allVotedAdvanced){
+    state.allVotedAdvanced=true;
+    const remainingSecs=Math.max(0,Math.round((state.timerEnd-Date.now())/1000));
+    if(remainingSecs>3){
+      const sessionWithBonus=Object.assign({},session,{leaderboardSeconds:(session.leaderboardSeconds||60)+remainingSecs});
+      advanceSubject(state.sessionId,sessionWithBonus,idx);
+    }
+  }
   // First in event
   if(vCount===1&&state.lastFirstInSubject!==idx){
     const firstVoter=votes[voteKey]?Object.values(votes[voteKey])[0]:null;
@@ -1497,7 +1500,9 @@ function startTimer(session){
     const now=Date.now();
     const secs=Math.max(0,Math.round((state.timerEnd-now)/1000));
     // Urgent sound at 10 seconds
-    if(secs===10&&!state.urgentSoundPlayed){state.urgentSoundPlayed=true;playSound('urgent');}
+    if(secs===10&&!state.urgentSoundPlayed){state.urgentSoundPlayed=true;playSound('tick10');}
+    if(secs===7&&!state.tick7Played){state.tick7Played=true;playSound('tick7');}
+    if(secs===1&&!state.tick1Played){state.tick1Played=true;playSound('tick1');}
     if(secs>10)state.urgentSoundPlayed=false;
     // Auto-submit when timer hits 0
     if(secs===0&&!state.hasVotedCurrentSubject&&state.participantId){
@@ -1547,8 +1552,11 @@ async function advanceSubject(sessionId,session,idx){
   const lbSecs=session.leaderboardSeconds||0;
   if(nextIdx>=subjects.length){
     if(lbSecs>0){
-      // Last leaderboard - show for full leaderboard duration then transition
-      const lastLbTime=lbSecs*1000;
+      // Last leaderboard - calculate actual rotation time based on enabled views
+      const rc=session.resultConfig||{toplist:true,categories:false,judges:false};
+      const viewCount=[rc.toplist!==false,rc.categories,rc.judges].filter(Boolean).length||1;
+      const sliceMs=Math.floor(lbSecs/viewCount)*1000;
+      const lastLbTime=sliceMs*viewCount; // matches actual showView rotation time
       await update(ref(db,`sessions/${sessionId}`),{status:'leaderboard',currentSubjectIndex:idx,isLastLeaderboard:true});
       setTimeout(async()=>await update(ref(db,`sessions/${sessionId}`),{status:'ended'}),lastLbTime);
     }else{await update(ref(db,`sessions/${sessionId}`),{status:'ended'});}
