@@ -806,7 +806,7 @@ import { getDatabase, ref, set, get, update, onValue, onChildAdded, remove, runT
 // Make all window functions available immediately
 Object.defineProperty(window, '__moduleReady', { value: true });
 
-const VERSION = 'Avstemning v2.0';
+const VERSION = 'Avstemning v2.1';
 console.log(VERSION);
 
 const FIREBASE_CONFIG = {
@@ -1161,7 +1161,7 @@ async function init(){
   const savedSessionId=ls('sessionId');
   const savedParticipantId=ls('participantId');
   const savedParticipantName=ls('participantName');
-  const savedIsAdmin=ls('isAdmin')==='true';
+  const savedIsAdmin=ls(`isAdmin_${slug}`)==='true';
 
   if(!slug){showScreen('screen-admin-login');loadAdminSessions();return;}
   state.sessionId=slug;
@@ -1557,19 +1557,12 @@ function loadDraft(idx,session){
 }
 
 window.submitVote=async function(){
+  if(!state.participantId||state.hasVotedCurrentSubject)return;
   const session=state.session;
   const idx=session.currentSubjectIndex||0;
   const errEl=document.getElementById('vote-error');
   errEl.style.display='none';
   const votes=state.currentVotes[idx]||{};
-  // Check if already voted
-  const existing=await get(ref(db,`sessions/${state.sessionId}/votes/${idx}/${state.participantId}`));
-  if(existing.exists()){
-    ls(`draft_${state.sessionId}_${idx}`,null);
-    state.hasVotedCurrentSubject=true;
-    showScreen('screen-submitted');
-    return;
-  }
   try{
     await set(ref(db,`sessions/${state.sessionId}/votes/${idx}/${state.participantId}`),
       {participantName:state.participantName,votes,submittedAt:Date.now()});
@@ -1707,7 +1700,7 @@ function showLeaderboardScreen(session){
   const scores=calcScores(dedupeSubjects(subjects),cats,votes,participants);
   const vCount=votes[idx]?Object.keys(votes[idx]).length:0;
 
-  // Build tab bar
+  // Build tab bar - clicking only shows content, does NOT affect timer/rotation
   const tabBar=document.getElementById('lb-tabs');
   if(tabBar){
     tabBar.innerHTML='';
@@ -1717,9 +1710,27 @@ function showLeaderboardScreen(session){
       btn.className='result-tab';
       btn.id=`lb-tab-${v}`;
       btn.textContent=tabLabels[v]||v;
-      btn.onclick=()=>showView(i);
+      btn.onclick=()=>showViewContent(v); // only switches content, not timer
       tabBar.appendChild(btn);
     });
+  }
+
+  // showViewContent: only swap visible content, no timer/countdown effect
+  function showViewContent(view){
+    views.forEach(v=>{const t=document.getElementById(`lb-tab-${v}`);if(t)t.classList.toggle('active',v===view);});
+    const lbList=document.getElementById('leaderboard-list');
+    const lbSpot=document.getElementById('lb-spotlight-content');
+    if(view==='toplist'){
+      if(lbList)lbList.style.display='';
+      if(lbSpot){lbSpot.style.display='none';lbSpot.innerHTML='';}
+      renderLeaderboard('leaderboard-list',scores,session);
+    } else if(view==='categories'){
+      if(lbList)lbList.style.display='none';
+      if(lbSpot){lbSpot.style.display='';showCategoryInLeaderboard(session,idx,lbSpot);}
+    } else if(view==='judges'){
+      if(lbList)lbList.style.display='none';
+      if(lbSpot){lbSpot.style.display='';showJudgeInLeaderboard(session,idx,lbSpot);}
+    }
   }
 
   function showView(viewIdx){
@@ -1792,35 +1803,43 @@ window.forceNext=async function(){
   const lbSecs=session.leaderboardSeconds||0;
 
   if(session.status==='voting'){
-    // voting → leaderboard (skip remaining voting time)
+    // voting → leaderboard only, watchdog handles timing
     if(nextIdx>=subjects.length){
-      if(lbSecs>0){
-        await update(ref(db,`sessions/${state.sessionId}`),{status:'leaderboard',currentSubjectIndex:idx,isLastLeaderboard:true,lbTimerEnd:Date.now()+lbSecs*1000,leaderboardSeconds:lbSecs});
-        setTimeout(async()=>{
-          const s=await get(ref(db,`sessions/${state.sessionId}`));
-          if(s.exists()&&s.val().status==='leaderboard')
-            await update(ref(db,`sessions/${state.sessionId}`),{status:'ended'});
-        },lbSecs*1000);
-      } else {
-        await update(ref(db,`sessions/${state.sessionId}`),{status:'ended'});
-      }
+      // Last subject
+      await update(ref(db,`sessions/${state.sessionId}`),{
+        status:'leaderboard',currentSubjectIndex:idx,
+        isLastLeaderboard:true,leaderboardSeconds:lbSecs
+      });
     } else {
-      await update(ref(db,`sessions/${state.sessionId}`),{status:'leaderboard',currentSubjectIndex:idx,leaderboardSeconds:lbSecs});
-      setTimeout(async()=>{
-        const timerEnd=session.minutesPerSubject>0?Date.now()+session.minutesPerSubject*60000:null;
-        await update(ref(db,`sessions/${state.sessionId}`),{status:'voting',currentSubjectIndex:nextIdx,timerEnd:timerEnd||null});
-        if(timerEnd)scheduleWatchdog(state.sessionId,timerEnd,session.minutesPerSubject,nextIdx);
-      },lbSecs*1000);
+      await update(ref(db,`sessions/${state.sessionId}`),{
+        status:'leaderboard',currentSubjectIndex:idx,
+        isLastLeaderboard:false,leaderboardSeconds:lbSecs
+      });
     }
+    // Schedule advance from leaderboard (admin only)
+    setTimeout(async()=>{
+      const s=await get(ref(db,`sessions/${state.sessionId}`));
+      if(!s.exists()||s.val().status!=='leaderboard'||s.val().currentSubjectIndex!==idx)return;
+      if(nextIdx>=subjects.length){
+        await update(ref(db,`sessions/${state.sessionId}`),{status:'ended'});
+      } else {
+        const timerEnd=session.minutesPerSubject>0?Date.now()+session.minutesPerSubject*60000:null;
+        await update(ref(db,`sessions/${state.sessionId}`),{
+          status:'voting',currentSubjectIndex:nextIdx,timerEnd:timerEnd||null
+        });
+        if(timerEnd)scheduleWatchdog(state.sessionId,timerEnd,session.minutesPerSubject,nextIdx);
+      }
+    },lbSecs*1000);
+
   } else if(session.status==='leaderboard'){
-    // leaderboard → next voting (skip remaining leaderboard time)
+    // leaderboard → next voting immediately
     if(nextIdx>=subjects.length){
       await update(ref(db,`sessions/${state.sessionId}`),{status:'ended'});
     } else {
       const timerEnd=session.minutesPerSubject>0?Date.now()+session.minutesPerSubject*60000:null;
       await update(ref(db,`sessions/${state.sessionId}`),{
         status:'voting',currentSubjectIndex:nextIdx,
-        timerEnd:timerEnd||null,isLastLeaderboard:false,lbTimerEnd:null
+        timerEnd:timerEnd||null,isLastLeaderboard:false
       });
       if(timerEnd)scheduleWatchdog(state.sessionId,timerEnd,session.minutesPerSubject,nextIdx);
     }
@@ -1839,8 +1858,8 @@ function dedupeSubjects(subjects){
 function calcScores(subjects,cats,votes,participants){
   return subjects.map((sub,idx)=>{
     let total=0;let hasVotes=false;
-    // Use the subject's original key index for vote lookup
-    const voteKey=sub.originalIndex!==undefined?sub.originalIndex:idx;
+    // Always use array index (0,1,2...) - same as how votes are stored
+    const voteKey=idx;
     participants.forEach(pid=>{
       const v=votes[voteKey]&&votes[voteKey][pid];if(!v)return;hasVotes=true;
       cats.forEach(cat=>{total+=((v.votes&&v.votes[cat.name])||0)*(cat.weight||1);});
@@ -1884,6 +1903,7 @@ function showFinalLeaderboard(session){
   document.getElementById('final-session-name').textContent=session.name;
   const container=document.getElementById('final-leaderboard');
   container.innerHTML='';
+  container.style.cssText='text-align:center;max-width:560px;margin:0 auto;';
   const max=scores[0]?scores[0].total:1;
   // Animated reveal
   scores.forEach((item,i)=>{
@@ -2688,7 +2708,7 @@ window.adminLogin=async function(){
   }
   if(!matched){errEl.style.display='block';return;}
   errEl.style.display='none';
-  state.isAdmin=true;ls('isAdmin','true');
+  state.isAdmin=true;ls(`isAdmin_${state.sessionId}`,'true');
   setAdminUI(true);
   loadAdminSessions();
 };
@@ -2716,7 +2736,7 @@ function loadAdminSessions(){
 function selectAdminSession(id,session){
   state.sessionId=id;
   ls('sessionId',id);
-  ls('isAdmin','true');
+  ls(`isAdmin_${state.sessionId}`,'true');
   applyTheme(session.theme);
   history.replaceState(null,'',`?s=${id}`);
   if(session.status==='published'||session.status==='waiting'){
