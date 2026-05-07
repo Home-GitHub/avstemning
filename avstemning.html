@@ -806,7 +806,7 @@ import { getDatabase, ref, set, get, update, onValue, onChildAdded, remove, runT
 // Make all window functions available immediately
 Object.defineProperty(window, '__moduleReady', { value: true });
 
-const VERSION = 'Avstemning v2.5';
+const VERSION = 'Avstemning v2.6';
 console.log(VERSION);
 
 const FIREBASE_CONFIG = {
@@ -1503,7 +1503,8 @@ function buildVotingCategories(session){
   cats.forEach(cat=>{
     const row=document.createElement('div');
     row.className='cat-row';
-    const val=state.currentVotes[idx][cat.name]||0;
+    const catKey=cat.key||safeKey(cat.name);
+    const val=state.currentVotes[idx][catKey]||0;
     const catKey=safeKey(cat.name);
     row.innerHTML=`
       <div class="cat-header">
@@ -1514,7 +1515,7 @@ function buildVotingCategories(session){
         <div class="slider-midmark"></div>
         <input type="range" class="slider-input" id="s-${catKey}" 
           min="0" max="${cat.max}" value="${val}" 
-          data-cat="${cat.name}" data-max="${cat.max}">
+          data-cat="${cat.name}" data-key="${cat.key||safeKey(cat.name)}" data-max="${cat.max}">
       </div>
       <div style="display:flex;justify-content:space-between;padding:0 0 2px;">
         <span style="font-size:10px;color:var(--muted);">0</span>
@@ -1533,11 +1534,11 @@ function buildVotingCategories(session){
     ['input','change','touchmove'].forEach(evt=>{
       slider.addEventListener(evt,(e)=>{
         e.stopPropagation();
-        const catName=slider.dataset.cat;
+        const catKey=slider.dataset.key||safeKey(slider.dataset.cat);
         const v=parseInt(slider.value);
         const si=session.currentSubjectIndex||0;
         if(!state.currentVotes[si])state.currentVotes[si]={};
-        state.currentVotes[si][catName]=v;
+        state.currentVotes[si][catKey]=v; // stored by key (Firebase-safe)
         document.getElementById(`v-${safeKey(catName)}`).textContent=v;
         updateSlider(slider);
         saveDraft(si);
@@ -1562,9 +1563,11 @@ async function doSubmitVote(subjectIdx){
   // Build votes - ensure all categories included with their current values
   const cats=session.categories?Object.values(session.categories):[];
   if(!state.currentVotes[subjectIdx])state.currentVotes[subjectIdx]={};
+  // Ensure all categories have a value using their Firebase-safe key
   cats.forEach(cat=>{
-    if(state.currentVotes[subjectIdx][cat.name]===undefined)
-      state.currentVotes[subjectIdx][cat.name]=0;
+    const k=cat.key||safeKey(cat.name);
+    if(state.currentVotes[subjectIdx][k]===undefined)
+      state.currentVotes[subjectIdx][k]=0;
   });
   const votes=Object.assign({},state.currentVotes[subjectIdx]);
   try{
@@ -1892,7 +1895,7 @@ function calcScores(subjects,cats,votes,participants){
     const voteKey=idx;
     participants.forEach(pid=>{
       const v=votes[voteKey]&&votes[voteKey][pid];if(!v)return;hasVotes=true;
-      cats.forEach(cat=>{total+=((v.votes&&v.votes[cat.name])||0)*(cat.weight||1);});
+      cats.forEach(cat=>{const k=cat.key||safeKey(cat.name);total+=((v.votes&&v.votes[k])||0)*(cat.weight||1);});
     });
     return{name:sub.name,total,hasVotes,idx:voteKey};
   }).sort((a,b)=>b.total-a.total);
@@ -2619,7 +2622,7 @@ function showCategoryInLeaderboard(session,idx,container){
   container.innerHTML=`<div style="text-align:center;margin-bottom:16px;"><div class="header-title">${subjectName||'Kategori'}</div><div class="text-muted" style="font-size:13px;">Hva syntes dere?</div></div>`;
   const catStats=cats.map(cat=>{
     let total=0,count=0;
-    participants.forEach(pid=>{const v=votes[idx]&&votes[idx][pid];if(!v)return;const val=(v.votes&&v.votes[cat.name])||0;total+=val;count++;});
+    participants.forEach(pid=>{const v=votes[idx]&&votes[idx][pid];if(!v)return;const k=cat.key||safeKey(cat.name);const val=(v.votes&&v.votes[k])||0;total+=val;count++;});
     return{name:cat.name,avg:count?total/count:0,max:12,count};
   }).sort((a,b)=>b.avg-a.avg);
   const maxAvg=catStats[0]?catStats[0].avg:1;
@@ -2643,7 +2646,7 @@ function showJudgeInLeaderboard(session,idx,container){
   parts.forEach(([pid,p])=>{
     const v=votes[idx]&&votes[idx][pid];
     if(!v)return;
-    const catScores=cats.map(cat=>{const val=(v.votes&&v.votes[cat.name])||0;return{name:cat.name,val};}).sort((a,b)=>b.val-a.val);
+    const catScores=cats.map(cat=>{const k=cat.key||safeKey(cat.name);const val=(v.votes&&v.votes[k])||0;return{name:cat.name,val};}).sort((a,b)=>b.val-a.val);
     const total=catScores.reduce((s,c)=>s+c.val,0);
     const div=document.createElement('div');
     div.style.cssText='background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;max-width:480px;margin-left:auto;margin-right:auto;';

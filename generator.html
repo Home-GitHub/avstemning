@@ -465,8 +465,9 @@ window.createSession = async () => {
   const existing = await get(ref(db,`sessions/${slug}`));
   if (existing.exists()) return showErr(errEl,'Denne app-ID-en er allerede i bruk');
   document.getElementById('create-btn-text').textContent = 'Publiserer...';
+  const safeKey=s=>String(s).trim().replace(/[.#$\[\]/]/g,'_').replace(/\s+/g,'_').substring(0,50)||'key';
   const subjectsObj = {}; subjects.forEach((s,i)=>{subjectsObj[i]={name:s,originalIndex:i};});
-  const categoriesObj = {}; categories.forEach((c,i)=>{categoriesObj[i]=c;});
+  const categoriesObj = {}; categories.forEach((c,i)=>{categoriesObj[i]={name:c.name,key:safeKey(c.name),max:c.max,weight:c.weight};});
   await set(ref(db,`sessions/${slug}`),{
     name,password,theme,minutesPerSubject:minutes,leaderboardSeconds:lbSecs,
     blindtest:blindtestEnabled,blindtestLocked:false,blindtestRevealed:false,
