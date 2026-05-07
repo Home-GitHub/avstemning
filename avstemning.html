@@ -806,7 +806,7 @@ import { getDatabase, ref, set, get, update, onValue, onChildAdded, remove, runT
 // Make all window functions available immediately
 Object.defineProperty(window, '__moduleReady', { value: true });
 
-const VERSION = 'Avstemning v2.3';
+const VERSION = 'Avstemning v2.5';
 console.log(VERSION);
 
 const FIREBASE_CONFIG = {
@@ -1347,14 +1347,10 @@ function handleSessionState(session){
     if(state.lastLbKey!==lbKey){
       state.lastLbKey=lbKey;
       state.finalShown=false; // reset for next session
-      // Auto-submit for ANY participant who hasn't voted yet
+      // Auto-submit for any participant who hasn't voted yet (e.g. admin forced next)
       const vIdx=session.currentSubjectIndex||0;
       if(state.participantId&&!state.hasVotedCurrentSubject){
-        const autoVotes=state.currentVotes[vIdx]||{};
-        set(ref(db,`sessions/${state.sessionId}/votes/${vIdx}/${state.participantId}`),
-          {participantName:state.participantName,votes:autoVotes,submittedAt:Date.now(),autoSubmitted:true}
-        ).catch(()=>{});
-        state.hasVotedCurrentSubject=true;
+        doSubmitVote(vIdx).catch(()=>{});
       }
       showLeaderboardScreen(session);
     }
@@ -1556,6 +1552,34 @@ function loadDraft(idx,session){
   if(draft){try{state.currentVotes[idx]=JSON.parse(draft);}catch(e){}}
 }
 
+// Central submit function - single source of truth for saving votes
+// Called from: manual SEND, timer expiry, admin forceNext
+async function doSubmitVote(subjectIdx){
+  if(!state.participantId||!state.sessionId)return false;
+  if(state.hasVotedCurrentSubject)return false;
+  const session=state.session;
+  if(!session)return false;
+  // Build votes - ensure all categories included with their current values
+  const cats=session.categories?Object.values(session.categories):[];
+  if(!state.currentVotes[subjectIdx])state.currentVotes[subjectIdx]={};
+  cats.forEach(cat=>{
+    if(state.currentVotes[subjectIdx][cat.name]===undefined)
+      state.currentVotes[subjectIdx][cat.name]=0;
+  });
+  const votes=Object.assign({},state.currentVotes[subjectIdx]);
+  try{
+    await set(ref(db,`sessions/${state.sessionId}/votes/${subjectIdx}/${state.participantId}`),
+      {participantName:state.participantName,votes,submittedAt:Date.now()});
+    ls(`draft_${state.sessionId}_${subjectIdx}`,null);
+    state.hasVotedCurrentSubject=true;
+    return true;
+  }catch(e){
+    console.error('Submit vote error:',e);
+    return false;
+  }
+}
+
+// Manual SEND button
 window.submitVote=async function(){
   if(!state.participantId){
     const errEl=document.getElementById('vote-error');
@@ -1563,39 +1587,26 @@ window.submitVote=async function(){
     return;
   }
   if(state.hasVotedCurrentSubject)return;
-  const session=state.session;
-  const idx=session.currentSubjectIndex||0;
+  const idx=state.session?.currentSubjectIndex||0;
   const errEl=document.getElementById('vote-error');
-  errEl.style.display='none';
-  // Build votes from currentVotes - ensure all categories are included
-  const cats=session.categories?Object.values(session.categories):[];
-  if(!state.currentVotes[idx])state.currentVotes[idx]={};
-  cats.forEach(cat=>{
-    if(state.currentVotes[idx][cat.name]===undefined)state.currentVotes[idx][cat.name]=0;
-  });
-  const votes=Object.assign({},state.currentVotes[idx]);
-  try{
-    await set(ref(db,`sessions/${state.sessionId}/votes/${idx}/${state.participantId}`),
-      {participantName:state.participantName,votes,submittedAt:Date.now()});
-    ls(`draft_${state.sessionId}_${idx}`,null);
-    state.hasVotedCurrentSubject=true;
+  if(errEl)errEl.style.display='none';
+  const ok=await doSubmitVote(idx);
+  if(ok){
     showScreen('screen-submitted');
-  }catch(e){
-    errEl.textContent='Kunne ikke sende inn, prøv igjen';
-    errEl.style.display='block';
-    console.error('Submit vote error:',e);
+  } else {
+    if(errEl){errEl.textContent='Kunne ikke sende inn, prøv igjen';errEl.style.display='block';}
   }
 };
 
 // ========== TIMER ==========
 function startTimer(session){
-  // Timer reads from state.session (Firebase source of truth) - not local closure
   if(state.timerInterval){clearInterval(state.timerInterval);state.timerInterval=null;}
-  const idx=session.currentSubjectIndex||0;
+  // Lock subjectIdx to THIS subject - never reads from live session
+  const lockedSubjectIdx=session.currentSubjectIndex||0;
   const total=(session.minutesPerSubject||3)*60;
-  if(state.lastWatchdogSubject!==idx){
-    state.lastWatchdogSubject=idx;
-    scheduleWatchdog(state.sessionId,session.timerEnd,session.minutesPerSubject,idx);
+  if(state.lastWatchdogSubject!==lockedSubjectIdx){
+    state.lastWatchdogSubject=lockedSubjectIdx;
+    scheduleWatchdog(state.sessionId,session.timerEnd,session.minutesPerSubject,lockedSubjectIdx);
   }
   function tick(){
     // Always read from state.session - updated by Firebase listener
@@ -1614,13 +1625,9 @@ function startTimer(session){
     if(secs>10){state.urgentSoundPlayed=false;}
     if(secs>7){state.tick7Played=false;}
     if(secs>1){state.tick1Played=false;}
-    // Auto-submit when timer hits 0
+    // Auto-submit when timer hits 0 - use central doSubmitVote with locked index
     if(secs===0&&!state.hasVotedCurrentSubject&&state.participantId){
-      state.hasVotedCurrentSubject=true;
-      const votes=state.currentVotes[subjectIdx]||{};
-      set(ref(db,`sessions/${state.sessionId}/votes/${subjectIdx}/${state.participantId}`),
-        {participantName:state.participantName,votes,submittedAt:Date.now(),autoSubmitted:true})
-        .catch(e=>console.error('Auto-submit failed:',e));
+      doSubmitVote(lockedSubjectIdx).catch(e=>console.error('Auto-submit failed:',e));
     }
     const pct=Math.max(0,(secs/sessionTotal)*100);
     const urgent=secs<=10&&secs>0;
