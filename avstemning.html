@@ -507,6 +507,7 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
       <div class="text-muted" id="lb-countdown"></div>
     </div>
     <div id="leaderboard-list"></div>
+    <div id="lb-spotlight-content" style="display:none;"></div>
     <div class="admin-only mt-16" style="flex-direction:column;">
       
     </div>
@@ -805,7 +806,7 @@ import { getDatabase, ref, set, get, update, onValue, onChildAdded, remove, runT
 // Make all window functions available immediately
 Object.defineProperty(window, '__moduleReady', { value: true });
 
-const VERSION = 'Avstemning v1.9';
+const VERSION = 'Avstemning v2.0';
 console.log(VERSION);
 
 const FIREBASE_CONFIG = {
@@ -842,6 +843,7 @@ let state = {
   isAdmin: false,
   timerInterval: null, timerEnd: null,
   currentVotes: {},
+  watchersStarted: false,
   hasVotedCurrentSubject: false,
   sessionListener: null,
   qrGenerated: {},
@@ -1246,16 +1248,20 @@ const shuffled=[...EMOJIS.slice(offset),...EMOJIS.slice(0,offset)].sort(()=>Math
 // ========== SESSION LISTENER ==========
 function startSessionListener(){
   if(state.sessionListener)off(ref(db,`sessions/${state.sessionId}`));
+  // Start sub-listeners once - not inside the main onValue loop
+  if(!state.watchersStarted){
+    state.watchersStarted=true;
+    watchReactions();
+    watchSkals();
+    watchActivity();
+  }
   state.sessionListener=onValue(ref(db,`sessions/${state.sessionId}`),snap=>{
     if(!snap.exists())return;
     const session=snap.val();
     state.session=session;
     applyTheme(session.theme);
     handleSessionState(session);
-    watchReactions(session);
-    watchSkals(session);
   });
-  watchActivity();
 }
 
 let lastShownSkalAt=0;
@@ -1341,6 +1347,15 @@ function handleSessionState(session){
     if(state.lastLbKey!==lbKey){
       state.lastLbKey=lbKey;
       state.finalShown=false; // reset for next session
+      // Auto-submit for ANY participant who hasn't voted yet
+      const vIdx=session.currentSubjectIndex||0;
+      if(state.participantId&&!state.hasVotedCurrentSubject){
+        const autoVotes=state.currentVotes[vIdx]||{};
+        set(ref(db,`sessions/${state.sessionId}/votes/${vIdx}/${state.participantId}`),
+          {participantName:state.participantName,votes:autoVotes,submittedAt:Date.now(),autoSubmitted:true}
+        ).catch(()=>{});
+        state.hasVotedCurrentSubject=true;
+      }
       showLeaderboardScreen(session);
     }
     return;
@@ -1611,6 +1626,8 @@ function startTimer(session){
 
 // ========== WATCHDOG ==========
 function scheduleWatchdog(sessionId,timerEnd,minutes,subjectIndex){
+  // Only admin triggers advance - this is the single source of truth for timer
+  if(!state.isAdmin)return;
   const delay=timerEnd-Date.now();
   if(delay<=0)return;
   setTimeout(async()=>{
@@ -1619,8 +1636,9 @@ function scheduleWatchdog(sessionId,timerEnd,minutes,subjectIndex){
     const s=snap.val();
     if(s.paused)return;
     if(s.currentSubjectIndex!==subjectIndex)return;
+    if(s.status!=='voting')return;
     await advanceSubject(sessionId,s,subjectIndex);
-  },delay+2000);
+  },delay+1000);
 }
 
 async function advanceSubject(sessionId,session,idx){
@@ -1711,21 +1729,31 @@ function showLeaderboardScreen(session){
     views.forEach(v=>{const t=document.getElementById(`lb-tab-${v}`);if(t)t.classList.toggle('active',v===view);});
     const nextLabel=isLastView?(isLast?'🏆 Endelig resultat':'Neste emne'):views[viewIdx+1]==='categories'?'Kategori-detaljer':views[viewIdx+1]==='judges'?'Dommer-detaljer':'Topp-liste';
 
+    // Always stay on screen-leaderboard, swap content inside
+    const lbList=document.getElementById('leaderboard-list');
+    const lbSpot=document.getElementById('lb-spotlight-content');
     if(view==='toplist'){
+      if(lbList)lbList.style.display='';
+      if(lbSpot){lbSpot.style.display='none';lbSpot.innerHTML='';}
       document.getElementById('lb-sub').textContent=`Etter emne ${idx+1} av ${subjects.length}`;
       renderLeaderboard('leaderboard-list',scores);
       document.getElementById('lb-voter-count').textContent=`${vCount} av ${participants.length} stemte`;
-      showScreen('screen-leaderboard');
+      if(!document.getElementById('screen-leaderboard').classList.contains('active'))
+        showScreen('screen-leaderboard');
     } else if(view==='categories'){
-      showCategorySpotlight(session,idx);
+      if(lbList)lbList.style.display='none';
+      if(lbSpot)lbSpot.style.display='';
+      showCategoryInLeaderboard(session,idx,lbSpot);
     } else if(view==='judges'){
-      showJudgeSpotlight(session,idx);
+      if(lbList)lbList.style.display='none';
+      if(lbSpot)lbSpot.style.display='';
+      showJudgeInLeaderboard(session,idx,lbSpot);
     }
 
     // Countdown
     if(sliceMs>0){
       let r=Math.floor(sliceMs/1000);
-      const countEl=view==='toplist'?document.getElementById('lb-countdown'):view==='judges'?document.getElementById('judge-lb-next-msg'):document.getElementById('cat-lb-next-msg');
+      const countEl=document.getElementById('lb-countdown');
       if(countEl){
         countEl.textContent=`${nextLabel} om ${formatTime(r)}`;
         const iv=setInterval(()=>{
@@ -2512,6 +2540,49 @@ function showJudgeSpotlight(session, idx){
 }
 
 // ========== CATEGORY SPOTLIGHT ==========
+function showCategoryInLeaderboard(session,idx,container){
+  if(!container)return;
+  // Build category content inline
+  const cats=session.categories?Object.values(session.categories):[];
+  const votes=session.votes||{};
+  const participants=session.participants?Object.keys(session.participants):[];
+  const subjectName=session.subjects?Object.values(session.subjects)[idx]?.name:'';
+  container.innerHTML=`<div style="text-align:center;margin-bottom:16px;"><div class="header-title">${subjectName||'Kategori'}</div><div class="text-muted" style="font-size:13px;">Hva syntes dere?</div></div>`;
+  const catStats=cats.map(cat=>{
+    let total=0,count=0;
+    participants.forEach(pid=>{const v=votes[idx]&&votes[idx][pid];if(!v)return;const val=(v.votes&&v.votes[cat.name])||0;total+=val;count++;});
+    return{name:cat.name,avg:count?total/count:0,max:12,count};
+  }).sort((a,b)=>b.avg-a.avg);
+  const maxAvg=catStats[0]?catStats[0].avg:1;
+  catStats.forEach((cat,i)=>{
+    const pct=maxAvg>0?(cat.avg/maxAvg*100):0;
+    const medal=i===0?'🥇':i===1?'🥈':'🥉';
+    const div=document.createElement('div');
+    div.style.cssText='background:var(--surface);border:0.5px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;max-width:480px;margin-left:auto;margin-right:auto;';
+    div.innerHTML=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;"><span style="font-size:20px;">${i<3?medal:''}</span><span style="flex:1;font-size:15px;font-weight:500;">${cat.name}</span><span style="font-family:'Bebas Neue',sans-serif;font-size:20px;">${cat.avg.toFixed(1)}</span><span style="font-size:11px;color:var(--muted);"> / ${cat.max} snitt</span></div><div style="height:4px;background:rgba(255,255,255,0.07);border-radius:2px;"><div style="height:4px;border-radius:2px;background:var(--accent);width:${pct}%;"></div></div>`;
+    container.appendChild(div);
+  });
+}
+
+function showJudgeInLeaderboard(session,idx,container){
+  if(!container)return;
+  const cats=session.categories?Object.values(session.categories):[];
+  const votes=session.votes||{};
+  const subjectName=session.subjects?Object.values(session.subjects)[idx]?.name:'';
+  container.innerHTML=`<div style="text-align:center;margin-bottom:16px;"><div class="header-title">Dommer-detaljer</div><div class="text-muted" style="font-size:13px;">${subjectName||''}</div></div>`;
+  const parts=Object.entries(session.participants||{});
+  parts.forEach(([pid,p])=>{
+    const v=votes[idx]&&votes[idx][pid];
+    if(!v)return;
+    const catScores=cats.map(cat=>{const val=(v.votes&&v.votes[cat.name])||0;return{name:cat.name,val};}).sort((a,b)=>b.val-a.val);
+    const total=catScores.reduce((s,c)=>s+c.val,0);
+    const div=document.createElement('div');
+    div.style.cssText='background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;max-width:480px;margin-left:auto;margin-right:auto;';
+    div.innerHTML=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"><div style="flex:1;font-size:15px;font-weight:600;">${p.name||pid}</div><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--accent);">${Math.round(total)}p</div></div>${catScores.slice(0,3).map((s,si)=>`<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-top:1px solid var(--border);"><div style="font-size:11px;color:var(--muted);width:20px;">${si+1}.</div><div style="flex:1;font-size:13px;">${s.name}</div><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--text2);">${s.val}</div></div>`).join('')}`;
+    container.appendChild(div);
+  });
+}
+
 function showCategorySpotlight(session, idx){
   const cats = session.categories ? Object.values(session.categories) : [];
   const votes = session.votes || {};
