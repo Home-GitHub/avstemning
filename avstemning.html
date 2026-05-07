@@ -501,6 +501,7 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
     </div>
   </div>
   <div class="content">
+    <div id="lb-tabs" style="display:flex;gap:2px;background:rgba(255,255,255,0.04);border-radius:10px;padding:3px;margin-bottom:14px;border:0.5px solid rgba(255,255,255,0.06);"></div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
       <div class="text-muted" id="lb-voter-count"></div>
       <div class="text-muted" id="lb-countdown"></div>
@@ -804,7 +805,7 @@ import { getDatabase, ref, set, get, update, onValue, onChildAdded, remove, runT
 // Make all window functions available immediately
 Object.defineProperty(window, '__moduleReady', { value: true });
 
-const VERSION = 'Avstemning v1.8';
+const VERSION = 'Avstemning v1.9';
 console.log(VERSION);
 
 const FIREBASE_CONFIG = {
@@ -1114,7 +1115,7 @@ window.sendReaction = async function sendReaction(emoji){
 function showFloatingReaction(emoji,senderName){
   const count=10;
   const container=document.createElement('div');
-  container.style.cssText='position:fixed;left:50%;bottom:0;z-index:9999;pointer-events:none;transform:translateX(-50%);';
+  container.style.cssText='position:fixed;left:50%;bottom:60px;z-index:9999;pointer-events:none;transform:translateX(-50%);';
   // Sender name label
   if(senderName){
     const lbl=document.createElement('div');
@@ -1254,6 +1255,7 @@ function startSessionListener(){
     watchReactions(session);
     watchSkals(session);
   });
+  watchActivity();
 }
 
 let lastShownSkalAt=0;
@@ -1271,10 +1273,26 @@ function watchReactions(){
 const _activityScores={};
 
 function trackActivity(name,type){
-  if(!name)return;
+  if(!name||!state.sessionId)return;
   const pts=type==='skal'?10:1;
   _activityScores[name]=(_activityScores[name]||0)+pts;
   renderActivityBar();
+  // Non-blocking Firebase sync
+  const key=safeKey(name);
+  set(ref(db,`sessions/${state.sessionId}/activity/${key}`),{
+    name,pts:_activityScores[name]
+  }).catch(()=>{});
+}
+
+function watchActivity(){
+  if(!state.sessionId)return;
+  onValue(ref(db,`sessions/${state.sessionId}/activity`),snap=>{
+    if(!snap.exists())return;
+    Object.values(snap.val()).forEach(entry=>{
+      if(entry.name)_activityScores[entry.name]=entry.pts||0;
+    });
+    renderActivityBar();
+  });
 }
 
 function renderActivityBar(){
@@ -1390,6 +1408,8 @@ function showVotingScreen(session){
     state.tick7Played = false;
     state.tick1Played = false;
     state.allVotedAdvanced = false;
+    // Clear timer interval on subject change to prevent double intervals
+    if(state.timerInterval){clearInterval(state.timerInterval);state.timerInterval=null;}
     eventQueue = []; // clear pending events
     playSound('newSubject'); // play sound for new subject
   }
@@ -1550,10 +1570,9 @@ window.submitVote=async function(){
 
 // ========== TIMER ==========
 function startTimer(session){
-  if(state.timerInterval)clearInterval(state.timerInterval);
+  if(state.timerInterval){clearInterval(state.timerInterval);state.timerInterval=null;}
   state.timerEnd=session.timerEnd||Date.now();
   const total=(session.minutesPerSubject||3)*60;
-  // ALL clients schedule watchdog so advance always happens even if admin refreshes
   const idx=session.currentSubjectIndex||0;
   if(state.lastWatchdogSubject!==idx){
     state.lastWatchdogSubject=idx;
@@ -1670,9 +1689,26 @@ function showLeaderboardScreen(session){
   const scores=calcScores(dedupeSubjects(subjects),cats,votes,participants);
   const vCount=votes[idx]?Object.keys(votes[idx]).length:0;
 
+  // Build tab bar
+  const tabBar=document.getElementById('lb-tabs');
+  if(tabBar){
+    tabBar.innerHTML='';
+    const tabLabels={'toplist':'🏆 Topp','categories':'📊 Kategori','judges':'🎯 Dommere'};
+    views.forEach((v,i)=>{
+      const btn=document.createElement('div');
+      btn.className='result-tab';
+      btn.id=`lb-tab-${v}`;
+      btn.textContent=tabLabels[v]||v;
+      btn.onclick=()=>showView(i);
+      tabBar.appendChild(btn);
+    });
+  }
+
   function showView(viewIdx){
     const view=views[viewIdx];
     const isLastView=viewIdx===views.length-1;
+    // Update active tab
+    views.forEach(v=>{const t=document.getElementById(`lb-tab-${v}`);if(t)t.classList.toggle('active',v===view);});
     const nextLabel=isLastView?(isLast?'🏆 Endelig resultat':'Neste emne'):views[viewIdx+1]==='categories'?'Kategori-detaljer':views[viewIdx+1]==='judges'?'Dommer-detaljer':'Topp-liste';
 
     if(view==='toplist'){
