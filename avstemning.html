@@ -1270,35 +1270,43 @@ function watchReactions(){
 }
 
 // ========== ACTIVITY BAR ==========
-// Activity scores backed by Firebase - same on all screens
+// Activity scores - local tracking, synced via Firebase set (not transaction)
+const _activityScores={};
+
 function trackActivity(name,type){
   if(!name||!state.sessionId)return;
   const pts=type==='skal'?10:1;
+  _activityScores[name]=(_activityScores[name]||0)+pts;
+  renderActivityBar(); // immediate local update
+  // Write to Firebase non-blocking - local value is source of truth
   const key=safeKey(name);
-  // Use runTransaction to safely increment
-  runTransaction(ref(db,`sessions/${state.sessionId}/activity/${key}`),cur=>{
-    if(cur===null)return{name,pts};
-    return{name:cur.name||name,pts:(cur.pts||0)+pts};
+  set(ref(db,`sessions/${state.sessionId}/activity/${key}`),{
+    name,pts:_activityScores[name]
   }).catch(()=>{});
 }
 
 function watchActivity(){
   onValue(ref(db,`sessions/${state.sessionId}/activity`),snap=>{
-    renderActivityBar(snap.exists()?snap.val():{});
+    if(!snap.exists())return;
+    const data=snap.val();
+    Object.values(data).forEach(entry=>{
+      if(entry.name)_activityScores[entry.name]=entry.pts||0;
+    });
+    renderActivityBar();
   });
 }
 
-function renderActivityBar(data){
+function renderActivityBar(){
   const bar=document.getElementById('activity-bar');
   if(!bar)return;
-  const sorted=Object.values(data||{}).sort((a,b)=>b.pts-a.pts).slice(0,3);
+  const sorted=Object.entries(_activityScores).sort((a,b)=>b[1]-a[1]).slice(0,3);
   if(!sorted.length){bar.style.display='none';return;}
   bar.style.display='flex';
-  const max=sorted[0].pts||1;
-  bar.innerHTML=sorted.map((entry,i)=>{
-    const pct=Math.round(entry.pts/max*100);
+  const max=sorted[0][1]||1;
+  bar.innerHTML=sorted.map(([name,score],i)=>{
+    const pct=Math.round(score/max*100);
     const medal=i===0?'🥇':i===1?'🥈':'🥉';
-    return `<div class="act-item"><div class="act-name">${medal} ${entry.name}</div><div class="act-bar-bg"><div class="act-bar-fill" style="width:${pct}%"></div></div><div class="act-score">${entry.pts}p</div></div>`;
+    return `<div class="act-item"><div class="act-name">${medal} ${name}</div><div class="act-bar-bg"><div class="act-bar-fill" style="width:${pct}%"></div></div><div class="act-score">${score}p</div></div>`;
   }).join('');
 }
 
@@ -1564,17 +1572,19 @@ function startTimer(session){
   const idx=session.currentSubjectIndex||0;
   const newTimerEnd=session.timerEnd||Date.now();
   const total=(session.minutesPerSubject||3)*60;
-  // Only reset timer if subject changed OR timerEnd changed significantly (>5s diff)
-  const timerChanged=Math.abs(newTimerEnd-(state.timerEnd||0))>5000;
-  const subjectChanged=state.lastWatchdogSubject!==idx;
-  if(subjectChanged||timerChanged){
+  const sameSubject=state.lastWatchdogSubject===idx;
+  const timerEndClose=Math.abs(newTimerEnd-(state.timerEnd||0))<2000;
+  // Only restart interval if subject changed or timerEnd changed significantly
+  if(!sameSubject||!timerEndClose){
     if(state.timerInterval)clearInterval(state.timerInterval);
+    state.timerInterval=null;
     state.timerEnd=newTimerEnd;
   }
-  if(subjectChanged){
+  if(!sameSubject){
     state.lastWatchdogSubject=idx;
     scheduleWatchdog(state.sessionId,state.timerEnd,session.minutesPerSubject,idx);
   }
+  if(state.timerInterval)return; // already running for this subject
   function tick(){
     if(session.paused)return;
     const now=Date.now();
@@ -1584,8 +1594,6 @@ function startTimer(session){
     if(secs===7&&!state.tick7Played){state.tick7Played=true;playSound('tick7');}
     if(secs===1&&!state.tick1Played){state.tick1Played=true;playSound('tick1');}
     if(secs>10)state.urgentSoundPlayed=false;
-    if(secs>7)state.tick7Played=false;
-    if(secs>1)state.tick1Played=false;
     // Auto-submit when timer hits 0
     if(secs===0&&!state.hasVotedCurrentSubject&&state.participantId){
       state.hasVotedCurrentSubject=true; // prevent multiple submits
@@ -1605,9 +1613,7 @@ function startTimer(session){
     });
   }
   tick();
-  if(!state.timerInterval){
-    state.timerInterval=setInterval(tick,500);
-  }
+  state.timerInterval=setInterval(tick,500);
 }
 
 // ========== WATCHDOG ==========
