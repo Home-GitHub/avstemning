@@ -806,7 +806,7 @@ import { getDatabase, ref, set, get, update, onValue, onChildAdded, remove, runT
 // Make all window functions available immediately
 Object.defineProperty(window, '__moduleReady', { value: true });
 
-const VERSION = 'Avstemning v2.2';
+const VERSION = 'Avstemning v2.3';
 console.log(VERSION);
 
 const FIREBASE_CONFIG = {
@@ -1435,7 +1435,7 @@ function showVotingScreen(session){
   document.getElementById('submitted-subject').textContent=subject.name;
   document.getElementById('submitted-progress-txt').textContent=`Emne ${idx+1} av ${subjects.length}`;
   const votes=session.votes||{};
-  const voteKey=subject.originalIndex!==undefined?subject.originalIndex:idx;
+  const voteKey=idx; // always use array index - consistent with submitVote and calcScores
   const hasVoted=votes[voteKey]&&votes[voteKey][state.participantId];
   state.hasVotedCurrentSubject=!!hasVoted;
   const pCount=session.participants?Object.keys(session.participants).length:0;
@@ -1943,7 +1943,7 @@ function showFinalLeaderboard(session){
           let bestSubjectIdx=null;
           let bestScore=-1;
           allSubjects.forEach((sub,si)=>{
-            const vk=sub.originalIndex!==undefined?sub.originalIndex:si;
+            const vk=si; // use array index consistently
             const v=votes[vk]&&votes[vk][pid];
             if(!v)return;
             let sc=0;
@@ -2184,18 +2184,21 @@ window.togglePauseWithMessage=async function(){
   const isPaused=state.session?.paused;
   const msg=document.getElementById('pause-message-input')?.value||'Pause – den som venter...';
   if(isPaused){
-    // Resume: set new timerEnd = now + remaining seconds
-    const remaining=Math.max(0,Math.round(((state.session?.timerEnd||Date.now())-Date.now())));
-    const newTimerEnd=Date.now()+remaining;
+    // Resume: calculate remaining = timerEnd - pausedAt, add to now
+    const pausedAt=state.session?.pausedAt||Date.now();
+    const timerEnd=state.session?.timerEnd||Date.now();
+    const remainingMs=Math.max(0,timerEnd-pausedAt);
+    const newTimerEnd=Date.now()+remainingMs;
     await update(ref(db,`sessions/${state.sessionId}`),{
-      paused:false,pauseMessage:null,timerEnd:newTimerEnd
+      paused:false,pauseMessage:null,timerEnd:newTimerEnd,pausedAt:null
     });
     // Re-schedule watchdog with new timerEnd
     if(state.isAdmin&&state.session){
       scheduleWatchdog(state.sessionId,newTimerEnd,state.session.minutesPerSubject,state.session.currentSubjectIndex||0);
     }
   } else {
-    // Pause: store remaining time, clear timerEnd so watchdog won't fire
+    // Pause: store current timerEnd as pausedAt reference, keep timerEnd
+    // tick() checks paused flag and stops - watchdog checks paused and stops
     await update(ref(db,`sessions/${state.sessionId}`),{
       paused:true,pauseMessage:msg,pausedAt:Date.now()
     });
