@@ -806,7 +806,7 @@ import { getDatabase, ref, set, get, update, onValue, onChildAdded, remove, runT
 // Make all window functions available immediately
 Object.defineProperty(window, '__moduleReady', { value: true });
 
-const VERSION = 'Avstemning v2.1';
+const VERSION = 'Avstemning v2.2';
 console.log(VERSION);
 
 const FIREBASE_CONFIG = {
@@ -1557,12 +1557,23 @@ function loadDraft(idx,session){
 }
 
 window.submitVote=async function(){
-  if(!state.participantId||state.hasVotedCurrentSubject)return;
+  if(!state.participantId){
+    const errEl=document.getElementById('vote-error');
+    if(errEl){errEl.textContent='Du er ikke innlogget – refresh siden';errEl.style.display='block';}
+    return;
+  }
+  if(state.hasVotedCurrentSubject)return;
   const session=state.session;
   const idx=session.currentSubjectIndex||0;
   const errEl=document.getElementById('vote-error');
   errEl.style.display='none';
-  const votes=state.currentVotes[idx]||{};
+  // Build votes from currentVotes - ensure all categories are included
+  const cats=session.categories?Object.values(session.categories):[];
+  if(!state.currentVotes[idx])state.currentVotes[idx]={};
+  cats.forEach(cat=>{
+    if(state.currentVotes[idx][cat.name]===undefined)state.currentVotes[idx][cat.name]=0;
+  });
+  const votes=Object.assign({},state.currentVotes[idx]);
   try{
     await set(ref(db,`sessions/${state.sessionId}/votes/${idx}/${state.participantId}`),
       {participantName:state.participantName,votes,submittedAt:Date.now()});
@@ -1578,33 +1589,40 @@ window.submitVote=async function(){
 
 // ========== TIMER ==========
 function startTimer(session){
+  // Timer reads from state.session (Firebase source of truth) - not local closure
   if(state.timerInterval){clearInterval(state.timerInterval);state.timerInterval=null;}
-  state.timerEnd=session.timerEnd||Date.now();
-  const total=(session.minutesPerSubject||3)*60;
   const idx=session.currentSubjectIndex||0;
+  const total=(session.minutesPerSubject||3)*60;
   if(state.lastWatchdogSubject!==idx){
     state.lastWatchdogSubject=idx;
-    scheduleWatchdog(state.sessionId,state.timerEnd,session.minutesPerSubject,idx);
+    scheduleWatchdog(state.sessionId,session.timerEnd,session.minutesPerSubject,idx);
   }
   function tick(){
-    if(session.paused)return;
+    // Always read from state.session - updated by Firebase listener
+    const currentSession=state.session;
+    if(!currentSession)return;
+    if(currentSession.paused)return; // reads live Firebase value
+    const timerEnd=currentSession.timerEnd||Date.now();
     const now=Date.now();
-    const secs=Math.max(0,Math.round((state.timerEnd-now)/1000));
-    // Urgent sound at 10 seconds
+    const secs=Math.max(0,Math.round((timerEnd-now)/1000));
+    const subjectIdx=currentSession.currentSubjectIndex||0;
+    const sessionTotal=(currentSession.minutesPerSubject||3)*60;
+    // Sounds based on live timer
     if(secs===10&&!state.urgentSoundPlayed){state.urgentSoundPlayed=true;playSound('tick10');}
     if(secs===7&&!state.tick7Played){state.tick7Played=true;playSound('tick7');}
     if(secs===1&&!state.tick1Played){state.tick1Played=true;playSound('tick1');}
-    if(secs>10)state.urgentSoundPlayed=false;
+    if(secs>10){state.urgentSoundPlayed=false;}
+    if(secs>7){state.tick7Played=false;}
+    if(secs>1){state.tick1Played=false;}
     // Auto-submit when timer hits 0
     if(secs===0&&!state.hasVotedCurrentSubject&&state.participantId){
-      state.hasVotedCurrentSubject=true; // prevent multiple submits
-      const idx=session.currentSubjectIndex||0;
-      const votes=state.currentVotes[idx]||{};
-      set(ref(db,`sessions/${state.sessionId}/votes/${idx}/${state.participantId}`),
+      state.hasVotedCurrentSubject=true;
+      const votes=state.currentVotes[subjectIdx]||{};
+      set(ref(db,`sessions/${state.sessionId}/votes/${subjectIdx}/${state.participantId}`),
         {participantName:state.participantName,votes,submittedAt:Date.now(),autoSubmitted:true})
         .catch(e=>console.error('Auto-submit failed:',e));
     }
-    const pct=Math.max(0,(secs/total)*100);
+    const pct=Math.max(0,(secs/sessionTotal)*100);
     const urgent=secs<=10&&secs>0;
     ['timer-display','submitted-timer'].forEach(id=>{
       const el=document.getElementById(id);if(el){el.textContent=formatTime(secs);el.className='timer-display'+(urgent?' urgent':'');}
@@ -1619,17 +1637,20 @@ function startTimer(session){
 
 // ========== WATCHDOG ==========
 function scheduleWatchdog(sessionId,timerEnd,minutes,subjectIndex){
-  // Only admin triggers advance - this is the single source of truth for timer
   if(!state.isAdmin)return;
+  if(!timerEnd)return;
   const delay=timerEnd-Date.now();
   if(delay<=0)return;
   setTimeout(async()=>{
     const snap=await get(ref(db,`sessions/${sessionId}`));
     if(!snap.exists())return;
     const s=snap.val();
-    if(s.paused)return;
+    if(s.paused)return; // paused - don't advance
+    if(!s.timerEnd)return; // timerEnd cleared (e.g. by forceNext) - don't advance
     if(s.currentSubjectIndex!==subjectIndex)return;
     if(s.status!=='voting')return;
+    // Verify timerEnd matches what we scheduled for
+    if(Math.abs(s.timerEnd-timerEnd)>5000)return; // timerEnd changed significantly
     await advanceSubject(sessionId,s,subjectIndex);
   },delay+1000);
 }
@@ -1808,12 +1829,14 @@ window.forceNext=async function(){
       // Last subject
       await update(ref(db,`sessions/${state.sessionId}`),{
         status:'leaderboard',currentSubjectIndex:idx,
-        isLastLeaderboard:true,leaderboardSeconds:lbSecs
+        isLastLeaderboard:true,leaderboardSeconds:lbSecs,
+        timerEnd:null // clear timerEnd so watchdog stops
       });
     } else {
       await update(ref(db,`sessions/${state.sessionId}`),{
         status:'leaderboard',currentSubjectIndex:idx,
-        isLastLeaderboard:false,leaderboardSeconds:lbSecs
+        isLastLeaderboard:false,leaderboardSeconds:lbSecs,
+        timerEnd:null // clear timerEnd so watchdog stops
       });
     }
     // Schedule advance from leaderboard (admin only)
@@ -2160,7 +2183,23 @@ window.togglePause=function(){togglePauseWithMessage();};
 window.togglePauseWithMessage=async function(){
   const isPaused=state.session?.paused;
   const msg=document.getElementById('pause-message-input')?.value||'Pause – den som venter...';
-  await update(ref(db,`sessions/${state.sessionId}`),{paused:!isPaused,pauseMessage:isPaused?null:msg});
+  if(isPaused){
+    // Resume: set new timerEnd = now + remaining seconds
+    const remaining=Math.max(0,Math.round(((state.session?.timerEnd||Date.now())-Date.now())));
+    const newTimerEnd=Date.now()+remaining;
+    await update(ref(db,`sessions/${state.sessionId}`),{
+      paused:false,pauseMessage:null,timerEnd:newTimerEnd
+    });
+    // Re-schedule watchdog with new timerEnd
+    if(state.isAdmin&&state.session){
+      scheduleWatchdog(state.sessionId,newTimerEnd,state.session.minutesPerSubject,state.session.currentSubjectIndex||0);
+    }
+  } else {
+    // Pause: store remaining time, clear timerEnd so watchdog won't fire
+    await update(ref(db,`sessions/${state.sessionId}`),{
+      paused:true,pauseMessage:msg,pausedAt:Date.now()
+    });
+  }
   document.getElementById('pause-toggle-btn').textContent=!isPaused?'▶ Fortsett':'⏸ Sett på pause';
   ['pause-btn','pause-btn2'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=!isPaused?'▶':'⏸';});
 };
