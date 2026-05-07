@@ -1505,7 +1505,6 @@ function buildVotingCategories(session){
     row.className='cat-row';
     const catKey=cat.key||safeKey(cat.name);
     const val=state.currentVotes[idx][catKey]||0;
-    const catKey=safeKey(cat.name);
     row.innerHTML=`
       <div class="cat-header">
         <div class="cat-name">${cat.name}${cat.weight>1?` <span style="font-size:10px;color:var(--muted);">×${cat.weight}</span>`:''}</div>
