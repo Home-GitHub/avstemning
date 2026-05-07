@@ -322,6 +322,8 @@ const FIREBASE_CONFIG = {
 
 const app = initializeApp(FIREBASE_CONFIG);
 const db = getDatabase(app);
+const GENERATOR_VERSION = 'Generator v1.0';
+console.log(GENERATOR_VERSION);
 const APP_URL = "https://home-github.github.io/avstemning/avstemning.html";
 
 let subjects = [], categories = [], blindtestEnabled = false;

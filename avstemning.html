@@ -806,7 +806,7 @@ import { getDatabase, ref, set, get, update, onValue, onChildAdded, remove, runT
 // Make all window functions available immediately
 Object.defineProperty(window, '__moduleReady', { value: true });
 
-const VERSION = 'Avstemning v2.6';
+const VERSION = 'Avstemning v2.7';
 console.log(VERSION);
 
 const FIREBASE_CONFIG = {
@@ -1495,16 +1495,20 @@ function buildVotingCategories(session){
   const container=document.getElementById('voting-categories');
   const cats=session.categories?Object.values(session.categories):[];
   const idx=session.currentSubjectIndex||0;
+  // Always initialize and store votes under catKey (Firebase-safe)
   if(!state.currentVotes[idx])state.currentVotes[idx]={};
-  cats.forEach(cat=>{if(state.currentVotes[idx][cat.name]===undefined)state.currentVotes[idx][cat.name]=0;});
+  cats.forEach(cat=>{
+    const k=cat.key||safeKey(cat.name);
+    if(state.currentVotes[idx][k]===undefined)state.currentVotes[idx][k]=0;
+  });
   container.innerHTML='';
   const card=document.createElement('div');
   card.className='voting-categories-inner';
   cats.forEach(cat=>{
-    const row=document.createElement('div');
-    row.className='cat-row';
     const catKey=cat.key||safeKey(cat.name);
     const val=state.currentVotes[idx][catKey]||0;
+    const row=document.createElement('div');
+    row.className='cat-row';
     row.innerHTML=`
       <div class="cat-header">
         <div class="cat-name">${cat.name}${cat.weight>1?` <span style="font-size:10px;color:var(--muted);">×${cat.weight}</span>`:''}</div>
@@ -1512,9 +1516,9 @@ function buildVotingCategories(session){
       </div>
       <div class="slider-wrap">
         <div class="slider-midmark"></div>
-        <input type="range" class="slider-input" id="s-${catKey}" 
-          min="0" max="${cat.max}" value="${val}" 
-          data-cat="${cat.name}" data-key="${cat.key||safeKey(cat.name)}" data-max="${cat.max}">
+        <input type="range" class="slider-input" id="s-${catKey}"
+          min="0" max="${cat.max}" value="${val}"
+          data-key="${catKey}" data-max="${cat.max}">
       </div>
       <div style="display:flex;justify-content:space-between;padding:0 0 2px;">
         <span style="font-size:10px;color:var(--muted);">0</span>
@@ -1533,12 +1537,12 @@ function buildVotingCategories(session){
     ['input','change','touchmove'].forEach(evt=>{
       slider.addEventListener(evt,(e)=>{
         e.stopPropagation();
-        const catKey=slider.dataset.key||safeKey(slider.dataset.cat);
+        const k=slider.dataset.key;
         const v=parseInt(slider.value);
         const si=session.currentSubjectIndex||0;
         if(!state.currentVotes[si])state.currentVotes[si]={};
-        state.currentVotes[si][catKey]=v; // stored by key (Firebase-safe)
-        document.getElementById(`v-${safeKey(catName)}`).textContent=v;
+        state.currentVotes[si][k]=v;
+        document.getElementById('v-'+k).textContent=v;
         updateSlider(slider);
         saveDraft(si);
       });
