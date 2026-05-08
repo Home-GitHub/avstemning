@@ -1440,18 +1440,9 @@ function showVotingScreen(session){
   // All voted early - advance immediately with remaining time added to leaderboard
   if(pCount>=2&&vCount>=pCount&&state.timerEnd&&!state.allVotedAdvanced){
     state.allVotedAdvanced=true;
-    const remainingSecs=Math.max(0,Math.round((state.timerEnd-Date.now())/1000));
     // Clear local timer so submitted screen doesn't keep counting
     if(state.timerInterval){clearInterval(state.timerInterval);state.timerInterval=null;}
-    if(remainingSecs>3){
-      const bonusLbSecs=(session.leaderboardSeconds||60)+remainingSecs;
-      // Write bonus to Firebase then advance
-      const sessionWithBonus=Object.assign({},session,{leaderboardSeconds:bonusLbSecs});
-      update(ref(db,`sessions/${state.sessionId}`),{leaderboardSeconds:bonusLbSecs})
-        .then(()=>advanceSubject(state.sessionId,sessionWithBonus,idx));
-    } else {
-      advanceSubject(state.sessionId,session,idx);
-    }
+    advanceSubject(state.sessionId,session,idx);
   }
   // First in event removed
   // All agreed event
@@ -1601,12 +1592,8 @@ window.submitVote=async function(){
     const vCount=session.votes&&session.votes[idx]?Object.keys(session.votes[idx]).length:0;
     if(pCount>=2&&vCount>=pCount&&!state.allVotedAdvanced){
       state.allVotedAdvanced=true;
-      const remainingSecs=Math.max(0,Math.round(((state.session?.timerEnd||Date.now())-Date.now())/1000));
       if(state.timerInterval){clearInterval(state.timerInterval);state.timerInterval=null;}
-      const bonusLbSecs=(session.leaderboardSeconds||60)+remainingSecs;
-      update(ref(db,`sessions/${state.sessionId}`),{leaderboardSeconds:bonusLbSecs})
-        .then(()=>advanceSubject(state.sessionId,Object.assign({},session,{leaderboardSeconds:bonusLbSecs}),idx))
-        .catch(()=>{});
+      advanceSubject(state.sessionId,session,idx);
     } else {
       showScreen('screen-submitted');
     }
