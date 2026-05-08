@@ -805,7 +805,7 @@ import { getDatabase, ref, set, get, update, onValue, onChildAdded, remove, runT
 // Make all window functions available immediately
 Object.defineProperty(window, '__moduleReady', { value: true });
 
-const VERSION = 'Avstemning v2.8';
+const VERSION = 'Avstemning v2.9';
 console.log(VERSION);
 
 const FIREBASE_CONFIG = {
@@ -1482,7 +1482,7 @@ function checkAllAgreed(session,idx){
   if(vArr.length<pCount)return;
   cats.forEach(cat=>{
     if(cat.max<=5)return;
-    const vals=vArr.map(v=>(v.votes&&v.votes[cat.name])||0);
+    const catK=cat.key||safeKey(cat.name);const vals=vArr.map(v=>(v.votes&&v.votes[catK])||0);
     const allSame=vals.every(v=>v===vals[0]);
     if(allSame)showEvent('🔥','Alle enige!',`${cat.name}: ${vals[0]} poeng`);
   });
@@ -1595,7 +1595,21 @@ window.submitVote=async function(){
   if(errEl)errEl.style.display='none';
   const ok=await doSubmitVote(idx);
   if(ok){
-    showScreen('screen-submitted');
+    // Check if all participants have now voted - if so advance immediately
+    const session=state.session;
+    const pCount=session.participants?Object.keys(session.participants).length:0;
+    const vCount=session.votes&&session.votes[idx]?Object.keys(session.votes[idx]).length:0;
+    if(pCount>=2&&vCount>=pCount&&!state.allVotedAdvanced){
+      state.allVotedAdvanced=true;
+      const remainingSecs=Math.max(0,Math.round(((state.session?.timerEnd||Date.now())-Date.now())/1000));
+      if(state.timerInterval){clearInterval(state.timerInterval);state.timerInterval=null;}
+      const bonusLbSecs=(session.leaderboardSeconds||60)+remainingSecs;
+      update(ref(db,`sessions/${state.sessionId}`),{leaderboardSeconds:bonusLbSecs})
+        .then(()=>advanceSubject(state.sessionId,Object.assign({},session,{leaderboardSeconds:bonusLbSecs}),idx))
+        .catch(()=>{});
+    } else {
+      showScreen('screen-submitted');
+    }
   } else {
     if(errEl){errEl.textContent='Kunne ikke sende inn, prøv igjen';errEl.style.display='block';}
   }
@@ -1955,7 +1969,7 @@ function showFinalLeaderboard(session){
             const v=votes[vk]&&votes[vk][pid];
             if(!v)return;
             let sc=0;
-            catList.forEach(cat=>{sc+=((v.votes&&v.votes[cat.name])||0)*(cat.weight||1);});
+            catList.forEach(cat=>{const k=cat.key||safeKey(cat.name);sc+=((v.votes&&v.votes[k])||0)*(cat.weight||1);});
             if(sc>bestScore){bestScore=sc;bestSubjectIdx=vk;}
           });
           return bestSubjectIdx===winnerVoteKey&&bestScore>0;
@@ -1967,7 +1981,7 @@ function showFinalLeaderboard(session){
           let score=0;
           catList.forEach(cat=>{
             const v=votes[winnerVoteKey]&&votes[winnerVoteKey][pid];
-            if(v)score+=((v.votes&&v.votes[cat.name])||0)*(cat.weight||1);
+            if(v){const k=cat.key||safeKey(cat.name);score+=((v.votes&&v.votes[k])||0)*(cat.weight||1);}
           });
           return{name,score:Math.round(score)};
         });
@@ -2441,7 +2455,7 @@ function buildJudgeBreakdown(session) {
       const v = votes[idx] && votes[idx][pid];
       if (!v) return { name: sub.name, total: 0 };
       let total = 0;
-      cats.forEach(cat => { total += ((v.votes && v.votes[cat.name]) || 0) * (cat.weight || 1); });
+      cats.forEach(cat => { const k=cat.key||safeKey(cat.name);total += ((v.votes && v.votes[k]) || 0) * (cat.weight || 1); });
       return { name: sub.name, total };
     }).sort((a, b) => b.total - a.total);
     favSubject = subjectScores[0];
@@ -2516,7 +2530,7 @@ function buildCategoryBreakdown(session) {
       participants.forEach(([pid, p]) => {
         const v = votes[idx] && votes[idx][pid];
         if (!v) return;
-        const pts = (v.votes && v.votes[cat.name]) || 0;
+        const k=cat.key||safeKey(cat.name);const pts = (v.votes && v.votes[k]) || 0;
         totalSum += pts; totalCount++;
         if (!personSums[pid]) { personSums[pid] = 0; personCounts[pid] = 0; }
         personSums[pid] += pts; personCounts[pid]++;
@@ -2586,7 +2600,7 @@ function showJudgeSpotlight(session, idx){
     const v=votes[idx]&&votes[idx][pid];
     if(!v)return{name:p.name,total:0,voted:false};
     let total=0;
-    cats.forEach(cat=>{total+=((v.votes&&v.votes[cat.name])||0)*(cat.weight||1);});
+    cats.forEach(cat=>{const k=cat.key||safeKey(cat.name);total+=((v.votes&&v.votes[k])||0)*(cat.weight||1);});
     return{name:p.name,total,voted:true};
   }).filter(j=>j.voted).sort((a,b)=>b.total-a.total);
 
@@ -2671,7 +2685,7 @@ function showCategorySpotlight(session, idx){
     participants.forEach(pid => {
       const v = votes[idx] && votes[idx][pid];
       if (!v) return;
-      const pts = (v.votes && v.votes[cat.name]) || 0;
+      const k2=cat.key||safeKey(cat.name);const pts = (v.votes && v.votes[k2]) || 0;
       total += pts; count++;
       if (pts > topScore) { topScore = pts; topName = v.participantName || pid; }
     });
