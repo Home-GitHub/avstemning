@@ -124,12 +124,12 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .sb-admin-btn{display:none;}
 .is-admin .sb-admin-btn{display:flex;}
 .sb-send{
-  width:44px;margin-top:auto;margin-bottom:8px;
+  width:44px;margin-top:auto;margin-bottom:28px;
   border-radius:12px;
   background:var(--accent);color:#080808;
-  font-size:9px;font-weight:700;
+  font-size:11px;font-weight:700;
   writing-mode:vertical-rl;letter-spacing:0.8px;
-  padding:14px 0;
+  padding:18px 0;
   display:none;align-items:center;justify-content:center;
   cursor:pointer;transition:all 0.15s;
 }
@@ -139,8 +139,8 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .voting-categories{flex:1;padding:10px 12px;overflow-y:auto;}
 .cat-row{margin-bottom:12px;}
 .cat-row:last-child{margin-bottom:4px;}
-.cat-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;}
-.cat-name{font-size:15px;color:rgba(255,255,255,0.65);font-weight:500;}
+.cat-header{display:flex;flex-direction:column;align-items:center;margin-bottom:4px;gap:2px;}
+.cat-name{font-size:18px;color:rgba(255,255,255,0.8);font-weight:600;text-align:center;width:100%;}
 .cat-val{font-size:22px;font-weight:700;color:var(--accent);font-family:monospace;line-height:1;}
 .slider-wrap{position:relative;padding:4px 0;}
 .slider-input{
@@ -152,7 +152,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 }
 .slider-input::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:32px;height:32px;border-radius:50%;background:var(--accent);cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,0.5);border:2px solid rgba(255,255,255,0.2);}
 .slider-input::-moz-range-thumb{width:32px;height:32px;border-radius:50%;background:var(--accent);cursor:pointer;border:2px solid rgba(255,255,255,0.2);}
-.slider-midmark{position:absolute;top:0;left:50%;transform:translateX(-50%);width:1.5px;height:100%;background:rgba(255,255,255,0.15);pointer-events:none;border-radius:1px;}
+.slider-midmark{position:absolute;top:-4px;bottom:-4px;transform:translateX(-50%);width:3px;background:rgba(255,255,255,0.35);pointer-events:none;border-radius:2px;}
 .slider-labels{display:flex;justify-content:space-between;margin-top:1px;}
 .slider-lbl{font-size:9px;color:rgba(255,255,255,0.2);}
 
@@ -336,10 +336,10 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
 
 <!-- GLOBAL SIDEBAR -->
 <div class="global-sidebar" id="global-sidebar">
-  <div class="sb-item sb-skal" data-action="openSkalSheet">🥂</div>
-  <div class="sb-divider"></div>
   <div class="sb-item sb-emoji-toggle" id="global-emoji-toggle" data-action="toggleGlobalEmoji">😊</div>
   <div class="sb-emoji-list" id="global-emoji-list"></div>
+  <div class="sb-divider"></div>
+  <div class="sb-item sb-skal" data-action="openSkalSheet">🥂</div>
   <div class="sb-admin-divider"></div>
   <div class="sb-item sb-admin-btn" data-action="openGear">⚙️</div>
   <div class="sb-item sb-admin-btn" id="global-pause-btn" data-action="togglePause">⏸</div>
@@ -805,7 +805,7 @@ import { getDatabase, ref, set, get, update, onValue, onChildAdded, remove, runT
 // Make all window functions available immediately
 Object.defineProperty(window, '__moduleReady', { value: true });
 
-const VERSION = 'Avstemning v3.2';
+const VERSION = 'Avstemning v3.3';
 console.log(VERSION);
 
 const FIREBASE_CONFIG = {
@@ -1499,11 +1499,11 @@ function buildVotingCategories(session){
     row.className='cat-row';
     row.innerHTML=`
       <div class="cat-header">
-        <div class="cat-name">${cat.name}${cat.weight>1?` <span style="font-size:10px;color:var(--muted);">×${cat.weight}</span>`:''}</div>
+        <div class="cat-name">${cat.name}${cat.weight>1?` <span style="font-size:11px;color:var(--muted);">×${cat.weight}</span>`:''}</div>
         <div class="cat-val" id="v-${catKey}">${val}</div>
       </div>
       <div class="slider-wrap">
-        <div class="slider-midmark"></div>
+        <div class="slider-midmark" style="left:${(Math.round(cat.max/2)/cat.max)*100}%"></div>
         <input type="range" class="slider-input" id="s-${catKey}"
           min="0" max="${cat.max}" value="${val}"
           data-key="${catKey}" data-max="${cat.max}">
@@ -1743,11 +1743,19 @@ function showLeaderboardScreen(session){
   const isLast=session.isLastLeaderboard||false;
   const rc=session.resultConfig||{toplist:true,categories:true,judges:false};
 
-  // Build list of enabled views
+  // Build list of enabled views - use order array if available
   const views=[];
-  if(rc.toplist!==false) views.push('toplist');
-  if(rc.categories) views.push('categories');
-  if(rc.judges) views.push('judges');
+  if(rc.order&&rc.order.length){
+    rc.order.forEach(key=>{
+      if(key==='toplist'&&rc.toplist!==false) views.push('toplist');
+      if(key==='categories'&&rc.categories) views.push('categories');
+      if(key==='judges'&&rc.judges) views.push('judges');
+    });
+  } else {
+    if(rc.toplist!==false) views.push('toplist');
+    if(rc.categories) views.push('categories');
+    if(rc.judges) views.push('judges');
+  }
   if(!views.length) views.push('toplist');
 
   const sliceMs=lbSecs>0?Math.floor(lbSecs/views.length)*1000:0;
@@ -2490,26 +2498,18 @@ function renderJudgeBreakdown(containerId, session) {
   const stats = buildJudgeBreakdown(session);
   const medals = ['🥇','🥈','🥉'];
 
-  stats.forEach((judge, i) => {
+  stats.forEach((judge) => {
     const div = document.createElement('div');
     div.style.cssText = 'background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;max-width:480px;margin-left:auto;margin-right:auto;';
-    const medal = i < 3 ? medals[i] : `#${i+1}`;
-    const topStr = judge.subjectScores.slice(0, 3).map((s, si) =>
-      `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-top:1px solid var(--border);">
-        <div style="font-size:11px;color:var(--muted);width:20px;">${si+1}.</div>
+    const topStr = judge.subjectScores.filter(s=>s.total>0).slice(0, 3).map((s, si) =>
+      `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-top:1px solid var(--border);">
+        <div style="font-size:14px;width:24px;">${medals[si]}</div>
         <div style="flex:1;font-size:13px;">${s.name}</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--text2);">${Math.round(s.total)}</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--accent);">${Math.round(s.total)}p</div>
       </div>`
     ).join('');
     div.innerHTML = `
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:${i===0?'var(--gold)':i===1?'var(--silver)':i===2?'var(--bronze)':'var(--muted)'};">${medal}</div>
-        <div style="flex:1;font-size:15px;font-weight:600;">${judge.name}</div>
-        <div style="text-align:right;">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--accent);">${judge.avg.toFixed(1)}</div>
-          <div style="font-size:10px;color:var(--muted);">snitt</div>
-        </div>
-      </div>
+      <div style="font-size:15px;font-weight:600;margin-bottom:8px;">${judge.name}</div>
       ${topStr}
     `;
     container.appendChild(div);
@@ -2667,17 +2667,23 @@ function showJudgeInLeaderboard(session,idx,container){
   if(!container)return;
   const cats=session.categories?Object.values(session.categories):[];
   const votes=session.votes||{};
-  const subjectName=session.subjects?Object.values(session.subjects)[idx]?.name:'';
-  container.innerHTML=`<div style="text-align:center;margin-bottom:16px;"><div class="header-title">Dommer-detaljer</div><div class="text-muted" style="font-size:13px;">${subjectName||''}</div></div>`;
+  const subjects=session.subjects?Object.values(session.subjects):[];
+  container.innerHTML=`<div style="text-align:center;margin-bottom:16px;"><div class="header-title">Favoritter så langt</div><div class="text-muted" style="font-size:13px;">Topp 3 emner per dommer</div></div>`;
   const parts=Object.entries(session.participants||{});
   parts.forEach(([pid,p])=>{
-    const v=votes[idx]&&votes[idx][pid];
-    if(!v)return;
-    const catScores=cats.map(cat=>{const k=cat.key||safeKey(cat.name);const val=(v.votes&&v.votes[k])||0;return{name:cat.name,val};}).sort((a,b)=>b.val-a.val);
-    const total=catScores.reduce((s,c)=>s+c.val,0);
+    // Calculate this participant's score per subject so far (up to current idx)
+    const subjectScores=subjects.slice(0,idx+1).map((sub,si)=>{
+      const v=votes[si]&&votes[si][pid];
+      if(!v)return null;
+      let total=0;
+      cats.forEach(cat=>{const k=cat.key||safeKey(cat.name);total+=((v.votes&&v.votes[k])||0)*(cat.weight||1);});
+      return{name:sub.name,total:Math.round(total)};
+    }).filter(Boolean).sort((a,b)=>b.total-a.total);
+    if(!subjectScores.length)return;
+    const medals=['🥇','🥈','🥉'];
     const div=document.createElement('div');
     div.style.cssText='background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;max-width:480px;margin-left:auto;margin-right:auto;';
-    div.innerHTML=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"><div style="flex:1;font-size:15px;font-weight:600;">${p.name||pid}</div><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--accent);">${Math.round(total)}p</div></div>${catScores.slice(0,3).map((s,si)=>`<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-top:1px solid var(--border);"><div style="font-size:11px;color:var(--muted);width:20px;">${si+1}.</div><div style="flex:1;font-size:13px;">${s.name}</div><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--text2);">${s.val}</div></div>`).join('')}`;
+    div.innerHTML=`<div style="font-size:15px;font-weight:600;margin-bottom:8px;">${p.name||pid}</div>${subjectScores.slice(0,3).map((s,si)=>`<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-top:1px solid var(--border);"><div style="font-size:14px;width:24px;">${medals[si]}</div><div style="flex:1;font-size:13px;">${s.name}</div><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--accent);">${s.total}p</div></div>`).join('')}`;
     container.appendChild(div);
   });
 }

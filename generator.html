@@ -172,21 +172,30 @@ select option{background:var(--surface2);}
               <div class="toggle-label">🏆 Topp-liste</div>
               <div class="toggle-sub">Emner rangert etter poengsum</div>
             </div>
-            <div class="toggle on" id="toggle-toplist" onclick="toggleResult('toplist')"></div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <input type="number" id="order-toplist" value="1" min="1" max="99" style="width:44px;text-align:center;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;padding:4px;">
+              <div class="toggle on" id="toggle-toplist" onclick="toggleResult('toplist')"></div>
+            </div>
           </div>
           <div class="toggle-row">
             <div>
               <div class="toggle-label">📊 Kategori-detaljer</div>
               <div class="toggle-sub">Kategorier med topp 3 dommere</div>
             </div>
-            <div class="toggle on" id="toggle-categories" onclick="toggleResult('categories')"></div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <input type="number" id="order-categories" value="2" min="1" max="99" style="width:44px;text-align:center;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;padding:4px;">
+              <div class="toggle on" id="toggle-categories" onclick="toggleResult('categories')"></div>
+            </div>
           </div>
           <div class="toggle-row">
             <div>
               <div class="toggle-label">🎯 Dommer-detaljer</div>
               <div class="toggle-sub">Hvem likte hva best</div>
             </div>
-            <div class="toggle" id="toggle-judges" onclick="toggleResult('judges')"></div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <input type="number" id="order-judges" value="3" min="1" max="99" style="width:44px;text-align:center;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;padding:4px;">
+              <div class="toggle" id="toggle-judges" onclick="toggleResult('judges')"></div>
+            </div>
           </div>
           <label style="margin-top:14px;">App-ID (brukes i URL)</label>
           <input type="text" id="cfg-slug" placeholder="f.eks. olsmaking-juni" autocomplete="off">
@@ -322,7 +331,7 @@ const FIREBASE_CONFIG = {
 
 const app = initializeApp(FIREBASE_CONFIG);
 const db = getDatabase(app);
-const GENERATOR_VERSION = 'Generator v1.0';
+const GENERATOR_VERSION = 'Generator v1.1';
 console.log(GENERATOR_VERSION);
 const APP_URL = "https://home-github.github.io/avstemning/avstemning.html";
 
@@ -333,6 +342,20 @@ window.toggleResult = function(key) {
   resultConfig[key] = !resultConfig[key];
   document.getElementById(`toggle-${key}`).classList.toggle('on', resultConfig[key]);
 };
+
+function buildResultConfig() {
+  const views = ['toplist','categories','judges'];
+  const config = {};
+  views.forEach(key => {
+    config[key] = resultConfig[key];
+  });
+  config.order = views
+    .filter(key => resultConfig[key])
+    .map(key => ({ key, order: parseInt(document.getElementById(`order-${key}`)?.value)||99 }))
+    .sort((a,b) => a.order - b.order)
+    .map(v => v.key);
+  return config;
+}
 let sessions = {}, activeSessionId = null;
 let enabledThemes = {standard:true,pub:true,vin:true,mgp:true,mat:true,party:true};
 const THEMES = [
@@ -473,7 +496,7 @@ window.createSession = async () => {
   await set(ref(db,`sessions/${slug}`),{
     name,password,theme,minutesPerSubject:minutes,leaderboardSeconds:lbSecs,
     blindtest:blindtestEnabled,blindtestLocked:false,blindtestRevealed:false,
-    resultConfig,
+    resultConfig:buildResultConfig(),
     status:'published',currentSubjectIndex:0,subjects:subjectsObj,categories:categoriesObj,createdAt:Date.now()
   });
   document.getElementById('create-btn-text').textContent = 'Publiser avstemning →';
