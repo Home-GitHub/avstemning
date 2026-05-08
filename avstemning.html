@@ -805,7 +805,7 @@ import { getDatabase, ref, set, get, update, onValue, onChildAdded, remove, runT
 // Make all window functions available immediately
 Object.defineProperty(window, '__moduleReady', { value: true });
 
-const VERSION = 'Avstemning v2.9';
+const VERSION = 'Avstemning v3.0';
 console.log(VERSION);
 
 const FIREBASE_CONFIG = {
@@ -1329,7 +1329,7 @@ function watchSkals(){
 }
 
 // ========== HANDLE SESSION STATE ==========
-function handleSessionState(session){
+async function handleSessionState(session){
   if(session.paused){
     document.getElementById('pause-overlay').classList.add('active');
     document.getElementById('pause-msg').textContent=session.pauseMessage||'Pause – den som venter...';
@@ -1345,11 +1345,11 @@ function handleSessionState(session){
     const lbKey=`${state.sessionId}_lb_${session.currentSubjectIndex}`;
     if(state.lastLbKey!==lbKey){
       state.lastLbKey=lbKey;
-      state.finalShown=false; // reset for next session
-      // Auto-submit for any participant who hasn't voted yet (e.g. admin forced next)
+      state.finalShown=false;
+      // await doSubmitVote so all votes are saved BEFORE leaderboard shows
       const vIdx=session.currentSubjectIndex||0;
       if(state.participantId&&!state.hasVotedCurrentSubject){
-        doSubmitVote(vIdx).catch(()=>{});
+        await doSubmitVote(vIdx);
       }
       showLeaderboardScreen(session);
     }
@@ -1642,8 +1642,8 @@ function startTimer(session){
     if(secs>10){state.urgentSoundPlayed=false;}
     if(secs>7){state.tick7Played=false;}
     if(secs>1){state.tick1Played=false;}
-    // Auto-submit when timer hits 0 - use central doSubmitVote with locked index
-    if(secs===0&&!state.hasVotedCurrentSubject&&state.participantId){
+    // Auto-submit when timer hits 0 - only if timerEnd is valid (not cleared by forceNext)
+    if(secs===0&&!state.hasVotedCurrentSubject&&state.participantId&&currentSession.timerEnd){
       doSubmitVote(lockedSubjectIdx).catch(e=>console.error('Auto-submit failed:',e));
     }
     const pct=Math.max(0,(secs/sessionTotal)*100);
@@ -1706,12 +1706,26 @@ async function advanceSubject(sessionId,session,idx){
     return;
   }
   if(lbSecs>0){
-    await update(ref(db,`sessions/${sessionId}`),{status:'leaderboard',currentSubjectIndex:idx,leaderboardSeconds:lbSecs});
-    setTimeout(async()=>{
-      const timerEnd=session.minutesPerSubject>0?Date.now()+session.minutesPerSubject*60000:null;
-      await update(ref(db,`sessions/${sessionId}`),{status:'voting',currentSubjectIndex:nextIdx,timerEnd:timerEnd||null});
-      if(timerEnd)scheduleWatchdog(sessionId,timerEnd,session.minutesPerSubject,nextIdx);
-    },lbSecs*1000);
+    const lbEnd=Date.now()+lbSecs*1000;
+    await update(ref(db,`sessions/${sessionId}`),{
+      status:'leaderboard',currentSubjectIndex:idx,
+      leaderboardSeconds:lbSecs,lbTimerEnd:lbEnd
+    });
+    // Only admin schedules advance from leaderboard
+    if(state.isAdmin){
+      setTimeout(async()=>{
+        const snap=await get(ref(db,`sessions/${sessionId}`));
+        if(!snap.exists())return;
+        const s=snap.val();
+        if(s.status!=='leaderboard'||s.currentSubjectIndex!==idx||s.paused)return;
+        const timerEnd=session.minutesPerSubject>0?Date.now()+session.minutesPerSubject*60000:null;
+        await update(ref(db,`sessions/${sessionId}`),{
+          status:'voting',currentSubjectIndex:nextIdx,
+          timerEnd:timerEnd||null,lbTimerEnd:null
+        });
+        if(timerEnd)scheduleWatchdog(sessionId,timerEnd,session.minutesPerSubject,nextIdx);
+      },lbSecs*1000);
+    }
   }else{
     const timerEnd=session.minutesPerSubject>0?Date.now()+session.minutesPerSubject*60000:null;
     await update(ref(db,`sessions/${sessionId}`),{status:'voting',currentSubjectIndex:nextIdx,timerEnd:timerEnd||null});
@@ -1804,28 +1818,43 @@ function showLeaderboardScreen(session){
       showJudgeInLeaderboard(session,idx,lbSpot);
     }
 
-    // Countdown
-    if(sliceMs>0){
-      let r=Math.floor(sliceMs/1000);
+    // Use lbTimerEnd from Firebase as source of truth for timing
+    if(sliceMs>0&&session.lbTimerEnd){
+      const totalLbMs=Math.max(0,session.lbTimerEnd-Date.now());
+      // Calculate when THIS view should end based on position in rotation
+      const viewStartMs=viewIdx*sliceMs;
+      const viewEndMs=Math.min((viewIdx+1)*sliceMs, totalLbMs);
+      const msUntilNext=Math.max(0,viewEndMs-viewStartMs-(Date.now()-(session.lbTimerEnd-totalLbMs-viewStartMs)));
+      // Simpler: just use sliceMs but cap at remaining total time
+      const msLeft=Math.max(0,session.lbTimerEnd-Date.now());
+      const msForThisView=Math.min(sliceMs, msLeft);
+
+      // Countdown display
+      let r=Math.floor(msForThisView/1000);
       const countEl=document.getElementById('lb-countdown');
+      if(state.lbCountInterval)clearInterval(state.lbCountInterval);
       if(countEl){
         countEl.textContent=`${nextLabel} om ${formatTime(r)}`;
-        const iv=setInterval(()=>{
-          r--;
-          countEl.textContent=`${nextLabel} om ${formatTime(r)}`;
-          if(r<=0)clearInterval(iv);
+        state.lbCountInterval=setInterval(()=>{
+          const secLeft=Math.max(0,Math.round((session.lbTimerEnd-Date.now())/1000));
+          const viewSecLeft=Math.min(r,secLeft);
+          r=Math.max(0,r-1);
+          countEl.textContent=`${nextLabel} om ${formatTime(Math.min(r,secLeft))}`;
+          if(r<=0)clearInterval(state.lbCountInterval);
         },1000);
       }
+
       if(!isLastView){
-        setTimeout(()=>showView(viewIdx+1),sliceMs);
+        setTimeout(()=>showView(viewIdx+1),msForThisView);
       } else if(isLast&&session.lbTimerEnd){
-        // All clients watch for end - whoever fires first checks status
-        const msLeft=Math.max(0,session.lbTimerEnd-Date.now());
-        setTimeout(async()=>{
-          const snap=await get(ref(db,`sessions/${state.sessionId}`));
-          if(snap.exists()&&snap.val().status==='leaderboard')
-            await update(ref(db,`sessions/${state.sessionId}`),{status:'ended'});
-        },msLeft);
+        const msToEnd=Math.max(0,session.lbTimerEnd-Date.now());
+        if(state.isAdmin){
+          setTimeout(async()=>{
+            const snap=await get(ref(db,`sessions/${state.sessionId}`));
+            if(snap.exists()&&snap.val().status==='leaderboard'&&!snap.val().paused)
+              await update(ref(db,`sessions/${state.sessionId}`),{status:'ended'});
+          },msToEnd);
+        }
       }
     }
   }
@@ -1849,16 +1878,18 @@ window.forceNext=async function(){
     // voting → leaderboard only, watchdog handles timing
     if(nextIdx>=subjects.length){
       // Last subject
+      const lbEnd1=Date.now()+lbSecs*1000;
       await update(ref(db,`sessions/${state.sessionId}`),{
         status:'leaderboard',currentSubjectIndex:idx,
         isLastLeaderboard:true,leaderboardSeconds:lbSecs,
-        timerEnd:null // clear timerEnd so watchdog stops
+        timerEnd:null,lbTimerEnd:lbEnd1
       });
     } else {
+      const lbEnd2=Date.now()+lbSecs*1000;
       await update(ref(db,`sessions/${state.sessionId}`),{
         status:'leaderboard',currentSubjectIndex:idx,
         isLastLeaderboard:false,leaderboardSeconds:lbSecs,
-        timerEnd:null // clear timerEnd so watchdog stops
+        timerEnd:null,lbTimerEnd:lbEnd2
       });
     }
     // Schedule advance from leaderboard (admin only)
