@@ -472,8 +472,7 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
       <span class="voting-meta" id="submitted-voter-count" style="color:var(--accent);"></span>
     </div>
     <div class="voting-timer-row">
-      <div class="voting-bar-bg"><div class="voting-bar-fill" id="submitted-bar" style="width:0%"></div></div>
-      <div class="voting-timer" id="submitted-timer">0:00</div>
+      
     </div>
     <div class="voting-dots" id="submitted-dots"></div>
   </div>
@@ -806,7 +805,7 @@ import { getDatabase, ref, set, get, update, onValue, onChildAdded, remove, runT
 // Make all window functions available immediately
 Object.defineProperty(window, '__moduleReady', { value: true });
 
-const VERSION = 'Avstemning v2.7';
+const VERSION = 'Avstemning v2.8';
 console.log(VERSION);
 
 const FIREBASE_CONFIG = {
@@ -1461,9 +1460,7 @@ function showVotingScreen(session){
     startTimer(session);
   }else{
     document.getElementById('timer-display').textContent='∞';
-    document.getElementById('submitted-timer').textContent='∞';
     document.getElementById('timer-bar').style.width='100%';
-    document.getElementById('submitted-bar').style.width='100%';
   }
   if(hasVoted){
     // If all voted, leaderboard is imminent - show transition
@@ -1637,12 +1634,10 @@ function startTimer(session){
     }
     const pct=Math.max(0,(secs/sessionTotal)*100);
     const urgent=secs<=10&&secs>0;
-    ['timer-display','submitted-timer'].forEach(id=>{
-      const el=document.getElementById(id);if(el){el.textContent=formatTime(secs);el.className='timer-display'+(urgent?' urgent':'');}
-    });
-    ['timer-bar','submitted-bar'].forEach(id=>{
-      const el=document.getElementById(id);if(el){el.style.width=pct+'%';el.style.background=urgent?'var(--danger)':'var(--accent)';}
-    });
+    const timerEl=document.getElementById('timer-display');
+    if(timerEl){timerEl.textContent=formatTime(secs);timerEl.className='timer-display'+(urgent?' urgent':'');}
+    const barEl=document.getElementById('timer-bar');
+    if(barEl){barEl.style.width=pct+'%';barEl.style.background=urgent?'var(--danger)':'var(--accent)';}
   }
   tick();
   state.timerInterval=setInterval(tick,500);
