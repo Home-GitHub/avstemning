@@ -72,7 +72,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 
 /* STANDARD HEADER */
 .header{padding:13px 14px 11px;display:flex;align-items:center;justify-content:space-between;border-bottom:0.5px solid rgba(255,255,255,0.06);background:var(--hdr-bg);position:sticky;top:0;z-index:20;backdrop-filter:blur(12px);}
-.header-title{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;color:var(--accent);line-height:1;}
+.header-title{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:1px;color:var(--accent);line-height:1;}
 .header-sub{font-size:11px;color:var(--muted);margin-top:1px;}
 .header-right{display:flex;align-items:center;gap:8px;}
 .icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;transition:all 0.15s;flex-shrink:0;}
@@ -93,6 +93,9 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 
 .sb-item{width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;transition:all 0.15s;}
 .sb-item:active{transform:scale(0.88);}
+.sb-large{width:44px;border-radius:12px;background:rgba(255,255,255,0.06);border:0.5px solid rgba(255,255,255,0.12);font-size:20px;padding:18px 0;height:auto;writing-mode:vertical-rl;}
+.sb-spacer{flex:1;}
+.sb-pause-indicator{display:none;width:44px;border-radius:12px;background:var(--accent-dim);border:0.5px solid var(--accent);color:var(--accent);font-size:20px;padding:18px 0;height:auto;writing-mode:vertical-rl;align-items:center;justify-content:center;margin-bottom:8px;}
 .sb-skal{border-color:rgba(255,255,255,0.15);background:var(--accent-dim);}
 .sb-divider{width:22px;height:0.5px;background:rgba(255,255,255,0.08);margin:6px 0;}
 .sb-emoji-toggle{position:relative;}
@@ -336,15 +339,16 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
 
 <!-- GLOBAL SIDEBAR -->
 <div class="global-sidebar" id="global-sidebar">
+  <div class="sb-item sb-skal sb-large" data-action="openSkalSheet">🥂</div>
+  <div class="sb-divider"></div>
   <div class="sb-item sb-emoji-toggle" id="global-emoji-toggle" data-action="toggleGlobalEmoji">😊</div>
   <div class="sb-emoji-list" id="global-emoji-list"></div>
-  <div class="sb-divider"></div>
-  <div class="sb-item sb-skal" data-action="openSkalSheet">🥂</div>
-  <div class="sb-admin-divider"></div>
+  <div class="sb-spacer"></div>
   <div class="sb-item sb-admin-btn" data-action="openGear">⚙️</div>
-  <div class="sb-item sb-admin-btn" id="global-pause-btn" data-action="togglePause">⏸</div>
-  <div class="sb-item sb-admin-btn sb-next" data-action="forceNext">➡️</div>
+  <div class="sb-item sb-admin-btn sb-large sb-next" data-action="forceNext">➡️</div>
+  <div class="sb-item sb-admin-btn sb-large" id="global-pause-btn" data-action="togglePause">⏸</div>
   <div class="sb-send" id="submit-vote-btn" data-action="submitVote">✓<br>SEND</div>
+  <div class="sb-pause-indicator" id="sb-pause-indicator">⏸</div>
 </div>
 
 <!-- TOAST -->
@@ -805,7 +809,7 @@ import { getDatabase, ref, set, get, update, onValue, onChildAdded, remove, runT
 // Make all window functions available immediately
 Object.defineProperty(window, '__moduleReady', { value: true });
 
-const VERSION = 'Avstemning v3.3';
+const VERSION = 'Avstemning v3.5';
 console.log(VERSION);
 
 const FIREBASE_CONFIG = {
@@ -1330,14 +1334,17 @@ function watchSkals(){
 
 // ========== HANDLE SESSION STATE ==========
 async function handleSessionState(session){
+  const pauseIndicator=document.getElementById('sb-pause-indicator');
+  const sendBtn=document.getElementById('submit-vote-btn');
   if(session.paused){
-    document.getElementById('pause-overlay').classList.add('active');
-    document.getElementById('pause-msg').textContent=session.pauseMessage||'Pause – den som venter...';
-    var resumeBtn=document.getElementById('pause-resume-btn');
-    if(resumeBtn)resumeBtn.style.display=state.isAdmin?'block':'none';
+    if(pauseIndicator)pauseIndicator.style.display='flex';
+    if(sendBtn)sendBtn.style.display='none';
     if(state.timerInterval){clearInterval(state.timerInterval);state.timerInterval=null;}
-    return;
-  }else{document.getElementById('pause-overlay').classList.remove('active');}
+    // Don't return - let the normal screen logic run so sliders/leaderboard stay visible
+  }else{
+    if(pauseIndicator)pauseIndicator.style.display='none';
+    document.getElementById('pause-overlay').classList.remove('active');
+  }
 
   if(session.status==='published'||session.status==='waiting'){showWaitingRoom(session);return;}
   if(session.status==='ended'){if(!state.finalShown){showFinalLeaderboard(session);}return;}
@@ -1509,9 +1516,9 @@ function buildVotingCategories(session){
           data-key="${catKey}" data-max="${cat.max}">
       </div>
       <div style="display:flex;justify-content:space-between;padding:0 0 2px;">
-        <span style="font-size:10px;color:var(--muted);">0</span>
-        <span style="font-size:10px;color:var(--muted);">${Math.round(cat.max/2)}</span>
-        <span style="font-size:10px;color:var(--muted);">${cat.max}</span>
+        <span style="font-size:13px;color:rgba(255,255,255,0.5);font-weight:600;">0</span>
+        <span style="font-size:13px;color:rgba(255,255,255,0.5);font-weight:600;">${Math.round(cat.max/2)}</span>
+        <span style="font-size:13px;color:rgba(255,255,255,0.5);font-weight:600;">${cat.max}</span>
       </div>`;
     card.appendChild(row);
   });
@@ -2384,7 +2391,7 @@ function getCatEmoji(name){
 
 window.openSkalSheet=function(){
   const now=Date.now();
-  const cooldown=30000;
+  const cooldown=(state.session?.leaderboardSeconds||30)*1000;
   if(now-state.lastSkalSentAt<cooldown){
     const remaining=Math.ceil((cooldown-(now-state.lastSkalSentAt))/1000);
     showToast(`Vent ${remaining} sek før neste skål`);return;
