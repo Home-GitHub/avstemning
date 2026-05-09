@@ -110,8 +110,11 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .is-admin .sb-tall{display:flex;}
 .sb-skal-large{width:44px;border-radius:12px;font-size:22px;padding:18px 0;height:auto;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;background:var(--accent-dim);border:0.5px solid rgba(255,255,255,0.15);}
 .sb-skal-large:active{transform:scale(0.95);}
-.sb-pause-banner{display:none;width:44px;flex:1;border-radius:12px;background:#e85d04;color:#fff;font-size:13px;font-weight:800;letter-spacing:0.5px;align-items:center;justify-content:center;cursor:pointer;text-align:center;line-height:1.3;padding:8px 4px;}
-.sb-send{width:44px;margin-bottom:12px;border-radius:12px;background:#22c55e;color:#fff;font-size:13px;font-weight:800;letter-spacing:0.5px;padding:18px 0;display:none;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;text-align:center;line-height:1.3;}
+.sb-large{width:44px;border-radius:12px;background:rgba(255,255,255,0.06);border:0.5px solid rgba(255,255,255,0.12);font-size:20px;padding:18px 0;height:auto;writing-mode:vertical-rl;display:none;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;}
+.sb-large:active{transform:scale(0.95);}
+.is-admin .sb-large{display:flex;}
+.sb-pause-banner{display:none;width:44px;flex:1;border-radius:12px;background:#e85d04;color:#fff;font-size:11px;font-weight:800;writing-mode:vertical-rl;letter-spacing:0.8px;align-items:center;justify-content:center;cursor:pointer;padding:8px 0;}
+.sb-send{width:44px;margin-bottom:12px;border-radius:12px;background:#22c55e;color:#fff;font-size:11px;font-weight:800;writing-mode:vertical-rl;letter-spacing:0.8px;padding:18px 0;display:none;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;}
 .sb-send:active{transform:scale(0.95);}
 .sb-send.locked{pointer-events:none;opacity:0.25;}
 
@@ -323,8 +326,8 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
   <div class="sb-item sb-admin-btn" data-action="openGear">⚙️</div>
   <div class="sb-pause-banner" id="sb-pause-banner" data-action="togglePause">⏸<br>PAUSE</div>
   <div class="sb-spacer"></div>
-  <div class="sb-tall sb-admin-btn" id="global-pause-btn" data-action="togglePause">⏸</div>
-  <div class="sb-tall sb-admin-btn sb-next" data-action="forceNext">➡️</div>
+  <div class="sb-large sb-admin-btn" id="global-pause-btn" data-action="togglePause">⏸</div>
+  <div class="sb-large sb-admin-btn sb-next" data-action="forceNext">➡️</div>
   <div class="sb-send" id="submit-vote-btn" data-action="submitVote">✓<br>SEND</div>
 </div>
 
@@ -786,7 +789,7 @@ import { getDatabase, ref, set, get, update, onValue, onChildAdded, remove, runT
 // Make all window functions available immediately
 Object.defineProperty(window, '__moduleReady', { value: true });
 
-const VERSION = 'Avstemning v3.7';
+const VERSION = 'Avstemning v3.8';
 console.log(VERSION);
 
 const FIREBASE_CONFIG = {
@@ -1317,13 +1320,13 @@ async function handleSessionState(session){
   if(session.paused){
     if(pauseBanner)pauseBanner.style.display='flex';
     if(sendBtn)sendBtn.classList.add('locked');
-    if(pauseBtn){pauseBtn.textContent='▶️';pauseBtn.style.display='flex';}
+    if(pauseBtn)pauseBtn.textContent='▶️';
     if(state.timerInterval){clearInterval(state.timerInterval);state.timerInterval=null;}
     // Don't return - let screen logic run so sliders/leaderboard stay visible
   }else{
     if(pauseBanner)pauseBanner.style.display='none';
     if(sendBtn)sendBtn.classList.remove('locked');
-    if(pauseBtn){pauseBtn.textContent='⏸';if(state.isAdmin)pauseBtn.style.display='flex';}
+    if(pauseBtn)pauseBtn.textContent='⏸';
     document.getElementById('pause-overlay').classList.remove('active');
   }
 
