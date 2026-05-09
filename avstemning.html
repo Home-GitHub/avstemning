@@ -50,11 +50,12 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
   position:sticky;top:0;z-index:20;
   border-bottom:0.5px solid rgba(255,255,255,0.06);
 }
-.voting-subject-wrap{padding:0 12px;margin-bottom:5px;}
+.voting-subject-wrap{padding:0 12px;margin-bottom:5px;text-align:center;}
 .voting-subject{
   font-weight:800;line-height:1.1;
   color:var(--accent);
-  white-space:nowrap;overflow:hidden;
+  font-size:24px;
+  text-align:center;
   display:block;width:100%;
 }
 .voting-meta-row{display:flex;justify-content:space-between;padding:0 12px;margin-bottom:6px;}
@@ -82,7 +83,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .content{flex:1;padding:18px 14px;overflow-y:auto;}
 
 /* GLOBAL SIDEBAR - visible on all screens except waiting */
-.global-sidebar{position:fixed;left:0;top:0;bottom:0;width:56px;display:none;flex-direction:column;align-items:center;padding:20px 0 12px;gap:6px;background:rgba(0,0,0,0.35);border-right:0.5px solid rgba(255,255,255,0.05);z-index:200;}
+.global-sidebar{position:fixed;left:0;top:var(--header-h,80px);bottom:0;width:56px;display:none;flex-direction:column;align-items:center;padding:8px 0 12px;gap:6px;background:rgba(0,0,0,0.35);border-right:0.5px solid rgba(255,255,255,0.05);z-index:200;}
 .global-sidebar.visible{display:flex;}
 .screens-with-sidebar{padding-left:56px;}
 
@@ -109,8 +110,8 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .is-admin .sb-tall{display:flex;}
 .sb-skal-large{width:44px;border-radius:12px;font-size:22px;padding:18px 0;height:auto;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;background:var(--accent-dim);border:0.5px solid rgba(255,255,255,0.15);}
 .sb-skal-large:active{transform:scale(0.95);}
-.sb-pause-banner{display:none;width:44px;border-radius:12px;background:var(--accent);color:#080808;font-size:11px;font-weight:700;writing-mode:vertical-rl;letter-spacing:0.8px;padding:18px 0;align-items:center;justify-content:center;cursor:pointer;}
-.sb-send{width:44px;margin-bottom:12px;border-radius:12px;background:var(--accent);color:#080808;font-size:11px;font-weight:700;writing-mode:vertical-rl;letter-spacing:0.8px;padding:18px 0;display:none;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;}
+.sb-pause-banner{display:none;width:44px;flex:1;border-radius:12px;background:#e85d04;color:#fff;font-size:13px;font-weight:800;letter-spacing:0.5px;align-items:center;justify-content:center;cursor:pointer;text-align:center;line-height:1.3;padding:8px 4px;}
+.sb-send{width:44px;margin-bottom:12px;border-radius:12px;background:#22c55e;color:#fff;font-size:13px;font-weight:800;letter-spacing:0.5px;padding:18px 0;display:none;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;text-align:center;line-height:1.3;}
 .sb-send:active{transform:scale(0.95);}
 .sb-send.locked{pointer-events:none;opacity:0.25;}
 
@@ -315,15 +316,15 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
 
 <!-- GLOBAL SIDEBAR -->
 <div class="global-sidebar" id="global-sidebar">
+  <div class="sb-skal-large" data-action="openSkalSheet">🥂</div>
   <div class="sb-item sb-emoji-toggle" id="global-emoji-toggle" data-action="toggleGlobalEmoji">😊</div>
   <div class="sb-emoji-list" id="global-emoji-list"></div>
   <div style="height:44px;"></div>
   <div class="sb-item sb-admin-btn" data-action="openGear">⚙️</div>
+  <div class="sb-pause-banner" id="sb-pause-banner" data-action="togglePause">⏸<br>PAUSE</div>
   <div class="sb-spacer"></div>
-  <div class="sb-pause-banner" id="sb-pause-banner" data-action="togglePause">⏸ PAUSE</div>
-  <div class="sb-skal-large" data-action="openSkalSheet">🥂</div>
-  <div class="sb-tall sb-admin-btn sb-next" data-action="forceNext">➡️</div>
   <div class="sb-tall sb-admin-btn" id="global-pause-btn" data-action="togglePause">⏸</div>
+  <div class="sb-tall sb-admin-btn sb-next" data-action="forceNext">➡️</div>
   <div class="sb-send" id="submit-vote-btn" data-action="submitVote">✓<br>SEND</div>
 </div>
 
@@ -785,7 +786,7 @@ import { getDatabase, ref, set, get, update, onValue, onChildAdded, remove, runT
 // Make all window functions available immediately
 Object.defineProperty(window, '__moduleReady', { value: true });
 
-const VERSION = 'Avstemning v3.6';
+const VERSION = 'Avstemning v3.7';
 console.log(VERSION);
 
 const FIREBASE_CONFIG = {
@@ -1290,7 +1291,7 @@ function renderActivityBar(){
   bar.innerHTML=sorted.map(([name,score],i)=>{
     const pct=Math.round(score/max*100);
     const medal=i===0?'🥇':i===1?'🥈':'🥉';
-    return `<div class="act-item"><div class="act-name">${medal} ${name}</div><div class="act-bar-bg"><div class="act-bar-fill" style="width:${pct}%"></div></div><div class="act-score">${score}p</div></div>`;
+    return `<div style="display:flex;align-items:center;gap:6px;white-space:nowrap;"><span>${medal}</span><span style="font-size:13px;">${name}</span><div style="width:60px;height:4px;border-radius:2px;background:rgba(255,255,255,0.1);overflow:hidden;"><div style="width:${pct}%;height:100%;background:var(--accent);border-radius:2px;"></div></div><span style="font-size:13px;color:var(--accent);font-weight:700;">${score}p</span></div>`;
   }).join('');
 }
 
@@ -1396,6 +1397,12 @@ function showVotingScreen(session){
   const subject=subjects[idx];
   if(!subject)return;
   
+  // Update sidebar top offset after header renders
+  requestAnimationFrame(()=>{
+    const h=document.querySelector('.voting-header');
+    if(h)document.documentElement.style.setProperty('--header-h',h.offsetHeight+'px');
+  });
+
   // Reset per-subject state when subject changes
   if(lastShownSubjectIdx !== idx){
     lastShownSubjectIdx = idx;
@@ -2854,7 +2861,7 @@ init().then(() => {
 
 </script>
 <!-- ACTIVITY BAR -->
-<div id="activity-bar" style="display:none;position:fixed;bottom:0;left:56px;right:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);border-top:0.5px solid rgba(255,255,255,0.06);padding:6px 12px;gap:12px;z-index:190;align-items:center;justify-content:center;flex-wrap:wrap;"></div>
+<div id="activity-bar" style="display:none;position:fixed;bottom:0;left:0;right:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);border-top:0.5px solid rgba(255,255,255,0.06);padding:6px 12px;gap:16px;z-index:190;align-items:center;justify-content:center;flex-wrap:nowrap;"></div>
 
 <script>
 // Global event delegator - handles all data-action clicks
