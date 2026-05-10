@@ -110,7 +110,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .is-admin .sb-tall{display:flex;}
 .sb-skal-large{width:44px;border-radius:12px;font-size:22px;padding:18px 0;height:auto;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;background:var(--accent-dim);border:0.5px solid rgba(255,255,255,0.15);}
 .sb-skal-large:active{transform:scale(0.95);}
-.sb-large{width:44px;border-radius:12px;background:rgba(255,255,255,0.06);border:0.5px solid rgba(255,255,255,0.12);font-size:20px;padding:18px 0;height:auto;writing-mode:vertical-rl;display:none;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;}
+.sb-large{width:44px;min-height:80px;border-radius:12px;background:rgba(255,255,255,0.06);border:0.5px solid rgba(255,255,255,0.12);font-size:20px;padding:18px 0;height:auto;writing-mode:vertical-rl;display:none;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;}
 .sb-large:active{transform:scale(0.95);}
 .is-admin .sb-large{display:flex;}
 .sb-pause-banner{display:none;width:44px;flex:1;border-radius:12px;background:#e85d04;color:#fff;font-size:11px;font-weight:800;writing-mode:vertical-rl;letter-spacing:0.8px;align-items:center;justify-content:center;cursor:pointer;padding:8px 0;}
@@ -789,7 +789,7 @@ import { getDatabase, ref, set, get, update, onValue, onChildAdded, remove, runT
 // Make all window functions available immediately
 Object.defineProperty(window, '__moduleReady', { value: true });
 
-const VERSION = 'Avstemning v3.8';
+const VERSION = 'Avstemning v3.9';
 console.log(VERSION);
 
 const FIREBASE_CONFIG = {
@@ -1810,8 +1810,6 @@ function showLeaderboardScreen(session){
       document.getElementById('lb-sub').textContent=`Etter emne ${idx+1} av ${subjects.length}`;
       renderLeaderboard('leaderboard-list',scores);
       document.getElementById('lb-voter-count').textContent=`${vCount} av ${participants.length} stemte`;
-      if(!document.getElementById('screen-leaderboard').classList.contains('active'))
-        showScreen('screen-leaderboard');
     } else if(view==='categories'){
       if(lbList)lbList.style.display='none';
       if(lbSpot)lbSpot.style.display='';
@@ -1847,6 +1845,7 @@ function showLeaderboardScreen(session){
     }
   }
 
+  showScreen('screen-leaderboard');
   showView(0);
 }
 
