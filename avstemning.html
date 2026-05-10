@@ -40,6 +40,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 
 /* SCREENS */
 .screen{display:none;min-height:100vh;flex-direction:column;position:relative;z-index:1;}
+#screen-voting{height:100vh;min-height:unset;overflow:hidden;}
 .screen.active{display:flex;}
 
 /* ===== VOTING SCREEN SPECIAL HEADER ===== */
@@ -88,7 +89,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .screens-with-sidebar{padding-left:56px;}
 
 /* VOTING BODY: sidebar + categories */
-.voting-body{display:flex;flex:1;overflow:hidden;}
+.voting-body{display:flex;flex:1;overflow:hidden;height:0;}
 
 /* SIDEBAR */
 
@@ -110,11 +111,12 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .is-admin .sb-tall{display:flex;}
 .sb-skal-large{width:44px;border-radius:12px;font-size:22px;padding:18px 0;height:auto;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;background:var(--accent-dim);border:0.5px solid rgba(255,255,255,0.15);}
 .sb-skal-large:active{transform:scale(0.95);}
-.sb-large{width:44px;min-height:80px;border-radius:12px;background:rgba(255,255,255,0.06);border:0.5px solid rgba(255,255,255,0.12);font-size:20px;padding:18px 0;height:auto;writing-mode:vertical-rl;display:none;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;}
+.sb-large{width:44px;height:80px;border-radius:12px;background:rgba(255,255,255,0.06);border:0.5px solid rgba(255,255,255,0.12);font-size:20px;padding:0;writing-mode:vertical-rl;display:none;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;}
 .sb-large:active{transform:scale(0.95);}
 .is-admin .sb-large{display:flex;}
-.sb-pause-banner{display:none;width:44px;flex:1;border-radius:12px;background:#e85d04;color:#fff;font-size:11px;font-weight:800;writing-mode:vertical-rl;letter-spacing:0.8px;align-items:center;justify-content:center;cursor:pointer;padding:8px 0;}
-.sb-send{width:44px;margin-bottom:12px;border-radius:12px;background:#22c55e;color:#fff;font-size:11px;font-weight:800;writing-mode:vertical-rl;letter-spacing:0.8px;padding:18px 0;display:none;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;}
+.sb-pause-banner{display:none;width:44px;flex:1;border-radius:12px;background:#e85d04;color:#fff;font-size:11px;font-weight:800;writing-mode:vertical-rl;letter-spacing:0.8px;align-items:center;justify-content:center;padding:8px 0;}
+.is-admin .sb-pause-banner{cursor:pointer;}
+.sb-send{width:44px;height:80px;margin-bottom:12px;border-radius:12px;background:#22c55e;color:#fff;font-size:11px;font-weight:800;writing-mode:vertical-rl;letter-spacing:0.8px;padding:0;display:none;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;}
 .sb-send:active{transform:scale(0.95);}
 .sb-send.locked{pointer-events:none;opacity:0.25;}
 
@@ -324,7 +326,7 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
   <div class="sb-emoji-list" id="global-emoji-list"></div>
   <div style="height:44px;"></div>
   <div class="sb-item sb-admin-btn" data-action="openGear">⚙️</div>
-  <div class="sb-pause-banner" id="sb-pause-banner" data-action="togglePause">⏸<br>PAUSE</div>
+  <div class="sb-pause-banner" id="sb-pause-banner">⏸<br>PAUSE</div>
   <div class="sb-spacer"></div>
   <div class="sb-large sb-admin-btn" id="global-pause-btn" data-action="togglePause">⏸</div>
   <div class="sb-large sb-admin-btn sb-next" data-action="forceNext">➡️</div>
@@ -789,7 +791,7 @@ import { getDatabase, ref, set, get, update, onValue, onChildAdded, remove, runT
 // Make all window functions available immediately
 Object.defineProperty(window, '__moduleReady', { value: true });
 
-const VERSION = 'Avstemning v3.9';
+const VERSION = 'Avstemning v3.10';
 console.log(VERSION);
 
 const FIREBASE_CONFIG = {
@@ -1180,21 +1182,7 @@ function watchParticipantCountForJoin(){
   });
 }
 
-function setAdminUI(isAdmin){
-  document.querySelectorAll('.admin-only').forEach(el=>el.style.display=isAdmin?'flex':'none');
-  if(isAdmin){
-    document.body.classList.add('is-admin');
-    document.querySelectorAll('.sb-admin-btn').forEach(el=>el.style.display='flex');
-    document.querySelectorAll('.sb-admin-divider').forEach(el=>el.style.display='block');
-  } else {
-    document.body.classList.remove('is-admin');
-    document.querySelectorAll('.sb-admin-btn').forEach(el=>el.style.display='none');
-    document.querySelectorAll('.sb-admin-divider').forEach(el=>el.style.display='none');
-  }
-  // Also update global sidebar pause btn text
-  const pauseBtn=document.getElementById('global-pause-btn');
-  if(pauseBtn)pauseBtn.style.display=isAdmin?'flex':'none';
-}
+function setAdminUI(isAdmin){\n  document.querySelectorAll('.admin-only').forEach(el=>el.style.display=isAdmin?'flex':'none');\n  if(isAdmin){\n    document.body.classList.add('is-admin');\n    document.querySelectorAll('.sb-admin-btn').forEach(el=>el.style.display='flex');\n    document.querySelectorAll('.sb-admin-divider').forEach(el=>el.style.display='block');\n    const banner=document.getElementById('sb-pause-banner');\n    if(banner&&!banner._adminClickBound){\n      banner._adminClickBound=true;\n      banner.addEventListener('click',()=>window.togglePause&&window.togglePause());\n    }\n  } else {\n    document.body.classList.remove('is-admin');\n    document.querySelectorAll('.sb-admin-btn').forEach(el=>el.style.display='none');\n    document.querySelectorAll('.sb-admin-divider').forEach(el=>el.style.display='none');\n  }\n  // Also update global sidebar pause btn text\n  const pauseBtn=document.getElementById('global-pause-btn');\n  if(pauseBtn)pauseBtn.style.display=isAdmin?'flex':'none';\n}
 
 // ========== JOIN ==========
 window.joinSession=async function(){
@@ -1920,16 +1908,21 @@ function calcScores(subjects,cats,votes,participants){
 function renderLeaderboard(containerId,scores){
   const container=document.getElementById(containerId);if(!container)return;
   container.innerHTML='';
-  const max=scores[0]?scores[0].total:1;
-  const classes=['gold','silver','bronze'];
-  const medals=['🥇','🥈','🥉'];
+  container.style.cssText='text-align:center;max-width:560px;margin:0 auto;';
   scores.forEach((item,i)=>{
-    const cls=i<3?classes[i]:'other';
-    const medal=i<3?medals[i]:`#${i+1}`;
-    const pct=max>0?(item.total/max*100):0;
     const div=document.createElement('div');
-    div.className=`lb-item ${cls}`;
-    div.innerHTML=`<div class="lb-row"><div class="lb-rank">${medal}</div><div class="lb-name">${item.name}</div><div class="lb-score">${Math.round(item.total)}</div></div><div class="lb-bar-bg"><div class="lb-bar-inner" style="width:${pct}%"></div></div>`;
+    if(i===0){
+      div.className='final-winner';
+      div.innerHTML=`<div class="final-winner-emoji">🥇</div><div class="final-winner-name">${item.name}</div><div class="final-winner-score">${Math.round(item.total)}</div><div style="font-size:12px;color:var(--muted);margin-top:4px;">poeng totalt</div>`;
+    }else if(i===1||i===2){
+      const medal=i===1?'🥈':'🥉';
+      const col=i===1?'var(--silver)':'var(--bronze)';
+      div.style.cssText='background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:12px;';
+      div.innerHTML=`<div style="font-size:24px;">${medal}</div><div style="flex:1;font-size:15px;font-weight:500;">${item.name}</div><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:${col};">${Math.round(item.total)}</div>`;
+    }else{
+      div.style.cssText='display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);';
+      div.innerHTML=`<div style="font-size:13px;color:var(--muted);width:24px;">#${i+1}</div><div style="flex:1;font-size:13px;">${item.name}</div><div style="font-size:14px;color:var(--muted);">${Math.round(item.total)}</div>`;
+    }
     container.appendChild(div);
   });
 }
