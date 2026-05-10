@@ -814,7 +814,7 @@ import { getDatabase, ref, set, get, update, onValue, onChildAdded, remove, runT
 // Make all window functions available immediately
 Object.defineProperty(window, '__moduleReady', { value: true });
 
-const VERSION = 'Avstemning v3.7';
+const VERSION = 'Avstemning v3.8';
 console.log(VERSION);
 
 const FIREBASE_CONFIG = {
@@ -1383,12 +1383,14 @@ async function handleSessionState(session){
     if(state.lastLbKey!==lbKey){
       state.lastLbKey=lbKey;
       state.finalShown=false;
-      // await doSubmitVote so all votes are saved BEFORE leaderboard shows
       const vIdx=session.currentSubjectIndex||0;
       if(state.participantId&&!state.hasVotedCurrentSubject){
         await doSubmitVote(vIdx);
       }
-      showLeaderboardScreen(session);
+      // Hent fersk sesjon fra Firebase så vi alltid rendrer med oppdaterte poeng
+      const freshSnap=await get(ref(db,`sessions/${state.sessionId}`));
+      const freshSession=freshSnap.exists()?freshSnap.val():session;
+      showLeaderboardScreen(freshSession);
     }
     return;
   }
