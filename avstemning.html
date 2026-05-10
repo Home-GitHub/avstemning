@@ -791,7 +791,7 @@ import { getDatabase, ref, set, get, update, onValue, onChildAdded, remove, runT
 // Make all window functions available immediately
 Object.defineProperty(window, '__moduleReady', { value: true });
 
-const VERSION = 'Avstemning v3.10';
+const VERSION = 'Avstemning v4.0';
 console.log(VERSION);
 
 const FIREBASE_CONFIG = {
@@ -1182,7 +1182,26 @@ function watchParticipantCountForJoin(){
   });
 }
 
-function setAdminUI(isAdmin){\n  document.querySelectorAll('.admin-only').forEach(el=>el.style.display=isAdmin?'flex':'none');\n  if(isAdmin){\n    document.body.classList.add('is-admin');\n    document.querySelectorAll('.sb-admin-btn').forEach(el=>el.style.display='flex');\n    document.querySelectorAll('.sb-admin-divider').forEach(el=>el.style.display='block');\n    const banner=document.getElementById('sb-pause-banner');\n    if(banner&&!banner._adminClickBound){\n      banner._adminClickBound=true;\n      banner.addEventListener('click',()=>window.togglePause&&window.togglePause());\n    }\n  } else {\n    document.body.classList.remove('is-admin');\n    document.querySelectorAll('.sb-admin-btn').forEach(el=>el.style.display='none');\n    document.querySelectorAll('.sb-admin-divider').forEach(el=>el.style.display='none');\n  }\n  // Also update global sidebar pause btn text\n  const pauseBtn=document.getElementById('global-pause-btn');\n  if(pauseBtn)pauseBtn.style.display=isAdmin?'flex':'none';\n}
+
+function setAdminUI(isAdmin){
+  document.querySelectorAll('.admin-only').forEach(el=>el.style.display=isAdmin?'flex':'none');
+  if(isAdmin){
+    document.body.classList.add('is-admin');
+    document.querySelectorAll('.sb-admin-btn').forEach(el=>el.style.display='flex');
+    document.querySelectorAll('.sb-admin-divider').forEach(el=>el.style.display='block');
+    const banner=document.getElementById('sb-pause-banner');
+    if(banner&&!banner._adminClickBound){
+      banner._adminClickBound=true;
+      banner.addEventListener('click',()=>window.togglePause&&window.togglePause());
+    }
+  } else {
+    document.body.classList.remove('is-admin');
+    document.querySelectorAll('.sb-admin-btn').forEach(el=>el.style.display='none');
+    document.querySelectorAll('.sb-admin-divider').forEach(el=>el.style.display='none');
+  }
+  const pauseBtn=document.getElementById('global-pause-btn');
+  if(pauseBtn)pauseBtn.style.display=isAdmin?'flex':'none';
+}
 
 // ========== JOIN ==========
 window.joinSession=async function(){
