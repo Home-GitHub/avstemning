@@ -1991,10 +1991,10 @@ function renderLeaderboard(containerId,scores){
       const medal=i===1?'🥈':'🥉';
       const col=i===1?'var(--silver)':'var(--bronze)';
       div.style.cssText='background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:12px;';
-      div.innerHTML=`<div style="font-size:24px;">${{medal}}</div><div style="flex:1;font-size:15px;font-weight:500;">${{item.name}}</div><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:${{col}};">${{Math.round(item.total)}}</div>`;
+      div.innerHTML=`<div style="font-size:24px;">${medal}</div><div style="flex:1;font-size:15px;font-weight:500;">${item.name}</div><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:${col};">${Math.round(item.total)}</div>`;
     }else{
       div.style.cssText='display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);';
-      div.innerHTML=`<div style="font-size:13px;color:var(--muted);width:24px;">#${{i+1}}</div><div style="flex:1;font-size:13px;">${{item.name}}</div><div style="font-size:14px;color:var(--muted);">${{Math.round(item.total)}}</div>`;
+      div.innerHTML=`<div style="font-size:13px;color:var(--muted);width:24px;">#${i+1}</div><div style="flex:1;font-size:13px;">${item.name}</div><div style="font-size:14px;color:var(--muted);">${Math.round(item.total)}</div>`;
     }
     container.appendChild(div);
   });
