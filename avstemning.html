@@ -52,14 +52,16 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
   padding:12px 0 0;
   background:var(--hdr-bg);
   backdrop-filter:blur(12px);
-  position:sticky;top:0;z-index:20;
+  position:fixed;top:0;left:0;right:0;z-index:20;
   border-bottom:0.5px solid rgba(255,255,255,0.06);
 }
-.voting-subject-wrap{padding:0 12px;margin-bottom:5px;}
+#screen-voting{padding-top:var(--voting-header-h,110px);}
+.voting-subject-wrap{padding:0 12px;margin-bottom:5px;text-align:center;}
 .voting-subject{
   font-weight:800;line-height:1.1;
   color:var(--accent);
-  white-space:nowrap;overflow:hidden;
+  font-size:26px;
+  text-align:center;
   display:block;width:100%;
 }
 .voting-meta-row{display:flex;justify-content:space-between;padding:0 12px;margin-bottom:6px;}
@@ -87,21 +89,22 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .content{flex:1;padding:18px 14px;overflow-y:auto;}
 
 /* GLOBAL SIDEBAR - visible on all screens except waiting */
-.global-sidebar{position:fixed;left:0;top:0;bottom:0;width:56px;display:none;flex-direction:column;align-items:center;padding:20px 0 12px;gap:6px;background:rgba(0,0,0,0.35);border-right:0.5px solid rgba(255,255,255,0.05);z-index:200;}
+.global-sidebar{position:fixed;left:0;top:var(--voting-header-h,110px);bottom:var(--activity-bar-h,36px);width:56px;display:none;flex-direction:column;align-items:center;padding:8px 0 8px;gap:6px;background:rgba(0,0,0,0.35);border-right:0.5px solid rgba(255,255,255,0.05);z-index:200;}
 .global-sidebar.visible{display:flex;}
 .screens-with-sidebar{padding-left:56px;}
 
 /* VOTING BODY: sidebar + categories */
-.voting-body{display:flex;flex:1;overflow:hidden;}
+.voting-body{display:flex;flex:1;overflow:hidden;height:0;}
 
 /* SIDEBAR */
 
 .sb-item{width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;transition:all 0.15s;}
 .sb-item:active{transform:scale(0.88);}
-.sb-large{width:44px;border-radius:12px;background:rgba(255,255,255,0.06);border:0.5px solid rgba(255,255,255,0.12);font-size:20px;padding:18px 0;height:auto;writing-mode:vertical-rl;}
+.sb-large{width:44px;height:72px;border-radius:12px;background:rgba(255,255,255,0.08);border:0.5px solid rgba(255,255,255,0.15);font-size:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;}
+.sb-large:active{transform:scale(0.93);}
 .sb-spacer{flex:1;}
 .sb-pause-indicator{display:none;width:44px;border-radius:12px;background:var(--accent-dim);border:0.5px solid var(--accent);color:var(--accent);font-size:20px;padding:18px 0;height:auto;writing-mode:vertical-rl;align-items:center;justify-content:center;margin-bottom:8px;}
-.sb-skal{border-color:rgba(255,255,255,0.15);background:var(--accent-dim);}
+.sb-skal{border-color:rgba(255,255,255,0.2);background:var(--accent-dim);}
 .sb-divider{width:22px;height:0.5px;background:rgba(255,255,255,0.08);margin:6px 0;}
 .sb-emoji-toggle{position:relative;}
 .sb-emoji-toggle.open{background:var(--accent-dim);border-color:rgba(255,255,255,0.15);}
@@ -110,9 +113,9 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .sb-e{width:40px;height:36px;border-radius:9px;font-size:18px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.03);cursor:pointer;transition:all 0.1s;}
 .sb-e:active{transform:scale(0.85);}
 .final-fans{display:flex;justify-content:center;gap:24px;margin-top:10px;flex-wrap:wrap;}
-.act-item{display:flex;align-items:center;gap:6px;font-size:12px;}
-.act-name{color:rgba(255,255,255,0.8);white-space:nowrap;max-width:120px;overflow:hidden;text-overflow:ellipsis;}
-.act-bar-bg{width:60px;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;flex-shrink:0;}
+.act-item{display:flex;align-items:center;gap:6px;font-size:12px;flex:1;min-width:0;}
+.act-name{color:rgba(255,255,255,0.8);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.act-bar-bg{flex:1;min-width:30px;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;flex-shrink:1;}
 .act-bar-fill{height:4px;border-radius:2px;background:var(--accent);transition:width 0.4s ease;}
 .act-score{color:var(--accent);font-weight:600;white-space:nowrap;}
 .final-fans-col{display:flex;flex-direction:column;align-items:center;gap:4px;}
@@ -132,23 +135,22 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .sb-admin-btn{display:none;}
 .is-admin .sb-admin-btn{display:flex;}
 .sb-send{
-  width:44px;margin-top:auto;margin-bottom:28px;
+  width:44px;height:72px;margin-bottom:8px;
   border-radius:12px;
   background:var(--accent);color:#080808;
-  font-size:11px;font-weight:700;
+  font-size:13px;font-weight:800;
   writing-mode:vertical-rl;letter-spacing:0.8px;
-  padding:18px 0;
   display:none;align-items:center;justify-content:center;
   cursor:pointer;transition:all 0.15s;
 }
 .sb-send:active{transform:scale(0.95);}
 
 /* CATEGORIES */
-.voting-categories{flex:1;padding:10px 12px;overflow-y:auto;}
+.voting-categories{flex:1;padding:10px 12px 80px 12px;overflow-y:auto;-webkit-overflow-scrolling:touch;}
 .cat-row{margin-bottom:12px;}
 .cat-row:last-child{margin-bottom:4px;}
 .cat-header{display:flex;flex-direction:column;align-items:center;margin-bottom:4px;gap:2px;}
-.cat-name{font-size:18px;color:rgba(255,255,255,0.8);font-weight:600;text-align:center;width:100%;}
+.cat-name{font-size:20px;color:rgba(255,255,255,0.85);font-weight:700;text-align:center;width:100%;}
 .cat-val{font-size:22px;font-weight:700;color:var(--accent);font-family:monospace;line-height:1;}
 .slider-wrap{position:relative;padding:4px 0;}
 .slider-input{
@@ -160,7 +162,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 }
 .slider-input::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:32px;height:32px;border-radius:50%;background:var(--accent);cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,0.5);border:2px solid rgba(255,255,255,0.2);}
 .slider-input::-moz-range-thumb{width:32px;height:32px;border-radius:50%;background:var(--accent);cursor:pointer;border:2px solid rgba(255,255,255,0.2);}
-.slider-midmark{position:absolute;top:-4px;bottom:-4px;transform:translateX(-50%);width:3px;background:rgba(255,255,255,0.35);pointer-events:none;border-radius:2px;}
+.slider-midmark{position:absolute;top:-6px;bottom:-6px;transform:translateX(-50%);width:3px;background:rgba(255,255,255,0.5);pointer-events:none;border-radius:2px;box-shadow:0 0 4px rgba(255,255,255,0.3);}
 .slider-labels{display:flex;justify-content:space-between;margin-top:1px;}
 .slider-lbl{font-size:9px;color:rgba(255,255,255,0.2);}
 
@@ -348,12 +350,12 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
   <div class="sb-divider"></div>
   <div class="sb-item sb-emoji-toggle" id="global-emoji-toggle" data-action="toggleGlobalEmoji">😊</div>
   <div class="sb-emoji-list" id="global-emoji-list"></div>
-  <div class="sb-spacer"></div>
+  <div style="height:44px;"></div>
   <div class="sb-item sb-admin-btn" data-action="openGear">⚙️</div>
-  <div class="sb-item sb-admin-btn sb-large sb-next" data-action="forceNext">➡️</div>
-  <div class="sb-item sb-admin-btn sb-large" id="global-pause-btn" data-action="togglePause">⏸</div>
-  <div class="sb-send" id="submit-vote-btn" data-action="submitVote">✓<br>SEND</div>
-  <div class="sb-pause-indicator" id="sb-pause-indicator">⏸</div>
+  <div class="sb-spacer"></div>
+  <div class="sb-large sb-admin-btn sb-next" id="sb-force-next-btn" data-action="forceNext">➡️</div>
+  <div class="sb-large sb-admin-btn" id="global-pause-btn" data-action="togglePause">⏸</div>
+  <div class="sb-send" id="submit-vote-btn" data-action="submitVote">✓ SEND</div>
 </div>
 
 <!-- TOAST -->
@@ -814,7 +816,7 @@ import { getDatabase, ref, set, get, update, onValue, onChildAdded, remove, runT
 // Make all window functions available immediately
 Object.defineProperty(window, '__moduleReady', { value: true });
 
-const VERSION = 'Avstemning v3.8';
+const VERSION = 'Avstemning v3.9';
 console.log(VERSION);
 
 const FIREBASE_CONFIG = {
@@ -1448,6 +1450,12 @@ window.startSession=async function(){
 // ========== VOTING ==========
 let lastShownSubjectIdx = -1;
 function showVotingScreen(session){
+  requestAnimationFrame(()=>{
+    const h=document.querySelector('.voting-header');
+    const a=document.getElementById('activity-bar');
+    if(h)document.documentElement.style.setProperty('--voting-header-h',h.offsetHeight+'px');
+    if(a)document.documentElement.style.setProperty('--activity-bar-h',a.offsetHeight+'px');
+  });
   const idx=session.currentSubjectIndex||0;
   const subjects=session.subjects?Object.values(session.subjects):[];
   const subject=subjects[idx];
@@ -1973,16 +1981,21 @@ function calcScores(subjects,cats,votes,participants){
 function renderLeaderboard(containerId,scores){
   const container=document.getElementById(containerId);if(!container)return;
   container.innerHTML='';
-  const max=scores[0]?scores[0].total:1;
-  const classes=['gold','silver','bronze'];
-  const medals=['🥇','🥈','🥉'];
+  container.style.cssText='text-align:center;max-width:560px;margin:0 auto;';
   scores.forEach((item,i)=>{
-    const cls=i<3?classes[i]:'other';
-    const medal=i<3?medals[i]:`#${i+1}`;
-    const pct=max>0?(item.total/max*100):0;
     const div=document.createElement('div');
-    div.className=`lb-item ${cls}`;
-    div.innerHTML=`<div class="lb-row"><div class="lb-rank">${medal}</div><div class="lb-name">${item.name}</div><div class="lb-score">${Math.round(item.total)}</div></div><div class="lb-bar-bg"><div class="lb-bar-inner" style="width:${pct}%"></div></div>`;
+    if(i===0){
+      div.className='final-winner';
+      div.innerHTML=`<div class="final-winner-emoji">🥇</div><div class="final-winner-name">${item.name}</div><div class="final-winner-score">${Math.round(item.total)}</div><div style="font-size:12px;color:var(--muted);margin-top:4px;">poeng totalt</div>`;
+    }else if(i===1||i===2){
+      const medal=i===1?'🥈':'🥉';
+      const col=i===1?'var(--silver)':'var(--bronze)';
+      div.style.cssText='background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:12px;';
+      div.innerHTML=`<div style="font-size:24px;">${{medal}}</div><div style="flex:1;font-size:15px;font-weight:500;">${{item.name}}</div><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:${{col}};">${{Math.round(item.total)}}</div>`;
+    }else{
+      div.style.cssText='display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);';
+      div.innerHTML=`<div style="font-size:13px;color:var(--muted);width:24px;">#${{i+1}}</div><div style="flex:1;font-size:13px;">${{item.name}}</div><div style="font-size:14px;color:var(--muted);">${{Math.round(item.total)}}</div>`;
+    }
     container.appendChild(div);
   });
 }
@@ -2931,7 +2944,7 @@ init().then(() => {
 
 </script>
 <!-- ACTIVITY BAR -->
-<div id="activity-bar" style="display:none;position:fixed;bottom:0;left:56px;right:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);border-top:0.5px solid rgba(255,255,255,0.06);padding:6px 12px;gap:12px;z-index:190;align-items:center;justify-content:center;flex-wrap:wrap;"></div>
+<div id="activity-bar" style="display:none;position:fixed;bottom:0;left:56px;right:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);border-top:0.5px solid rgba(255,255,255,0.06);padding:6px 12px;gap:16px;z-index:190;align-items:center;justify-content:center;flex-wrap:nowrap;overflow:hidden;"></div>
 
 <script>
 // Global event delegator - handles all data-action clicks
