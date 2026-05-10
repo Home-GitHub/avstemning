@@ -6,6 +6,11 @@
 <title>Avstemning</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
+/* ================================================================
+   UI/UX - CSS
+   Kun endre denne seksjonen ved UI/UX-arbeid
+   ================================================================ */
+
 /* ===== THEME SYSTEM ===== */
 :root{
   --bg:#0a0a0a;--surface:#111;--surface2:#1a1a1a;--border:#252525;
@@ -809,7 +814,7 @@ import { getDatabase, ref, set, get, update, onValue, onChildAdded, remove, runT
 // Make all window functions available immediately
 Object.defineProperty(window, '__moduleReady', { value: true });
 
-const VERSION = 'Avstemning v3.6';
+const VERSION = 'Avstemning v3.7';
 console.log(VERSION);
 
 const FIREBASE_CONFIG = {
@@ -837,6 +842,16 @@ const SKAL_TEXTS = [
   { text: "Skål for [navn] – vår mest ettertenksomme dommer!", type: "sist" },
   { text: "Skål for [navn] – som reddet fristen i siste sekund, igjen!", type: "sist" },
 ];
+
+// ================================================================
+// UI/UX - JavaScript (visning og rendering)
+// Kun endre denne seksjonen ved UI/UX-arbeid
+// ================================================================
+
+// ================================================================
+// LOGIKK - Kjerne
+// Ikke endre denne seksjonen ved UI/UX-arbeid
+// ================================================================
 
 // ========== STATE ==========
 let state = {
@@ -886,6 +901,11 @@ function showScreen(id){
 function formatTime(s){if(s<0)s=0;return`${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`;}
 function safeKey(s){return s.replace(/[.#$/\[\]\s]/g,'_');}
 function generateId(){return Date.now().toString(36)+Math.random().toString(36).substr(2,5);}
+
+// ================================================================
+// UI/UX - JavaScript (visning og rendering)
+// Kun endre denne seksjonen ved UI/UX-arbeid
+// ================================================================
 
 // ========== THEME ==========
 function applyTheme(theme){
@@ -1154,6 +1174,11 @@ function showFloatingReaction(emoji,senderName){
   setTimeout(()=>container.remove(),3500);
 }
 
+// ================================================================
+// LOGIKK - Kjerne
+// Ikke endre denne seksjonen ved UI/UX-arbeid
+// ================================================================
+
 // ========== INIT ==========
 async function init(){
   initEmojiPicker();
@@ -1332,6 +1357,11 @@ function watchSkals(){
   });
 }
 
+// ================================================================
+// LOGIKK - Sesjon og flyt
+// Ikke endre denne seksjonen ved UI/UX-arbeid
+// ================================================================
+
 // ========== HANDLE SESSION STATE ==========
 async function handleSessionState(session){
   const pauseIndicator=document.getElementById('sb-pause-indicator');
@@ -1407,6 +1437,11 @@ window.startSession=async function(){
   await update(ref(db,`sessions/${state.sessionId}`),{status:'voting',currentSubjectIndex:0,timerEnd:timerEnd||null});
   if(timerEnd)scheduleWatchdog(state.sessionId,timerEnd,session.minutesPerSubject,0);
 };
+
+// ================================================================
+// LOGIKK - Stemming
+// Ikke endre denne seksjonen ved UI/UX-arbeid
+// ================================================================
 
 // ========== VOTING ==========
 let lastShownSubjectIdx = -1;
@@ -1608,6 +1643,11 @@ window.submitVote=async function(){
     if(errEl){errEl.textContent='Kunne ikke sende inn, prøv igjen';errEl.style.display='block';}
   }
 };
+
+// ================================================================
+// LOGIKK - Timer og watchdog
+// Ikke endre denne seksjonen ved UI/UX-arbeid
+// ================================================================
 
 // ========== TIMER ==========
 function startTimer(session){
@@ -1945,6 +1985,11 @@ function renderLeaderboard(containerId,scores){
   });
 }
 
+// ================================================================
+// UI/UX - Leaderboard og resultat
+// Kun endre denne seksjonen ved UI/UX-arbeid
+// ================================================================
+
 // ========== FINAL LEADERBOARD ==========
 function showFinalLeaderboard(session){
   if(state.finalShown)return;
@@ -2114,6 +2159,11 @@ function showFasit(session){
     content.appendChild(div);
   });
 }
+
+// ================================================================
+// LOGIKK - Admin
+// Ikke endre denne seksjonen ved UI/UX-arbeid
+// ================================================================
 
 // ========== ADMIN PANEL ==========
 window.openGear=function(){
@@ -2299,6 +2349,11 @@ window.lockBlindtest=async function(){
   document.getElementById('gear-blindtest-section').style.display='none';
   showToast('Fasit låst! Ingen kan se den før avsløringen.');
 };
+
+// ================================================================
+// UI/UX - Skål og reaksjoner
+// Kun endre denne seksjonen ved UI/UX-arbeid
+// ================================================================
 
 // ========== SKÅL ==========
 function showSkalToast(text,sender){
