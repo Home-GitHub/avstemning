@@ -791,7 +791,7 @@ import { getDatabase, ref, set, get, update, onValue, onChildAdded, remove, runT
 // Make all window functions available immediately
 Object.defineProperty(window, '__moduleReady', { value: true });
 
-const VERSION = 'Avstemning v4.1';
+const VERSION = 'Avstemning v4.2';
 console.log(VERSION);
 
 const FIREBASE_CONFIG = {
@@ -1146,7 +1146,7 @@ async function init(){
   const savedSessionId=ls('sessionId');
   const savedParticipantId=ls('participantId');
   const savedParticipantName=ls('participantName');
-  const savedIsAdmin=ls(`isAdmin_${slug}`)==='true';
+  const savedIsAdmin=(ls(`isAdmin_${slug}`)==='true')||(ls('isAdmin')==='true'&&savedSessionId===slug);
 
   if(!slug){showScreen('screen-admin-login');loadAdminSessions();return;}
   state.sessionId=slug;
@@ -1348,23 +1348,23 @@ async function handleSessionState(session){
     document.getElementById('pause-overlay').classList.remove('active');
   }
 
-  if(session.status==='published'||session.status==='waiting'){showWaitingRoom(session);return;}
-  if(session.status==='ended'){if(!state.finalShown){showFinalLeaderboard(session);}return;}
+  if(session.status==='published'||session.status==='waiting'){showWaitingRoom(session);setAdminUI(state.isAdmin);return;}
+  if(session.status==='ended'){if(!state.finalShown){showFinalLeaderboard(session);}setAdminUI(state.isAdmin);return;}
   if(session.status==='leaderboard'){
     const lbKey=`${state.sessionId}_lb_${session.currentSubjectIndex}`;
     if(state.lastLbKey!==lbKey){
       state.lastLbKey=lbKey;
       state.finalShown=false;
-      // await doSubmitVote so all votes are saved BEFORE leaderboard shows
       const vIdx=session.currentSubjectIndex||0;
       if(state.participantId&&!state.hasVotedCurrentSubject){
         await doSubmitVote(vIdx);
       }
       showLeaderboardScreen(session);
     }
+    setAdminUI(state.isAdmin);
     return;
   }
-  if(session.status==='voting'){showVotingScreen(session);return;}
+  if(session.status==='voting'){showVotingScreen(session);setAdminUI(state.isAdmin);return;}
 }
 
 // ========== WAITING ROOM ==========
@@ -2380,7 +2380,7 @@ window.loginFromSheet=async function(){
   const session=snap.val();
   if(session.password!==pw){errEl.style.display="block";return;}
   errEl.style.display="none";
-  state.isAdmin=true;ls("isAdmin","true");ls("sessionId",state.sessionId);
+  state.isAdmin=true;ls("isAdmin","true");ls("sessionId",state.sessionId);ls(`isAdmin_${state.sessionId}`,'true');
   setAdminUI(true);
   document.getElementById("admin-login-sheet").classList.remove("open");
   document.getElementById("admin-pw-sheet-input").value="";
