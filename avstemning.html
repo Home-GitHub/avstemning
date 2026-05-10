@@ -40,7 +40,6 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 
 /* SCREENS */
 .screen{display:none;min-height:100vh;flex-direction:column;position:relative;z-index:1;}
-#screen-voting{height:100vh;min-height:unset;overflow:hidden;}
 .screen.active{display:flex;}
 
 /* ===== VOTING SCREEN SPECIAL HEADER ===== */
@@ -51,12 +50,11 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
   position:sticky;top:0;z-index:20;
   border-bottom:0.5px solid rgba(255,255,255,0.06);
 }
-.voting-subject-wrap{padding:0 12px;margin-bottom:5px;text-align:center;}
+.voting-subject-wrap{padding:0 12px;margin-bottom:5px;}
 .voting-subject{
   font-weight:800;line-height:1.1;
   color:var(--accent);
-  font-size:24px;
-  text-align:center;
+  white-space:nowrap;overflow:hidden;
   display:block;width:100%;
 }
 .voting-meta-row{display:flex;justify-content:space-between;padding:0 12px;margin-bottom:6px;}
@@ -84,18 +82,20 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .content{flex:1;padding:18px 14px;overflow-y:auto;}
 
 /* GLOBAL SIDEBAR - visible on all screens except waiting */
-.global-sidebar{position:fixed;left:0;top:var(--header-h,80px);bottom:0;width:56px;display:none;flex-direction:column;align-items:center;padding:8px 0 12px;gap:6px;background:rgba(0,0,0,0.35);border-right:0.5px solid rgba(255,255,255,0.05);z-index:200;}
+.global-sidebar{position:fixed;left:0;top:0;bottom:0;width:56px;display:none;flex-direction:column;align-items:center;padding:20px 0 12px;gap:6px;background:rgba(0,0,0,0.35);border-right:0.5px solid rgba(255,255,255,0.05);z-index:200;}
 .global-sidebar.visible{display:flex;}
 .screens-with-sidebar{padding-left:56px;}
 
 /* VOTING BODY: sidebar + categories */
-.voting-body{display:flex;flex:1;overflow:hidden;height:0;}
+.voting-body{display:flex;flex:1;overflow:hidden;}
 
 /* SIDEBAR */
 
 .sb-item{width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;transition:all 0.15s;}
 .sb-item:active{transform:scale(0.88);}
+.sb-large{width:44px;border-radius:12px;background:rgba(255,255,255,0.06);border:0.5px solid rgba(255,255,255,0.12);font-size:20px;padding:18px 0;height:auto;writing-mode:vertical-rl;}
 .sb-spacer{flex:1;}
+.sb-pause-indicator{display:none;width:44px;border-radius:12px;background:var(--accent-dim);border:0.5px solid var(--accent);color:var(--accent);font-size:20px;padding:18px 0;height:auto;writing-mode:vertical-rl;align-items:center;justify-content:center;margin-bottom:8px;}
 .sb-skal{border-color:rgba(255,255,255,0.15);background:var(--accent-dim);}
 .sb-divider{width:22px;height:0.5px;background:rgba(255,255,255,0.08);margin:6px 0;}
 .sb-emoji-toggle{position:relative;}
@@ -104,24 +104,42 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .sb-emoji-list.open{max-height:200px;opacity:1;}
 .sb-e{width:40px;height:36px;border-radius:9px;font-size:18px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.03);cursor:pointer;transition:all 0.1s;}
 .sb-e:active{transform:scale(0.85);}
+.final-fans{display:flex;justify-content:center;gap:24px;margin-top:10px;flex-wrap:wrap;}
+.act-item{display:flex;align-items:center;gap:6px;font-size:12px;}
+.act-name{color:rgba(255,255,255,0.8);white-space:nowrap;max-width:120px;overflow:hidden;text-overflow:ellipsis;}
+.act-bar-bg{width:60px;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;flex-shrink:0;}
+.act-bar-fill{height:4px;border-radius:2px;background:var(--accent);transition:width 0.4s ease;}
+.act-score{color:var(--accent);font-weight:600;white-space:nowrap;}
+.final-fans-col{display:flex;flex-direction:column;align-items:center;gap:4px;}
+.fan-name{font-size:12px;color:rgba(255,255,255,0.6);background:rgba(255,255,255,0.06);padding:3px 10px;border-radius:20px;display:flex;align-items:center;gap:6px;}
+.fan-score{color:var(--accent);font-weight:600;font-size:11px;}
+@keyframes floatUp{
+  0%{opacity:0;transform:translateX(-50%) translateY(0) scale(0.5);}
+  15%{opacity:1;transform:translateX(-50%) translateY(-20px) scale(1.1);}
+  80%{opacity:1;transform:translateX(-50%) translateY(-180px) scale(1);}
+  100%{opacity:0;transform:translateX(-50%) translateY(-260px) scale(0.8);}
+}
+.floating-reaction{animation:floatUp 3s ease-out forwards;text-align:center;}
+.fr-emoji{font-size:36px;line-height:1;}
+.fr-name{font-size:15px;color:#fff;margin-top:4px;font-weight:700;white-space:nowrap;text-shadow:0 2px 8px rgba(0,0,0,1);letter-spacing:0.3px;}
+.sb-admin-divider{width:22px;height:0.5px;background:rgba(255,255,255,0.08);margin:6px 0;display:none;}
+.is-admin .sb-admin-divider{display:block;}
 .sb-admin-btn{display:none;}
 .is-admin .sb-admin-btn{display:flex;}
-.sb-tall{width:44px;border-radius:12px;font-size:22px;padding:18px 0;height:auto;display:none;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;background:rgba(255,255,255,0.06);border:0.5px solid rgba(255,255,255,0.12);}
-.sb-tall:active{transform:scale(0.95);}
-.is-admin .sb-tall{display:flex;}
-.sb-skal-large{width:44px;border-radius:12px;font-size:22px;padding:18px 0;height:auto;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;background:var(--accent-dim);border:0.5px solid rgba(255,255,255,0.15);}
-.sb-skal-large:active{transform:scale(0.95);}
-.sb-large{width:44px;height:80px;border-radius:12px;background:rgba(255,255,255,0.06);border:0.5px solid rgba(255,255,255,0.12);font-size:20px;padding:0;writing-mode:vertical-rl;display:none;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;}
-.sb-large:active{transform:scale(0.95);}
-.is-admin .sb-large{display:flex;}
-.sb-pause-banner{display:none;width:44px;flex:1;border-radius:12px;background:#e85d04;color:#fff;font-size:11px;font-weight:800;writing-mode:vertical-rl;letter-spacing:0.8px;align-items:center;justify-content:center;padding:8px 0;}
-.is-admin .sb-pause-banner{cursor:pointer;}
-.sb-send{width:44px;height:80px;margin-bottom:12px;border-radius:12px;background:#22c55e;color:#fff;font-size:11px;font-weight:800;writing-mode:vertical-rl;letter-spacing:0.8px;padding:0;display:none;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;}
+.sb-send{
+  width:44px;margin-top:auto;margin-bottom:28px;
+  border-radius:12px;
+  background:var(--accent);color:#080808;
+  font-size:11px;font-weight:700;
+  writing-mode:vertical-rl;letter-spacing:0.8px;
+  padding:18px 0;
+  display:none;align-items:center;justify-content:center;
+  cursor:pointer;transition:all 0.15s;
+}
 .sb-send:active{transform:scale(0.95);}
-.sb-send.locked{pointer-events:none;opacity:0.25;}
 
 /* CATEGORIES */
-.voting-categories{flex:1;padding:10px 12px;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.voting-categories{flex:1;padding:10px 12px;overflow-y:auto;}
 .cat-row{margin-bottom:12px;}
 .cat-row:last-child{margin-bottom:4px;}
 .cat-header{display:flex;flex-direction:column;align-items:center;margin-bottom:4px;gap:2px;}
@@ -321,16 +339,16 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
 
 <!-- GLOBAL SIDEBAR -->
 <div class="global-sidebar" id="global-sidebar">
-  <div class="sb-skal-large" data-action="openSkalSheet">🥂</div>
+  <div class="sb-item sb-skal sb-large" data-action="openSkalSheet">🥂</div>
+  <div class="sb-divider"></div>
   <div class="sb-item sb-emoji-toggle" id="global-emoji-toggle" data-action="toggleGlobalEmoji">😊</div>
   <div class="sb-emoji-list" id="global-emoji-list"></div>
-  <div style="height:44px;"></div>
-  <div class="sb-item sb-admin-btn" data-action="openGear">⚙️</div>
-  <div class="sb-pause-banner" id="sb-pause-banner">⏸<br>PAUSE</div>
   <div class="sb-spacer"></div>
-  <div class="sb-large sb-admin-btn" id="global-pause-btn" data-action="togglePause">⏸</div>
-  <div class="sb-large sb-admin-btn sb-next" data-action="forceNext">➡️</div>
+  <div class="sb-item sb-admin-btn" data-action="openGear">⚙️</div>
+  <div class="sb-item sb-admin-btn sb-large sb-next" data-action="forceNext">➡️</div>
+  <div class="sb-item sb-admin-btn sb-large" id="global-pause-btn" data-action="togglePause">⏸</div>
   <div class="sb-send" id="submit-vote-btn" data-action="submitVote">✓<br>SEND</div>
+  <div class="sb-pause-indicator" id="sb-pause-indicator">⏸</div>
 </div>
 
 <!-- TOAST -->
@@ -791,7 +809,7 @@ import { getDatabase, ref, set, get, update, onValue, onChildAdded, remove, runT
 // Make all window functions available immediately
 Object.defineProperty(window, '__moduleReady', { value: true });
 
-const VERSION = 'Avstemning v4.2';
+const VERSION = 'Avstemning v3.6';
 console.log(VERSION);
 
 const FIREBASE_CONFIG = {
@@ -1182,36 +1200,20 @@ function watchParticipantCountForJoin(){
   });
 }
 
-
 function setAdminUI(isAdmin){
   document.querySelectorAll('.admin-only').forEach(el=>el.style.display=isAdmin?'flex':'none');
   if(isAdmin){
     document.body.classList.add('is-admin');
-    document.querySelectorAll('.sb-admin-btn').forEach(el=>{
-      el.style.display='flex';
-      if(el.classList.contains('sb-large')){
-        el.style.width='44px';
-        el.style.height='80px';
-        el.style.minHeight='80px';
-        el.style.boxSizing='border-box';
-      }
-    });
+    document.querySelectorAll('.sb-admin-btn').forEach(el=>el.style.display='flex');
     document.querySelectorAll('.sb-admin-divider').forEach(el=>el.style.display='block');
-    const banner=document.getElementById('sb-pause-banner');
-    if(banner&&!banner._adminClickBound){
-      banner._adminClickBound=true;
-      banner.addEventListener('click',()=>window.togglePause&&window.togglePause());
-    }
   } else {
     document.body.classList.remove('is-admin');
     document.querySelectorAll('.sb-admin-btn').forEach(el=>el.style.display='none');
     document.querySelectorAll('.sb-admin-divider').forEach(el=>el.style.display='none');
   }
+  // Also update global sidebar pause btn text
   const pauseBtn=document.getElementById('global-pause-btn');
-  if(pauseBtn){
-    pauseBtn.style.display=isAdmin?'flex':'none';
-    if(isAdmin){pauseBtn.style.width='44px';pauseBtn.style.height='80px';pauseBtn.style.minHeight='80px';}
-  }
+  if(pauseBtn)pauseBtn.style.display=isAdmin?'flex':'none';
 }
 
 // ========== JOIN ==========
@@ -1312,7 +1314,7 @@ function renderActivityBar(){
   bar.innerHTML=sorted.map(([name,score],i)=>{
     const pct=Math.round(score/max*100);
     const medal=i===0?'🥇':i===1?'🥈':'🥉';
-    return `<div style="display:flex;align-items:center;gap:6px;white-space:nowrap;"><span>${medal}</span><span style="font-size:13px;">${name}</span><div style="width:60px;height:4px;border-radius:2px;background:rgba(255,255,255,0.1);overflow:hidden;"><div style="width:${pct}%;height:100%;background:var(--accent);border-radius:2px;"></div></div><span style="font-size:13px;color:var(--accent);font-weight:700;">${score}p</span></div>`;
+    return `<div class="act-item"><div class="act-name">${medal} ${name}</div><div class="act-bar-bg"><div class="act-bar-fill" style="width:${pct}%"></div></div><div class="act-score">${score}p</div></div>`;
   }).join('');
 }
 
@@ -1332,39 +1334,35 @@ function watchSkals(){
 
 // ========== HANDLE SESSION STATE ==========
 async function handleSessionState(session){
-  const pauseBanner=document.getElementById('sb-pause-banner');
+  const pauseIndicator=document.getElementById('sb-pause-indicator');
   const sendBtn=document.getElementById('submit-vote-btn');
-  const pauseBtn=document.getElementById('global-pause-btn');
   if(session.paused){
-    if(pauseBanner)pauseBanner.style.display='flex';
-    if(sendBtn)sendBtn.classList.add('locked');
-    if(pauseBtn)pauseBtn.textContent='▶️';
+    if(pauseIndicator)pauseIndicator.style.display='flex';
+    if(sendBtn)sendBtn.style.display='none';
     if(state.timerInterval){clearInterval(state.timerInterval);state.timerInterval=null;}
-    // Don't return - let screen logic run so sliders/leaderboard stay visible
+    // Don't return - let the normal screen logic run so sliders/leaderboard stay visible
   }else{
-    if(pauseBanner)pauseBanner.style.display='none';
-    if(sendBtn)sendBtn.classList.remove('locked');
-    if(pauseBtn)pauseBtn.textContent='⏸';
+    if(pauseIndicator)pauseIndicator.style.display='none';
     document.getElementById('pause-overlay').classList.remove('active');
   }
 
-  if(session.status==='published'||session.status==='waiting'){showWaitingRoom(session);setAdminUI(state.isAdmin);return;}
-  if(session.status==='ended'){if(!state.finalShown){showFinalLeaderboard(session);}setAdminUI(state.isAdmin);return;}
+  if(session.status==='published'||session.status==='waiting'){showWaitingRoom(session);return;}
+  if(session.status==='ended'){if(!state.finalShown){showFinalLeaderboard(session);}return;}
   if(session.status==='leaderboard'){
     const lbKey=`${state.sessionId}_lb_${session.currentSubjectIndex}`;
     if(state.lastLbKey!==lbKey){
       state.lastLbKey=lbKey;
       state.finalShown=false;
+      // await doSubmitVote so all votes are saved BEFORE leaderboard shows
       const vIdx=session.currentSubjectIndex||0;
       if(state.participantId&&!state.hasVotedCurrentSubject){
         await doSubmitVote(vIdx);
       }
       showLeaderboardScreen(session);
     }
-    setAdminUI(state.isAdmin);
     return;
   }
-  if(session.status==='voting'){showVotingScreen(session);setAdminUI(state.isAdmin);return;}
+  if(session.status==='voting'){showVotingScreen(session);return;}
 }
 
 // ========== WAITING ROOM ==========
@@ -1413,18 +1411,11 @@ window.startSession=async function(){
 // ========== VOTING ==========
 let lastShownSubjectIdx = -1;
 function showVotingScreen(session){
-  setAdminUI(state.isAdmin);
   const idx=session.currentSubjectIndex||0;
   const subjects=session.subjects?Object.values(session.subjects):[];
   const subject=subjects[idx];
   if(!subject)return;
   
-  // Update sidebar top offset after header renders
-  requestAnimationFrame(()=>{
-    const h=document.querySelector('.voting-header');
-    if(h)document.documentElement.style.setProperty('--header-h',h.offsetHeight+'px');
-  });
-
   // Reset per-subject state when subject changes
   if(lastShownSubjectIdx !== idx){
     lastShownSubjectIdx = idx;
@@ -1750,7 +1741,6 @@ async function advanceSubject(sessionId,session,idx){
 
 // ========== LEADERBOARD ==========
 function showLeaderboardScreen(session){
-  setAdminUI(state.isAdmin);
   const idx=session.currentSubjectIndex||0;
   const subjects=session.subjects?Object.values(session.subjects):[];
   const cats=session.categories?Object.values(session.categories):[];
@@ -1830,6 +1820,8 @@ function showLeaderboardScreen(session){
       document.getElementById('lb-sub').textContent=`Etter emne ${idx+1} av ${subjects.length}`;
       renderLeaderboard('leaderboard-list',scores);
       document.getElementById('lb-voter-count').textContent=`${vCount} av ${participants.length} stemte`;
+      if(!document.getElementById('screen-leaderboard').classList.contains('active'))
+        showScreen('screen-leaderboard');
     } else if(view==='categories'){
       if(lbList)lbList.style.display='none';
       if(lbSpot)lbSpot.style.display='';
@@ -1865,7 +1857,6 @@ function showLeaderboardScreen(session){
     }
   }
 
-  showScreen('screen-leaderboard');
   showView(0);
 }
 
@@ -1940,21 +1931,16 @@ function calcScores(subjects,cats,votes,participants){
 function renderLeaderboard(containerId,scores){
   const container=document.getElementById(containerId);if(!container)return;
   container.innerHTML='';
-  container.style.cssText='text-align:center;max-width:560px;margin:0 auto;';
+  const max=scores[0]?scores[0].total:1;
+  const classes=['gold','silver','bronze'];
+  const medals=['🥇','🥈','🥉'];
   scores.forEach((item,i)=>{
+    const cls=i<3?classes[i]:'other';
+    const medal=i<3?medals[i]:`#${i+1}`;
+    const pct=max>0?(item.total/max*100):0;
     const div=document.createElement('div');
-    if(i===0){
-      div.className='final-winner';
-      div.innerHTML=`<div class="final-winner-emoji">🥇</div><div class="final-winner-name">${item.name}</div><div class="final-winner-score">${Math.round(item.total)}</div><div style="font-size:12px;color:var(--muted);margin-top:4px;">poeng totalt</div>`;
-    }else if(i===1||i===2){
-      const medal=i===1?'🥈':'🥉';
-      const col=i===1?'var(--silver)':'var(--bronze)';
-      div.style.cssText='background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:12px;';
-      div.innerHTML=`<div style="font-size:24px;">${medal}</div><div style="flex:1;font-size:15px;font-weight:500;">${item.name}</div><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:${col};">${Math.round(item.total)}</div>`;
-    }else{
-      div.style.cssText='display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);';
-      div.innerHTML=`<div style="font-size:13px;color:var(--muted);width:24px;">#${i+1}</div><div style="flex:1;font-size:13px;">${item.name}</div><div style="font-size:14px;color:var(--muted);">${Math.round(item.total)}</div>`;
-    }
+    div.className=`lb-item ${cls}`;
+    div.innerHTML=`<div class="lb-row"><div class="lb-rank">${medal}</div><div class="lb-name">${item.name}</div><div class="lb-score">${Math.round(item.total)}</div></div><div class="lb-bar-bg"><div class="lb-bar-inner" style="width:${pct}%"></div></div>`;
     container.appendChild(div);
   });
 }
@@ -2888,7 +2874,7 @@ init().then(() => {
 
 </script>
 <!-- ACTIVITY BAR -->
-<div id="activity-bar" style="display:none;position:fixed;bottom:0;left:0;right:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);border-top:0.5px solid rgba(255,255,255,0.06);padding:6px 12px;gap:16px;z-index:190;align-items:center;justify-content:center;flex-wrap:nowrap;"></div>
+<div id="activity-bar" style="display:none;position:fixed;bottom:0;left:56px;right:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);border-top:0.5px solid rgba(255,255,255,0.06);padding:6px 12px;gap:12px;z-index:190;align-items:center;justify-content:center;flex-wrap:wrap;"></div>
 
 <script>
 // Global event delegator - handles all data-action clicks
