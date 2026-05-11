@@ -83,8 +83,9 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 #screen-leaderboard{padding-top:var(--header-h,56px);}
 #screen-leaderboard .content{overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:0;}
 #lb-tabs-fixed{position:fixed;top:var(--header-h,56px);left:56px;right:0;z-index:15;background:var(--bg);padding:8px 12px 4px;border-bottom:0.5px solid rgba(255,255,255,0.06);}
+#result-tabs-fixed{position:fixed;top:var(--header-h,56px);left:56px;right:0;z-index:15;background:var(--bg);padding:8px 12px 4px;border-bottom:0.5px solid rgba(255,255,255,0.06);}
 #screen-leaderboard .content{padding-top:52px;}
-#screen-final .content{overflow-y:auto;-webkit-overflow-scrolling:touch;}
+#screen-final .content{overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:52px;}
 .header-title{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:1px;color:var(--accent);line-height:1;}
 .header-sub{font-size:11px;color:var(--muted);margin-top:1px;}
 .header-right{display:flex;align-items:center;gap:8px;}
@@ -360,9 +361,10 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
   <div style="height:44px;"></div>
   <div class="sb-item sb-admin-btn" data-action="openGear">⚙️</div>
   <div class="sb-pause-indicator" id="sb-pause-indicator">PAUSET</div>
-  <div class="sb-large sb-admin-btn sb-next" id="sb-force-next-btn" data-action="forceNext" style="margin-top:auto;">➡️</div>
+  <div class="sb-spacer"></div>
+  <div class="sb-large sb-admin-btn sb-next" id="sb-force-next-btn" data-action="forceNext">➡️</div>
   <div class="sb-large sb-admin-btn" id="global-pause-btn" data-action="togglePause">⏸</div>
-  <div class="sb-send" id="submit-vote-btn" data-action="submitVote">✓ SEND</div>
+  <div class="sb-send" id="submit-vote-btn" data-action="submitVote" style="visibility:hidden;">✓ SEND</div>
 </div>
 
 <!-- TOAST -->
@@ -592,8 +594,8 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
       
     </div>
   </div>
+  <div id="result-tabs-fixed"><div class="result-tabs" id="result-tabs-container"></div></div>
   <div class="content">
-    <div class="result-tabs" id="result-tabs-container"></div>
     <div class="result-panel active" id="panel-toplist">
       <div id="final-leaderboard"></div>
       <div id="blindtest-reveal-section" style="display:none;">
@@ -823,7 +825,7 @@ import { getDatabase, ref, set, get, update, onValue, onChildAdded, remove, runT
 // Make all window functions available immediately
 Object.defineProperty(window, '__moduleReady', { value: true });
 
-const VERSION = 'Avstemning v3.13';
+const VERSION = 'Avstemning v3.14';
 console.log(VERSION);
 
 const FIREBASE_CONFIG = {
@@ -905,7 +907,7 @@ function showScreen(id){
   }
   // Show/hide SEND button only on voting screen
   const sendBtn=document.getElementById('submit-vote-btn');
-  if(sendBtn)sendBtn.style.display=(id==='screen-voting')?'flex':'none';
+  if(sendBtn)sendBtn.style.visibility=(id==='screen-voting')?'visible':'hidden';
 }
 function formatTime(s){if(s<0)s=0;return`${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`;}
 function safeKey(s){return s.replace(/[.#$/\[\]\s]/g,'_');}
@@ -1379,13 +1381,13 @@ async function handleSessionState(session){
   if(session.paused){
     // Vis pause-indikator kun for spillere
     if(pauseIndicator)pauseIndicator.style.display=state.isAdmin?'none':'flex';
-    if(sendBtn){sendBtn.classList.add('locked');sendBtn.style.opacity='0.3';}
+    if(sendBtn){sendBtn.classList.add('locked');sendBtn.style.opacity='0.3';sendBtn.style.pointerEvents='none';}
     if(pauseBtn){pauseBtn.textContent='▶️';pauseBtn.style.background='#c0392b';pauseBtn.style.border='0.5px solid #e74c3c';}
     if(state.timerInterval){clearInterval(state.timerInterval);state.timerInterval=null;}
     // Don't return - let the normal screen logic run so sliders/leaderboard stay visible
   }else{
     if(pauseIndicator)pauseIndicator.style.display='none';
-    if(sendBtn){sendBtn.classList.remove('locked');sendBtn.style.opacity='';}
+    if(sendBtn){sendBtn.classList.remove('locked');sendBtn.style.opacity='';sendBtn.style.pointerEvents='';}
     if(pauseBtn){pauseBtn.textContent='⏸';pauseBtn.style.background='';pauseBtn.style.border='';}
     document.getElementById('pause-overlay').classList.remove('active');
   }
@@ -2780,7 +2782,7 @@ function showJudgeInLeaderboard(session,idx,container){
     const medals=['🥇','🥈','🥉'];
     const div=document.createElement('div');
     div.style.cssText='background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;max-width:480px;margin-left:auto;margin-right:auto;';
-    div.innerHTML=`<div style="font-size:15px;font-weight:600;margin-bottom:8px;text-align:center;">${p.name||pid}</div>${subjectScores.slice(0,3).map((s,si)=>`<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-top:1px solid var(--border);"><div style="font-size:14px;width:24px;">${medals[si]}</div><div style="flex:1;font-size:13px;">${s.name}</div><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--accent);">${s.total}p</div></div>`).join('')}`;
+    div.innerHTML=`<div style="font-size:15px;font-weight:600;margin-bottom:8px;text-align:center;width:100%;">${p.name||pid}</div>${subjectScores.slice(0,3).map((s,si)=>`<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-top:1px solid var(--border);"><div style="font-size:14px;width:24px;">${medals[si]}</div><div style="flex:1;font-size:13px;">${s.name}</div><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--accent);">${s.total}p</div></div>`).join('')}`;
     container.appendChild(div);
   });
 }
