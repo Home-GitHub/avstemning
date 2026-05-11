@@ -79,9 +79,10 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 
 /* STANDARD HEADER */
 .header{padding:13px 14px 11px;display:flex;align-items:center;justify-content:space-between;border-bottom:0.5px solid rgba(255,255,255,0.06);background:var(--hdr-bg);position:fixed;top:0;left:0;right:0;z-index:20;backdrop-filter:blur(12px);}
-#screen-final{padding-top:56px;}
-#screen-leaderboard{padding-top:56px;}
-#screen-leaderboard .content{overflow-y:auto;-webkit-overflow-scrolling:touch;}
+#screen-final{padding-top:var(--header-h,56px);}
+#screen-leaderboard{padding-top:var(--header-h,56px);}
+#screen-leaderboard .content{overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:0;}
+#screen-leaderboard #lb-tabs{position:sticky;top:0;z-index:10;background:var(--bg);padding:8px 0 4px;}
 #screen-final .content{overflow-y:auto;-webkit-overflow-scrolling:touch;}
 .header-title{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:1px;color:var(--accent);line-height:1;}
 .header-sub{font-size:11px;color:var(--muted);margin-top:1px;}
@@ -93,7 +94,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .content{flex:1;padding:18px 14px;overflow-y:auto;}
 
 /* GLOBAL SIDEBAR - visible on all screens except waiting */
-.global-sidebar{position:fixed;left:0;top:var(--voting-header-h,110px);bottom:var(--activity-bar-h,36px);width:56px;display:none;flex-direction:column;align-items:center;padding:8px 0 8px;gap:6px;background:rgba(0,0,0,0.35);border-right:0.5px solid rgba(255,255,255,0.05);z-index:200;}
+.global-sidebar{position:fixed;left:0;top:var(--header-h,56px);bottom:var(--activity-bar-h,36px);width:56px;display:none;flex-direction:column;align-items:center;padding:8px 0 8px;gap:6px;background:rgba(0,0,0,0.35);border-right:0.5px solid rgba(255,255,255,0.05);z-index:200;}
 .global-sidebar.visible{display:flex;}
 .screens-with-sidebar{padding-left:56px;}
 
@@ -148,6 +149,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
   cursor:pointer;transition:all 0.15s;
 }
 .sb-send:active{transform:scale(0.95);}
+.sb-send.locked{opacity:0.3;pointer-events:none;cursor:not-allowed;}
 
 /* CATEGORIES */
 .voting-categories{flex:1;padding:10px 12px 80px 12px;overflow-y:auto;-webkit-overflow-scrolling:touch;}
@@ -821,7 +823,7 @@ import { getDatabase, ref, set, get, update, onValue, onChildAdded, remove, runT
 // Make all window functions available immediately
 Object.defineProperty(window, '__moduleReady', { value: true });
 
-const VERSION = 'Avstemning v3.11';
+const VERSION = 'Avstemning v3.12';
 console.log(VERSION);
 
 const FIREBASE_CONFIG = {
@@ -1377,13 +1379,14 @@ async function handleSessionState(session){
   if(session.paused){
     // Vis pause-indikator kun for spillere
     if(pauseIndicator)pauseIndicator.style.display=state.isAdmin?'none':'flex';
-    if(sendBtn)sendBtn.style.display='none';
-    if(pauseBtn)pauseBtn.textContent='▶️';
+    if(sendBtn){sendBtn.classList.add('locked');}
+    if(pauseBtn){pauseBtn.textContent='▶️';pauseBtn.style.background='#c0392b';pauseBtn.style.border='0.5px solid #e74c3c';}
     if(state.timerInterval){clearInterval(state.timerInterval);state.timerInterval=null;}
     // Don't return - let the normal screen logic run so sliders/leaderboard stay visible
   }else{
     if(pauseIndicator)pauseIndicator.style.display='none';
-    if(pauseBtn)pauseBtn.textContent='⏸';
+    if(sendBtn){sendBtn.classList.remove('locked');}
+    if(pauseBtn){pauseBtn.textContent='⏸';pauseBtn.style.background='';pauseBtn.style.border='';}
     document.getElementById('pause-overlay').classList.remove('active');
   }
 
@@ -1462,7 +1465,7 @@ function showVotingScreen(session){
   requestAnimationFrame(()=>{
     const h=document.querySelector('.voting-header');
     const a=document.getElementById('activity-bar');
-    if(h)document.documentElement.style.setProperty('--voting-header-h',h.offsetHeight+'px');
+    if(h){const hh=h.offsetHeight+'px';document.documentElement.style.setProperty('--voting-header-h',hh);document.documentElement.style.setProperty('--header-h',hh);}
     if(a)document.documentElement.style.setProperty('--activity-bar-h',a.offsetHeight+'px');
   });
   const idx=session.currentSubjectIndex||0;
@@ -1800,6 +1803,10 @@ async function advanceSubject(sessionId,session,idx){
 
 // ========== LEADERBOARD ==========
 function showLeaderboardScreen(session){
+  requestAnimationFrame(()=>{
+    const h=document.querySelector('#screen-leaderboard .header');
+    if(h)document.documentElement.style.setProperty('--header-h',h.offsetHeight+'px');
+  });
   const idx=session.currentSubjectIndex||0;
   const subjects=session.subjects?Object.values(session.subjects):[];
   const cats=session.categories?Object.values(session.categories):[];
@@ -2016,6 +2023,10 @@ function renderLeaderboard(containerId,scores){
 
 // ========== FINAL LEADERBOARD ==========
 function showFinalLeaderboard(session){
+  requestAnimationFrame(()=>{
+    const h=document.querySelector('#screen-final .header');
+    if(h)document.documentElement.style.setProperty('--header-h',h.offsetHeight+'px');
+  });
   if(state.finalShown)return;
   state.finalShown=true;
   setAdminUI(state.isAdmin);
