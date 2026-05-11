@@ -147,8 +147,9 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
   background:var(--accent);color:#080808;
   font-size:13px;font-weight:800;
   writing-mode:vertical-rl;letter-spacing:0.8px;
-  display:none;align-items:center;justify-content:center;
+  display:flex;align-items:center;justify-content:center;
   cursor:pointer;transition:all 0.15s;
+  visibility:hidden;
 }
 .sb-send:active{transform:scale(0.95);}
 .sb-send.locked{opacity:0.3;pointer-events:none;cursor:not-allowed;}
@@ -364,7 +365,7 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
   <div class="sb-spacer"></div>
   <div class="sb-large sb-admin-btn sb-next" id="sb-force-next-btn" data-action="forceNext">➡️</div>
   <div class="sb-large sb-admin-btn" id="global-pause-btn" data-action="togglePause">⏸</div>
-  <div class="sb-send" id="submit-vote-btn" data-action="submitVote" style="visibility:hidden;">✓ SEND</div>
+  <div class="sb-send" id="submit-vote-btn" data-action="submitVote">✓ SEND</div>
 </div>
 
 <!-- TOAST -->
@@ -825,7 +826,7 @@ import { getDatabase, ref, set, get, update, onValue, onChildAdded, remove, runT
 // Make all window functions available immediately
 Object.defineProperty(window, '__moduleReady', { value: true });
 
-const VERSION = 'Avstemning v3.14';
+const VERSION = 'Avstemning v3.15';
 console.log(VERSION);
 
 const FIREBASE_CONFIG = {
@@ -905,9 +906,9 @@ function showScreen(id){
     el.classList.add('screens-with-sidebar');
     initGlobalEmojiMenu();
   }
-  // Show/hide SEND button only on voting screen
+  // Show/hide SEND button only on voting screen - visibility only, never display
   const sendBtn=document.getElementById('submit-vote-btn');
-  if(sendBtn)sendBtn.style.visibility=(id==='screen-voting')?'visible':'hidden';
+  if(sendBtn){sendBtn.style.visibility=(id==='screen-voting')?'visible':'hidden';}
 }
 function formatTime(s){if(s<0)s=0;return`${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`;}
 function safeKey(s){return s.replace(/[.#$/\[\]\s]/g,'_');}
@@ -920,7 +921,9 @@ function generateId(){return Date.now().toString(36)+Math.random().toString(36).
 
 // ========== THEME ==========
 function applyTheme(theme){
+  const isAdmin=document.body.classList.contains('is-admin');
   document.body.className = theme && theme !== 'standard' ? `theme-${theme}` : '';
+  if(isAdmin)document.body.classList.add('is-admin');
   applyThemeBg(theme);
 }
 
@@ -1464,6 +1467,7 @@ window.startSession=async function(){
 // ========== VOTING ==========
 let lastShownSubjectIdx = -1;
 function showVotingScreen(session){
+  setAdminUI(state.isAdmin);
   requestAnimationFrame(()=>{
     const h=document.querySelector('.voting-header');
     const a=document.getElementById('activity-bar');
@@ -1805,6 +1809,7 @@ async function advanceSubject(sessionId,session,idx){
 
 // ========== LEADERBOARD ==========
 function showLeaderboardScreen(session){
+  setAdminUI(state.isAdmin);
   requestAnimationFrame(()=>{
     const h=document.querySelector('#screen-leaderboard .header');
     if(h)document.documentElement.style.setProperty('--header-h',h.offsetHeight+'px');
