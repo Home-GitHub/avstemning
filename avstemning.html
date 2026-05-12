@@ -785,7 +785,7 @@ import { getDatabase, ref, set, get, update, onValue, onChildAdded, remove, runT
 // Make all window functions available immediately
 Object.defineProperty(window, '__moduleReady', { value: true });
 
-const VERSION = 'Avstemning v3.17';
+const VERSION = 'Avstemning v3.18';
 console.log(VERSION);
 
 const FIREBASE_CONFIG = {
@@ -1162,7 +1162,7 @@ async function init(){
   const savedSessionId=ls('sessionId');
   const savedParticipantId=ls('participantId');
   const savedParticipantName=ls('participantName');
-  const savedIsAdmin=(ls(`isAdmin_${slug}`)==='true')||(ls('isAdmin')==='true'&&savedSessionId===slug);
+  const savedIsAdmin=(ls(`isAdmin_${slug}`)==='true');
 
   if(!slug){showScreen('screen-admin-login');loadAdminSessions();return;}
   state.sessionId=slug;
