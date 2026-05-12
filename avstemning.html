@@ -154,6 +154,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .sb-send:active{transform:scale(0.95);}
 .sb-send.locked{opacity:0.3;pointer-events:none;cursor:not-allowed;}
 @keyframes confettiFall{0%{transform:translateY(0) rotate(0deg);opacity:1;}100%{transform:translateY(110vh) rotate(720deg);opacity:0;}}
+@keyframes glitterFly{0%{transform:translate(0,0) scale(1) rotate(0deg);opacity:1;}100%{transform:translate(var(--tx),var(--ty)) scale(0) rotate(360deg);opacity:0;}}
 
 /* CATEGORIES */
 .voting-categories{flex:1;padding:10px 12px 80px 12px;overflow-y:auto;-webkit-overflow-scrolling:touch;}
@@ -801,7 +802,7 @@ import { getDatabase, ref, set, get, update, onValue, onChildAdded, remove, runT
 // Make all window functions available immediately
 Object.defineProperty(window, '__moduleReady', { value: true });
 
-const VERSION = 'Avstemning v3.23';
+const VERSION = 'Avstemning v3.24';
 console.log(VERSION);
 
 const FIREBASE_CONFIG = {
@@ -1399,20 +1400,20 @@ async function handleSessionState(session){
       addExternalWinnerTab(session);
       state.externalWinnerShown=true;
       window.switchResultTab('external-winner');
-      startConfetti();
-      // Punkt 64: schedule activity winner after minutesPerSubject
+      startGlitter();
+      try{window.playSound('fanfare');}catch(e){}
+      // Punkt 64: schedule activity winner after minutesPerSubject – write to Firebase
       const delay=(session.minutesPerSubject||3)*60*1000;
-      setTimeout(()=>{
-        addActivityWinnerTab(session);
-        window.switchResultTab('activity-winner');
-        startConfetti();
+      setTimeout(async ()=>{
+        await set(ref(db,`sessions/${state.sessionId}/showActivityWinner`),true);
       }, delay);
     }
     else if(session.showActivityWinner&&!state.activityWinnerShown){
       addActivityWinnerTab(session);
       state.activityWinnerShown=true;
       window.switchResultTab('activity-winner');
-      startConfetti();
+      startGlitter();
+      try{window.playSound('fanfare');}catch(e){}
     }
     return;
   }
@@ -1615,7 +1616,7 @@ function buildVotingCategories(session){
         ">${val}</div>
       </div>
       <div style="display:flex;justify-content:space-between;padding:0 0 2px;">
-        <span style="font-size:13px;color:rgba(255,255,255,0.5);font-weight:600;">0</span>
+        <span class="slider-lbl" style="font-size:13px;color:rgba(255,255,255,0.5);font-weight:600;">0</span>
         <span style="font-size:13px;color:rgba(255,255,255,0.5);font-weight:600;">${Math.round(cat.max/2)}</span>
         <span style="font-size:13px;color:rgba(255,255,255,0.5);font-weight:600;">${cat.max}</span>
       </div>`;
@@ -2896,45 +2897,57 @@ function addExternalWinnerTab(session){
 }
 
 // Punkt 53: Confetti animation
-function startConfetti(){
+function startGlitter(){
   const container = document.getElementById('confetti-container');
   if(!container) return;
-  if(container._confettiInterval) return; // already running
-  const colors = ['var(--accent)','#a78bfa','#34d399','#f472b6','#fbbf24','#60a5fa'];
-  // Initial burst
+  if(container._glitterInterval) return; // already running
+  const colors = ['#fbbf24','#f59e0b','#a78bfa','#c4b5fd','#fde68a','#ede9fe','#ffffff'];
+  const shapes = ['✦','✧','★','✶','·','⬧'];
+
   function spawnBatch(count){
+    const cx = window.innerWidth/2;
+    const cy = window.innerHeight/2;
     for(let i = 0; i < count; i++){
-      setTimeout(() => {
+      setTimeout(()=>{
         const el = document.createElement('div');
-        const size = 6 + Math.random() * 10;
+        const angle = Math.random()*Math.PI*2;
+        const speed = 80 + Math.random()*200;
+        const tx = Math.cos(angle)*speed;
+        const ty = Math.sin(angle)*speed;
+        const size = 10 + Math.random()*16;
+        const duration = 1.2 + Math.random()*1.5;
+        const color = colors[Math.floor(Math.random()*colors.length)];
+        const shape = shapes[Math.floor(Math.random()*shapes.length)];
+        el.textContent = shape;
         el.style.cssText = `
-          position:absolute;
-          left:${Math.random()*100}%;
-          top:-20px;
-          width:${size}px;height:${size}px;
-          background:${colors[Math.floor(Math.random()*colors.length)]};
-          border-radius:${Math.random()>0.5?'50%':'2px'};
-          opacity:${0.7+Math.random()*0.3};
-          animation:confettiFall ${2+Math.random()*2.5}s linear forwards;
+          position:fixed;
+          left:${cx + (Math.random()-0.5)*120}px;
+          top:${cy + (Math.random()-0.5)*120}px;
+          font-size:${size}px;
+          color:${color};
+          opacity:1;
+          pointer-events:none;
+          z-index:9999;
+          animation:glitterFly ${duration}s ease-out forwards;
+          --tx:${tx}px;
+          --ty:${ty}px;
         `;
-        container.appendChild(el);
-        setTimeout(() => el.remove(), 4500);
-      }, Math.random() * 1200);
+        document.body.appendChild(el);
+        setTimeout(()=>el.remove(), duration*1000+100);
+      }, Math.random()*800);
     }
   }
-  spawnBatch(200);
-  // Keep spawning continuously
-  container._confettiInterval = setInterval(() => spawnBatch(40), 1500);
-  // Play fanfare sound if available
-  try{ window.playSound('fanfare'); }catch(e){}
+
+  spawnBatch(80);
+  container._glitterInterval = setInterval(()=>spawnBatch(30), 1200);
 }
 
-function stopConfetti(){
+function stopGlitter(){
   const container = document.getElementById('confetti-container');
   if(!container) return;
-  if(container._confettiInterval){
-    clearInterval(container._confettiInterval);
-    container._confettiInterval = null;
+  if(container._glitterInterval){
+    clearInterval(container._glitterInterval);
+    container._glitterInterval = null;
   }
 }
 
@@ -3082,9 +3095,9 @@ window.switchResultTab = function(tab) {
   const panelEl = document.getElementById(`panel-${tab}`);
   if (btnEl) btnEl.classList.add('active');
   if (panelEl) panelEl.classList.add('active');
-  // Stop confetti when leaving winner tab
-  if(tab !== 'external-winner') stopConfetti();
-  else startConfetti();
+  // Stop/start glitter when switching tabs
+  if(tab === 'external-winner' || tab === 'activity-winner') startGlitter();
+  else stopGlitter();
 };
 
 function buildCategoryBreakdown(session) {
