@@ -85,7 +85,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 #lb-tabs-fixed{position:fixed;top:var(--header-h,56px);left:56px;right:0;z-index:15;background:var(--bg);padding:8px 12px 4px;border-bottom:0.5px solid rgba(255,255,255,0.06);}
 #result-tabs-fixed{position:fixed;top:var(--header-h,56px);left:56px;right:0;z-index:15;background:var(--bg);padding:8px 12px 4px;border-bottom:0.5px solid rgba(255,255,255,0.06);}
 #screen-leaderboard .content{padding-top:52px;}
-#screen-final .content{overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:52px;}
+#screen-final .content{overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:var(--final-content-top,52px);}
 .header-title{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:1px;color:var(--accent);line-height:1;}
 .header-sub{font-size:11px;color:var(--muted);margin-top:1px;}
 .header-right{display:flex;align-items:center;gap:8px;}
@@ -799,7 +799,7 @@ import { getDatabase, ref, set, get, update, onValue, onChildAdded, remove, runT
 // Make all window functions available immediately
 Object.defineProperty(window, '__moduleReady', { value: true });
 
-const VERSION = 'Avstemning v3.20';
+const VERSION = 'Avstemning v3.21';
 console.log(VERSION);
 
 const FIREBASE_CONFIG = {
@@ -1064,6 +1064,8 @@ function getAudioCtx(){
 }
 // Init audio on first user interaction
 document.addEventListener('click',function(){getAudioCtx();},{once:true});
+// Expose to window so functions outside module scope can call playSound
+window.getAudioCtx=getAudioCtx;
 
 function playSound(type){
   try{
@@ -1105,12 +1107,32 @@ function playSound(type){
         o.stop(ctx.currentTime+i*0.13+0.3);
       });
       return;
+    } else if(type==='fanfare'){
+      const fanfreqs=[[523,659,784],[659,784,1047],[784,1047,1319]];
+      let t=ctx.currentTime;
+      fanfreqs.forEach(chord=>{
+        chord.forEach(f=>{
+          const o=ctx.createOscillator();
+          const g=ctx.createGain();
+          o.type='triangle';
+          o.connect(g);g.connect(ctx.destination);
+          o.frequency.setValueAtTime(f,t);
+          g.gain.setValueAtTime(0,t);
+          g.gain.linearRampToValueAtTime(0.25,t+0.04);
+          g.gain.exponentialRampToValueAtTime(0.001,t+0.35);
+          o.start(t);o.stop(t+0.4);
+        });
+        t+=0.22;
+      });
+      return;
     } else {
       // Unknown type - no sound
       return;
     }
   }catch(e){console.log('Sound error:',e);}
 }
+// Expose playSound to window for calls outside module scope (punkt 60)
+window.playSound=playSound;
 function updateJoinPreview(){const n=(document.getElementById('join-name')?.value||'').trim();document.getElementById('join-preview').textContent=n?`Du vises som: ${state.selectedEmoji} ${n}`:'';}
 
 // ========== REACTION BAR ==========
@@ -1375,7 +1397,7 @@ async function handleSessionState(session){
       addExternalWinnerTab(session);
       state.externalWinnerShown=true;
       window.switchResultTab('external-winner');
-      startConfetti(session.leaderboardSeconds||10);
+      startConfetti();
     }
     return;
   }
@@ -2019,6 +2041,13 @@ function showFinalLeaderboard(session){
   requestAnimationFrame(()=>{
     const h=document.querySelector('#screen-final .header');
     if(h)document.documentElement.style.setProperty('--header-h',h.offsetHeight+'px');
+    // Punkt 59: set content padding to header + tabs height
+    setTimeout(()=>{
+      const hh=h?h.offsetHeight:56;
+      const tabs=document.getElementById('result-tabs-fixed');
+      const th=tabs?tabs.offsetHeight:44;
+      document.documentElement.style.setProperty('--final-content-top',(hh+th)+'px');
+    },100);
   });
   if(state.finalShown)return;
   state.finalShown=true;
@@ -2821,35 +2850,50 @@ function addExternalWinnerTab(session){
   });
 
   // Start confetti
-  startConfetti(session.leaderboardSeconds || 10);
+  startConfetti();
 }
 
 // Punkt 53: Confetti animation
-function startConfetti(durationSecs){
+function startConfetti(){
   const container = document.getElementById('confetti-container');
   if(!container) return;
+  if(container._confettiInterval) return; // already running
   const colors = ['var(--accent)','#a78bfa','#34d399','#f472b6','#fbbf24','#60a5fa'];
-  const total = 120;
-  for(let i = 0; i < total; i++){
-    setTimeout(() => {
-      const el = document.createElement('div');
-      const size = 6 + Math.random() * 8;
-      el.style.cssText = `
-        position:absolute;
-        left:${Math.random()*100}%;
-        top:-20px;
-        width:${size}px;height:${size}px;
-        background:${colors[Math.floor(Math.random()*colors.length)]};
-        border-radius:${Math.random()>0.5?'50%':'2px'};
-        opacity:${0.7+Math.random()*0.3};
-        animation:confettiFall ${1.5+Math.random()*2}s linear forwards;
-      `;
-      container.appendChild(el);
-      setTimeout(() => el.remove(), 3500);
-    }, Math.random() * durationSecs * 1000 * 0.7);
+  // Initial burst
+  function spawnBatch(count){
+    for(let i = 0; i < count; i++){
+      setTimeout(() => {
+        const el = document.createElement('div');
+        const size = 6 + Math.random() * 10;
+        el.style.cssText = `
+          position:absolute;
+          left:${Math.random()*100}%;
+          top:-20px;
+          width:${size}px;height:${size}px;
+          background:${colors[Math.floor(Math.random()*colors.length)]};
+          border-radius:${Math.random()>0.5?'50%':'2px'};
+          opacity:${0.7+Math.random()*0.3};
+          animation:confettiFall ${2+Math.random()*2.5}s linear forwards;
+        `;
+        container.appendChild(el);
+        setTimeout(() => el.remove(), 4500);
+      }, Math.random() * 1200);
+    }
   }
+  spawnBatch(200);
+  // Keep spawning continuously
+  container._confettiInterval = setInterval(() => spawnBatch(40), 1500);
   // Play fanfare sound if available
-  try{ playSound('fanfare'); }catch(e){}
+  try{ window.playSound('fanfare'); }catch(e){}
+}
+
+function stopConfetti(){
+  const container = document.getElementById('confetti-container');
+  if(!container) return;
+  if(container._confettiInterval){
+    clearInterval(container._confettiInterval);
+    container._confettiInterval = null;
+  }
 }
 
 window.switchResultTab = function(tab) {
@@ -2859,6 +2903,9 @@ window.switchResultTab = function(tab) {
   const panelEl = document.getElementById(`panel-${tab}`);
   if (btnEl) btnEl.classList.add('active');
   if (panelEl) panelEl.classList.add('active');
+  // Stop confetti when leaving winner tab
+  if(tab !== 'external-winner') stopConfetti();
+  else startConfetti();
 };
 
 function buildCategoryBreakdown(session) {
