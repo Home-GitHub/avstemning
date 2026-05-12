@@ -681,60 +681,19 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
           <button class="btn btn-secondary btn-sm" data-action="updateLbSecs">Sett</button>
         </div>
       </div>
-      <div class="admin-row">
-        <div><div class="admin-row-label">Legg til tid</div></div>
-        <div class="admin-btn-group">
-          <button class="btn btn-secondary btn-sm" data-action="addTime" data-arg="60">+1 min</button>
-          <button class="btn btn-secondary btn-sm" data-action="addTime" data-arg="120">+2 min</button>
-        </div>
-      </div>
-      <div class="admin-row">
-        <div><div class="admin-row-label">Tving neste emne</div></div>
-        <button class="btn btn-danger btn-sm" data-action="forceNext">Hopp →</button>
-      </div>
-      <div class="admin-row">
-        <div><div class="admin-row-label">Gå tilbake</div><div class="admin-row-sub">Nullstiller stemmer for emnet</div></div>
-        <button class="btn btn-danger btn-sm" data-action="goBack">← Tilbake</button>
-      </div>
-      <div class="admin-row">
-        <div><div class="admin-row-label">Hopp til emne</div></div>
-        <div class="admin-btn-group">
-          <input type="number" id="gear-jump" style="width:50px;padding:6px 8px;font-size:13px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text);text-align:center;" min="1">
-          <button class="btn btn-secondary btn-sm" data-action="jumpToSubject">Hopp</button>
-        </div>
-      </div>
-    </div>
 
-    <!-- PAUSE -->
-    <div class="admin-section" id="gear-pause-section">
-      <div class="admin-section-label">Pause</div>
+      <div class="admin-section-label" style="margin-top:8px;">Bytt emne</div>
       <div class="admin-row">
-        <div><div class="admin-row-label">Pausemelding</div></div>
+        <button class="btn btn-danger btn-sm" data-action="goBack">← Tilbake</button>
+        <button class="btn btn-danger btn-sm" data-action="forceNext">Neste →</button>
       </div>
-      <input class="manual-add-input" type="text" id="pause-message-input" value="Pause – den som venter...">
-      <button class="btn btn-secondary" data-action="togglePauseWithMessage" id="pause-toggle-btn">⏸ Sett på pause</button>
     </div>
 
     <!-- PARTICIPANTS -->
     <div class="admin-section">
       <div class="admin-section-label">Deltakere</div>
       <div id="gear-participants"></div>
-      <div class="divider"></div>
-      <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Legg til manuelt</div>
-      <div class="input-row-inline">
-        <input class="manual-add-input" type="text" id="manual-emoji" placeholder="🍺" style="flex:0 0 60px;text-align:center;">
-        <input class="manual-add-input" type="text" id="manual-name" placeholder="Navn">
-        <button class="btn btn-secondary btn-sm" data-action="addManualParticipant" style="flex-shrink:0;">+</button>
-      </div>
-    </div>
 
-    <!-- SKÅL -->
-    <div class="admin-section">
-      <div class="admin-section-label">🥂 Skål</div>
-      <div class="admin-row" id="skal-admin-row">
-        <div><div class="admin-row-label">Send auto-skål</div><div class="admin-row-sub">Tilfeldig med ekte navn</div></div>
-        <button class="btn btn-secondary btn-sm" data-action="sendAutoSkal">🥂 Send</button>
-      </div>
     </div>
 
     <!-- SESSION -->
@@ -826,7 +785,7 @@ import { getDatabase, ref, set, get, update, onValue, onChildAdded, remove, runT
 // Make all window functions available immediately
 Object.defineProperty(window, '__moduleReady', { value: true });
 
-const VERSION = 'Avstemning v3.15';
+const VERSION = 'Avstemning v3.17';
 console.log(VERSION);
 
 const FIREBASE_CONFIG = {
@@ -1526,6 +1485,10 @@ function showVotingScreen(session){
   if(hasVoted){
     // If all voted, leaderboard is imminent - show transition
     showScreen('screen-submitted');
+    requestAnimationFrame(()=>{
+      const sh=document.querySelector('#screen-submitted .voting-header');
+      if(sh)document.documentElement.style.setProperty('--header-h',sh.offsetHeight+'px');
+    });
     if(pCount>=2&&vCount>=pCount){
       document.getElementById('submitted-voter-count').textContent='⚡ Alle har stemt!';
     }
