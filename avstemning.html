@@ -260,8 +260,9 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
 .final-winner-score{font-family:'Bebas Neue',sans-serif;font-size:64px;color:var(--accent);line-height:1;}
 
 /* RESULT TABS */
-.result-tabs{display:flex;gap:2px;background:rgba(255,255,255,0.04);border-radius:10px;padding:3px;margin-bottom:18px;border:0.5px solid rgba(255,255,255,0.06);}
-.result-tab{flex:1;padding:14px 9px;text-align:center;font-size:13px;font-weight:500;border-radius:8px;cursor:pointer;color:var(--muted);transition:all 0.2s;}
+.result-tabs{display:flex;gap:2px;background:rgba(255,255,255,0.04);border-radius:10px;padding:3px;margin-bottom:18px;border:0.5px solid rgba(255,255,255,0.06);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;flex-wrap:nowrap;}
+.result-tabs::-webkit-scrollbar{display:none;}
+.result-tab{flex:0 0 auto;padding:14px 12px;text-align:center;font-size:13px;font-weight:500;border-radius:8px;cursor:pointer;color:var(--muted);transition:all 0.2s;white-space:nowrap;}
 .result-tab.active{background:rgba(255,255,255,0.07);color:var(--text);}
 .result-panel{display:none;}
 .result-panel.active{display:block;}
@@ -800,7 +801,7 @@ import { getDatabase, ref, set, get, update, onValue, onChildAdded, remove, runT
 // Make all window functions available immediately
 Object.defineProperty(window, '__moduleReady', { value: true });
 
-const VERSION = 'Avstemning v3.22';
+const VERSION = 'Avstemning v3.23';
 console.log(VERSION);
 
 const FIREBASE_CONFIG = {
@@ -1624,9 +1625,22 @@ function buildVotingCategories(session){
   container.querySelectorAll('.slider-input').forEach(slider=>{
     function updateSlider(s){
       const pct=(s.value/s.max)*100;
+      const v=parseInt(s.value);
       s.style.background=`linear-gradient(to right,var(--accent) ${pct}%,var(--border) ${pct}%)`;
+      // Punkt 61: update thumb label
       const label=document.getElementById('v-'+s.dataset.key);
-      if(label){label.style.left=pct+'%';label.textContent=s.value;}
+      if(label){label.style.left=pct+'%';label.textContent=v;}
+      // Punkt 68: update 0-label to show current value, highlighted when > 0
+      const wrap=s.closest('.slider-wrap');
+      if(wrap){
+        const minLbl=wrap.nextElementSibling&&wrap.nextElementSibling.querySelector('.slider-lbl');
+        if(minLbl){
+          minLbl.textContent=v>0?v:0;
+          minLbl.style.color=v>0?'var(--accent)':'';
+          minLbl.style.fontWeight=v>0?'700':'600';
+          minLbl.style.fontSize=v>0?'14px':'12px';
+        }
+      }
     }
     updateSlider(slider);
     ['input','change','touchmove'].forEach(evt=>{
