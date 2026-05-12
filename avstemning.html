@@ -170,8 +170,8 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
   outline:none;cursor:pointer;display:block;
   touch-action:manipulation;
 }
-.slider-input::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:32px;height:32px;border-radius:50%;background:var(--accent);cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,0.5);border:2px solid rgba(255,255,255,0.2);}
-.slider-input::-moz-range-thumb{width:32px;height:32px;border-radius:50%;background:var(--accent);cursor:pointer;border:2px solid rgba(255,255,255,0.2);}
+.slider-input::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:26px;height:26px;border-radius:50%;background:transparent;cursor:pointer;box-shadow:none;border:none;}
+.slider-input::-moz-range-thumb{width:26px;height:26px;border-radius:50%;background:transparent;cursor:pointer;border:none;}
 .slider-midmark{position:absolute;top:-6px;bottom:-6px;transform:translateX(-50%);width:3px;background:rgba(255,255,255,0.5);pointer-events:none;border-radius:2px;box-shadow:0 0 4px rgba(255,255,255,0.3);}
 .slider-labels{display:flex;justify-content:space-between;margin-top:1px;}
 .slider-lbl{font-size:9px;color:rgba(255,255,255,0.2);}
@@ -618,6 +618,7 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
       <div id="final-judge-breakdown"></div>
     </div>
     <div class="result-panel" id="panel-external-winner"></div>
+    <div class="result-panel" id="panel-activity-winner"></div>
     <div class="text-muted text-center mt-24" style="font-size:12px;padding-bottom:32px;">Takk for deltakelse! 🎉</div>
   </div>
 </div>
@@ -799,7 +800,7 @@ import { getDatabase, ref, set, get, update, onValue, onChildAdded, remove, runT
 // Make all window functions available immediately
 Object.defineProperty(window, '__moduleReady', { value: true });
 
-const VERSION = 'Avstemning v3.21';
+const VERSION = 'Avstemning v3.22';
 console.log(VERSION);
 
 const FIREBASE_CONFIG = {
@@ -1398,6 +1399,19 @@ async function handleSessionState(session){
       state.externalWinnerShown=true;
       window.switchResultTab('external-winner');
       startConfetti();
+      // Punkt 64: schedule activity winner after minutesPerSubject
+      const delay=(session.minutesPerSubject||3)*60*1000;
+      setTimeout(()=>{
+        addActivityWinnerTab(session);
+        window.switchResultTab('activity-winner');
+        startConfetti();
+      }, delay);
+    }
+    else if(session.showActivityWinner&&!state.activityWinnerShown){
+      addActivityWinnerTab(session);
+      state.activityWinnerShown=true;
+      window.switchResultTab('activity-winner');
+      startConfetti();
     }
     return;
   }
@@ -1578,13 +1592,26 @@ function buildVotingCategories(session){
     row.innerHTML=`
       <div class="cat-header">
         <div class="cat-name">${cat.name}${cat.weight>1?` <span style="font-size:11px;color:var(--muted);">×${cat.weight}</span>`:''}</div>
-        <div class="cat-val" id="v-${catKey}">${val}</div>
       </div>
-      <div class="slider-wrap">
+      <div class="slider-wrap" style="position:relative;">
         <div class="slider-midmark" style="left:${(Math.round(cat.max/2)/cat.max)*100}%"></div>
         <input type="range" class="slider-input" id="s-${catKey}"
           min="0" max="${cat.max}" value="${val}"
           data-key="${catKey}" data-max="${cat.max}">
+        <div class="thumb-label" id="v-${catKey}" style="
+          position:absolute;
+          top:50%;
+          left:${cat.max>0?(val/cat.max)*100:0}%;
+          transform:translate(-50%,-50%);
+          width:26px;height:26px;
+          border-radius:50%;
+          background:rgba(167,124,255,0.25);
+          border:1.5px solid rgba(167,124,255,0.4);
+          display:flex;align-items:center;justify-content:center;
+          font-size:11px;font-weight:700;color:#c4b5fd;
+          pointer-events:none;
+          box-shadow:0 2px 8px rgba(0,0,0,0.4);
+        ">${val}</div>
       </div>
       <div style="display:flex;justify-content:space-between;padding:0 0 2px;">
         <span style="font-size:13px;color:rgba(255,255,255,0.5);font-weight:600;">0</span>
@@ -1598,6 +1625,8 @@ function buildVotingCategories(session){
     function updateSlider(s){
       const pct=(s.value/s.max)*100;
       s.style.background=`linear-gradient(to right,var(--accent) ${pct}%,var(--border) ${pct}%)`;
+      const label=document.getElementById('v-'+s.dataset.key);
+      if(label){label.style.left=pct+'%';label.textContent=s.value;}
     }
     updateSlider(slider);
     ['input','change','touchmove'].forEach(evt=>{
@@ -1608,7 +1637,6 @@ function buildVotingCategories(session){
         const si=session.currentSubjectIndex||0;
         if(!state.currentVotes[si])state.currentVotes[si]={};
         state.currentVotes[si][k]=v;
-        document.getElementById('v-'+k).textContent=v;
         updateSlider(slider);
         saveDraft(si);
       });
@@ -2895,6 +2923,143 @@ function stopConfetti(){
     container._confettiInterval = null;
   }
 }
+
+// ================================================================
+// AKTIVITETSVINNER – Punkt 63–67
+// ================================================================
+
+// Punkt 63: Calculate activity winner from _activityScores
+function calcActivityWinner(){
+  const entries = Object.entries(_activityScores);
+  if(!entries.length) return {winners:[], all:[]};
+  const sorted = entries.sort((a,b) => b[1]-a[1]);
+  const best = sorted[0][1];
+  const winners = sorted.filter(([,pts]) => pts===best).map(([name,pts]) => ({name,pts}));
+  const all = sorted.map(([name,pts],i) => ({name,pts,rank:i+1}));
+  return {winners, all};
+}
+
+// Punkt 65+66+67: Build activity winner tab
+function addActivityWinnerTab(session){
+  const tabContainer = document.getElementById('result-tabs-container');
+  if(!tabContainer || document.getElementById('tab-btn-activity-winner')) return;
+  const btn = document.createElement('div');
+  btn.className = 'result-tab';
+  btn.id = 'tab-btn-activity-winner';
+  btn.textContent = '🔥 Aktiv';
+  btn.onclick = () => window.switchResultTab('activity-winner');
+  tabContainer.appendChild(btn);
+
+  const panel = document.getElementById('panel-activity-winner');
+  if(!panel) return;
+
+  const {winners, all} = calcActivityWinner();
+  if(!all.length){ panel.innerHTML = '<div style="text-align:center;padding:32px;color:var(--muted);">Ingen aktivitet registrert.</div>'; return; }
+
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('nb-NO', {day:'numeric', month:'long', year:'numeric'});
+  const sessionName = session.name || '';
+  const isShared = winners.length > 1;
+
+  const winnerNamesHtml = isShared
+    ? winners.map(w => `<div style="display:inline-flex;align-items:center;gap:6px;background:rgba(167,124,255,0.15);border:0.5px solid #7c5cbf;border-radius:24px;padding:6px 14px;font-size:15px;color:#f5f0ff;margin:4px;">${w.name}</div>`).join('')
+    : `<div style="font-size:28px;font-weight:500;color:#f5f0ff;margin:4px 0;">${winners[0].name}</div>`;
+
+  // Winner diploma HTML
+  let html = `<div style="padding:24px 16px 16px;display:flex;flex-direction:column;align-items:center;">`;
+
+  // Winner diploma
+  html += `
+    <div id="activity-diplom-winner" style="
+      background:linear-gradient(160deg,#1a0f3c 0%,#0d0820 100%);
+      border-radius:20px;border:2px solid #7c5cbf;
+      padding:32px 24px 24px;text-align:center;
+      width:100%;max-width:400px;margin-bottom:12px;
+    ">
+      <div style="font-size:11px;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;color:#c4b5fd;margin-bottom:4px;">Kveldens mest aktive</div>
+      <div style="font-size:16px;font-weight:500;color:#f5f0ff;margin-bottom:4px;">${sessionName}</div>
+      <div style="font-size:11px;color:#7c5cbf;letter-spacing:0.8px;margin-bottom:16px;">${dateStr}</div>
+      <div style="font-size:44px;margin-bottom:12px;">🔥</div>
+      <div style="margin-bottom:4px;">${winnerNamesHtml}</div>
+      <div style="height:1px;background:linear-gradient(90deg,transparent,#7c5cbf,transparent);margin:16px 0;"></div>
+      <div style="font-size:15px;color:#f5f0ff;font-weight:500;">${winners[0].pts} reaksjoner gjennom kvelden</div>
+    </div>
+    <button onclick="shareActivityDiplom('activity-diplom-winner','${sessionName.replace(/'/g,"\'")} – Kveldens mest aktive')" style="
+      width:100%;max-width:400px;padding:10px;font-size:13px;font-weight:500;
+      border-radius:12px;background:rgba(167,124,255,0.15);color:#c4b5fd;
+      border:0.5px solid #7c5cbf;cursor:pointer;margin-bottom:24px;
+    ">Del diplom</button>`;
+
+  // Individual diplomas
+  const emojiList = ['🔥','⚡','✨','🌟','💫','🎉','🎊','🎶','🎸','🎤'];
+  all.forEach((p, i) => {
+    const isWinner = p.rank === 1;
+    const emoji = emojiList[i % emojiList.length];
+    const diplomId = `activity-diplom-${i}`;
+    html += `
+      <div id="${diplomId}" style="
+        background:#0d0820;
+        border-radius:20px;
+        border:${isWinner ? '2px solid #7c5cbf' : '1.5px solid #3a2f5a'};
+        padding:24px 20px 18px;text-align:center;
+        width:100%;max-width:400px;margin-bottom:10px;
+      ">
+        <div style="font-size:11px;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;color:${isWinner?'#c4b5fd':'#5a4a7a'};margin-bottom:4px;">Kveldens mest aktive</div>
+        <div style="font-size:14px;font-weight:500;color:${isWinner?'#f5f0ff':'rgba(255,255,255,0.5)'};margin-bottom:4px;">${sessionName}</div>
+        <div style="font-size:11px;color:#3a2f5a;letter-spacing:0.8px;margin-bottom:12px;">${dateStr}</div>
+        <div style="font-size:36px;margin-bottom:10px;">${emoji}</div>
+        <div style="font-size:22px;font-weight:500;color:${isWinner?'#f5f0ff':'rgba(255,255,255,0.7)'};margin-bottom:4px;">${p.name}</div>
+        <div style="height:1px;background:linear-gradient(90deg,transparent,${isWinner?'#7c5cbf':'#3a2f5a'},transparent);margin:12px 0;"></div>
+        <div style="font-size:13px;color:${isWinner?'#f5f0ff':'rgba(255,255,255,0.5)'};font-weight:500;">${p.pts} reaksjoner</div>
+        <div style="font-size:11px;color:${isWinner?'#7c5cbf':'#3a2f5a'};margin-top:3px;">#${p.rank} av kvelden</div>
+      </div>
+      <button onclick="shareActivityDiplom('${diplomId}','${sessionName.replace(/'/g,"\'")} – #${p.rank} av kvelden')" style="
+        width:100%;max-width:400px;padding:8px;font-size:12px;font-weight:500;
+        border-radius:10px;background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.4);
+        border:0.5px solid rgba(255,255,255,0.08);cursor:pointer;margin-bottom:16px;
+      ">Del diplom</button>`;
+  });
+
+  html += `</div>`;
+  panel.innerHTML = html;
+
+  // Scroll to own diploma
+  if(state.participantName){
+    const myIdx = all.findIndex(p => p.name === state.participantName);
+    if(myIdx >= 0){
+      setTimeout(()=>{
+        const myDiplom = document.getElementById(`activity-diplom-${myIdx}`);
+        if(myDiplom) myDiplom.scrollIntoView({behavior:'smooth', block:'center'});
+      }, 500);
+    }
+  }
+}
+
+// Punkt 67: Share individual diploma
+window.shareActivityDiplom = async function(diplomId, title){
+  const diplom = document.getElementById(diplomId);
+  if(!diplom) return;
+  try {
+    if(!window.html2canvas){
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+      document.head.appendChild(script);
+      await new Promise(res => { script.onload = res; });
+    }
+    const canvas = await html2canvas(diplom, {backgroundColor:'#0d0820', scale:2});
+    canvas.toBlob(async blob => {
+      const file = new File([blob], 'diplom.png', {type:'image/png'});
+      if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
+        await navigator.share({files:[file], title});
+      } else {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'diplom.png';
+        a.click();
+      }
+    });
+  } catch(e){ console.error('Share error:', e); }
+};
 
 window.switchResultTab = function(tab) {
   document.querySelectorAll('.result-tab').forEach(t => t.classList.remove('active'));
