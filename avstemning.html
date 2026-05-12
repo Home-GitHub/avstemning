@@ -153,6 +153,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 }
 .sb-send:active{transform:scale(0.95);}
 .sb-send.locked{opacity:0.3;pointer-events:none;cursor:not-allowed;}
+@keyframes confettiFall{0%{transform:translateY(0) rotate(0deg);opacity:1;}100%{transform:translateY(110vh) rotate(720deg);opacity:0;}}
 
 /* CATEGORIES */
 .voting-categories{flex:1;padding:10px 12px 80px 12px;overflow-y:auto;-webkit-overflow-scrolling:touch;}
@@ -616,6 +617,7 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
     <div class="result-panel" id="panel-judges">
       <div id="final-judge-breakdown"></div>
     </div>
+    <div class="result-panel" id="panel-external-winner"></div>
     <div class="text-muted text-center mt-24" style="font-size:12px;padding-bottom:32px;">Takk for deltakelse! 🎉</div>
   </div>
 </div>
@@ -638,6 +640,18 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
     <div class="divider"></div>
     <div style="font-size:12px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.8px;">Publiserte sesjoner</div>
     <div id="admin-session-list"></div>
+  </div>
+</div>
+
+<!-- ===== EKSTERN RESULTAT SHEET ===== -->
+<div class="sheet-bg" id="external-sheet">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">🏆 Ekstern topp 3</div>
+    <div id="external-subjects-list" style="margin-bottom:16px;max-height:55vh;overflow-y:auto;"></div>
+    <div id="external-validation-msg" style="color:var(--danger);font-size:13px;text-align:center;margin-bottom:8px;display:none;"></div>
+    <button class="btn btn-primary" data-action="saveExternalResults" style="width:100%;margin-bottom:8px;">Lagre og kår vinner</button>
+    <button class="btn btn-secondary" onclick="document.getElementById('external-sheet').classList.remove('open')" style="width:100%;">Avbryt</button>
   </div>
 </div>
 
@@ -775,7 +789,7 @@ var _fns = ['showAdminLoginSheet','loginFromSheet','openSkalSheet','joinSession'
   'openGear','closeGear','showQrSheet','startSession','togglePause','togglePauseWithMessage',
   'forceNext','goBack','jumpToSubject','updateMinutes','updateLbSecs','addTime',
   'shuffleBlindtest','lockBlindtest','revealBlindtest',
-  'endSession','adminLogin','kickParticipant','removeVote','addManualParticipant'];
+  'endSession','adminLogin','kickParticipant','removeVote','addManualParticipant','saveExternalResults','openExternalSheet'];
 _fns.forEach(function(n) { window[n] = _proxyHandler(n); });
 </script>
 <script type="module" id="main-module">
@@ -785,7 +799,7 @@ import { getDatabase, ref, set, get, update, onValue, onChildAdded, remove, runT
 // Make all window functions available immediately
 Object.defineProperty(window, '__moduleReady', { value: true });
 
-const VERSION = 'Avstemning v3.18';
+const VERSION = 'Avstemning v3.19';
 console.log(VERSION);
 
 const FIREBASE_CONFIG = {
@@ -1355,7 +1369,16 @@ async function handleSessionState(session){
   }
 
   if(session.status==='published'||session.status==='waiting'){showWaitingRoom(session);return;}
-  if(session.status==='ended'){if(!state.finalShown){showFinalLeaderboard(session);}return;}
+  if(session.status==='ended'){
+    if(!state.finalShown){showFinalLeaderboard(session);}
+    else if(session.externalResults&&!state.externalWinnerShown){
+      addExternalWinnerTab(session);
+      state.externalWinnerShown=true;
+      window.switchResultTab('external-winner');
+      startConfetti(session.leaderboardSeconds||10);
+    }
+    return;
+  }
   if(session.status==='leaderboard'){
     const lbKey=`${state.sessionId}_lb_${session.currentSubjectIndex}`;
     if(state.lastLbKey!==lbKey){
@@ -2111,6 +2134,15 @@ function showFinalLeaderboard(session){
   }
 
   state.session=session; // ensure session is set before showScreen calls initGlobalEmojiMenu
+  // Punkt 48: swap force-next btn to trophy on final screen (admin only)
+  if(state.isAdmin){
+    const fnBtn=document.getElementById('sb-force-next-btn');
+    if(fnBtn){fnBtn.textContent='🏆';fnBtn.dataset.action='openExternalSheet';}
+  }
+  // If externalResults already saved, show winner tab
+  if(session.externalResults){
+    addExternalWinnerTab(session);
+  }
   showScreen('screen-final');
   setTimeout(() => {
     try{ if (rc.categories) buildCategoryBreakdown(session); }catch(e){console.error('Category breakdown error:',e);}
@@ -2584,6 +2616,178 @@ function renderJudgeBreakdown(containerId, session) {
 }
 
 // ========== RESULT TABS ==========
+// ================================================================
+// EKSTERN VINNER – UI/UX og logikk
+// ================================================================
+
+// Punkt 49: Open external sheet and build subject list
+window.openExternalSheet = function(){
+  const session = state.session;
+  if(!session) return;
+  const subjects = session.subjects ? Object.values(session.subjects) : [];
+  const existing = session.externalResults || {};
+  const list = document.getElementById('external-subjects-list');
+  list.innerHTML = '';
+  subjects.forEach((sub, i) => {
+    const saved = existing[i] || {};
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:0.5px solid var(--border);';
+    row.innerHTML = `
+      <div style="flex:1;font-size:14px;font-weight:500;">${sub.name}</div>
+      <select data-idx="${i}" class="ext-rank" style="font-size:12px;padding:4px 6px;border-radius:8px;border:0.5px solid var(--border);background:var(--surface2);color:var(--text);width:90px;">
+        <option value="">–</option>
+        <option value="1" ${saved.rank==1?'selected':''}>1. plass</option>
+        <option value="2" ${saved.rank==2?'selected':''}>2. plass</option>
+        <option value="3" ${saved.rank==3?'selected':''}>3. plass</option>
+      </select>
+      <input type="number" data-idx="${i}" class="ext-pts" placeholder="poeng" value="${saved.points||''}"
+        style="width:64px;font-size:12px;padding:4px 8px;border-radius:8px;border:0.5px solid var(--border);background:var(--surface2);color:var(--text);text-align:center;">
+    `;
+    list.appendChild(row);
+  });
+  document.getElementById('external-validation-msg').style.display = 'none';
+  document.getElementById('external-sheet').classList.add('open');
+};
+
+// Punkt 50+51: Validate and save external results
+window.saveExternalResults = async function(){
+  const msgEl = document.getElementById('external-validation-msg');
+  msgEl.style.display = 'none';
+
+  const ranks = document.querySelectorAll('.ext-rank');
+  const pts = document.querySelectorAll('.ext-pts');
+
+  // Punkt 50: Check for duplicate ranks
+  const usedRanks = {};
+  let dupError = false;
+  ranks.forEach(sel => {
+    if(!sel.value) return;
+    if(usedRanks[sel.value]){ dupError = true; }
+    usedRanks[sel.value] = true;
+  });
+  if(dupError){
+    msgEl.textContent = 'Samme plassering er brukt på flere emner. Korriger før du lagrer.';
+    msgEl.style.display = 'block';
+    return;
+  }
+
+  // Build results object
+  const results = {};
+  ranks.forEach((sel, i) => {
+    if(!sel.value) return;
+    results[sel.dataset.idx] = {
+      rank: parseInt(sel.value),
+      points: parseInt(pts[i].value) || 0
+    };
+  });
+
+  // Must have at least a 1st place
+  const hasFirst = Object.values(results).some(r => r.rank === 1);
+  if(!hasFirst){
+    msgEl.textContent = 'Du må angi minst én 1. plass.';
+    msgEl.style.display = 'block';
+    return;
+  }
+
+  // Punkt 51: Save to Firebase
+  await set(ref(db, `sessions/${state.sessionId}/externalResults`), results);
+  document.getElementById('external-sheet').classList.remove('open');
+};
+
+// Punkt 52: Calculate external winner(s)
+function calcExternalWinner(session){
+  const results = session.externalResults || {};
+  // Find subject index with rank=1
+  const firstPlaceIdx = Object.entries(results).find(([,v]) => v.rank === 1)?.[0];
+  if(firstPlaceIdx === undefined) return [];
+  const subjectIdx = parseInt(firstPlaceIdx);
+  const votes = session.votes || {};
+  const subjectVotes = votes[subjectIdx] || {};
+  const cats = session.categories ? Object.values(session.categories) : [];
+  // Calculate each participant's total score for the 1st place subject
+  const participants = session.participants || {};
+  let best = -1;
+  let winners = [];
+  Object.entries(participants).forEach(([pid, p]) => {
+    const v = subjectVotes[pid];
+    if(!v) return;
+    let score = 0;
+    cats.forEach(cat => {
+      const k = cat.key || safeKey(cat.name);
+      score += ((v.votes && v.votes[k]) || 0) * (cat.weight || 1);
+    });
+    score = Math.round(score);
+    if(score > best){ best = score; winners = [{name: p.name||pid, score}]; }
+    else if(score === best){ winners.push({name: p.name||pid, score}); }
+  });
+  const subjectName = session.subjects ? Object.values(session.subjects)[subjectIdx]?.name : '';
+  return { winners, subjectName, subjectIdx };
+}
+
+// Punkt 53+54: Add external winner tab and render winner panel
+function addExternalWinnerTab(session){
+  const tabContainer = document.getElementById('result-tabs-container');
+  if(!tabContainer || document.getElementById('tab-btn-external-winner')) return;
+  const btn = document.createElement('div');
+  btn.className = 'result-tab';
+  btn.id = 'tab-btn-external-winner';
+  btn.textContent = '🏆 Vinner';
+  btn.onclick = () => window.switchResultTab('external-winner');
+  tabContainer.appendChild(btn);
+
+  const panel = document.getElementById('panel-external-winner');
+  if(!panel) return;
+  const result = calcExternalWinner(session);
+  if(!result.winners || result.winners.length === 0){ panel.innerHTML = '<div style="text-align:center;padding:32px;color:var(--muted);">Ingen vinner funnet.</div>'; return; }
+
+  const isShared = result.winners.length > 1;
+  const namesHtml = result.winners.map(w =>
+    `<div style="font-size:22px;font-weight:500;color:var(--text);margin-bottom:2px;">${w.name}</div>`
+  ).join('');
+
+  panel.innerHTML = `
+    <div id="confetti-container" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;overflow:hidden;"></div>
+    <div style="text-align:center;padding:32px 16px 24px;max-width:480px;margin:0 auto;">
+      <div style="font-size:52px;margin-bottom:16px;">🏆</div>
+      <div style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:12px;">
+        ${isShared ? 'Delt seier – mest enig med ekstern' : 'Mest enig med ekstern'}
+      </div>
+      ${namesHtml}
+      <div style="font-size:13px;color:var(--muted);margin-top:8px;">Stemte frem <strong>${result.subjectName}</strong> som nr. 1</div>
+    </div>
+  `;
+  // Start confetti
+  startConfetti(session.leaderboardSeconds || 10);
+}
+
+// Punkt 53: Confetti animation
+function startConfetti(durationSecs){
+  const container = document.getElementById('confetti-container');
+  if(!container) return;
+  const colors = ['var(--accent)','#a78bfa','#34d399','#f472b6','#fbbf24','#60a5fa'];
+  const total = 120;
+  for(let i = 0; i < total; i++){
+    setTimeout(() => {
+      const el = document.createElement('div');
+      const size = 6 + Math.random() * 8;
+      el.style.cssText = `
+        position:absolute;
+        left:${Math.random()*100}%;
+        top:-20px;
+        width:${size}px;height:${size}px;
+        background:${colors[Math.floor(Math.random()*colors.length)]};
+        border-radius:${Math.random()>0.5?'50%':'2px'};
+        opacity:${0.7+Math.random()*0.3};
+        animation:confettiFall ${1.5+Math.random()*2}s linear forwards;
+      `;
+      container.appendChild(el);
+      setTimeout(() => el.remove(), 3500);
+    }, Math.random() * durationSecs * 1000 * 0.7);
+  }
+  // Play fanfare sound if available
+  try{ playSound('fanfare'); }catch(e){}
+}
+
 window.switchResultTab = function(tab) {
   document.querySelectorAll('.result-tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.result-panel').forEach(p => p.classList.remove('active'));
