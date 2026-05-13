@@ -86,7 +86,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 #result-tabs-fixed{position:fixed;top:var(--header-h,56px);left:56px;right:0;z-index:15;background:var(--bg);padding:8px 12px 4px;border-bottom:0.5px solid rgba(255,255,255,0.06);}
 #screen-leaderboard .content{padding-top:52px;}
 #screen-final .content{overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:var(--final-content-top,52px);}
-.header-title{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:1px;color:var(--accent);line-height:1;}
+.header-title{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:1px;color:var(--accent);line-height:1;text-align:center;width:100%;}
 .header-sub{font-size:11px;color:var(--muted);margin-top:1px;}
 .header-right{display:flex;align-items:center;gap:8px;}
 .icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;transition:all 0.15s;flex-shrink:0;}
@@ -163,7 +163,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .cat-header{display:flex;flex-direction:column;align-items:center;margin-bottom:4px;gap:2px;}
 .cat-name{font-size:20px;color:rgba(255,255,255,0.85);font-weight:700;text-align:center;width:100%;}
 .cat-val{font-size:22px;font-weight:700;color:var(--accent);font-family:monospace;line-height:1;}
-.slider-wrap{position:relative;padding:4px 0;}
+.slider-wrap{position:relative;padding:4px 16px 4px 0;}
 .slider-input{
   width:100%;-webkit-appearance:none;appearance:none;
   height:8px;border-radius:4px;
@@ -433,22 +433,14 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
 <div id="screen-waiting" class="screen">
   <div class="header">
     <div class="header-left" style="display:flex;align-items:center;gap:10px;">
-      
       <div>
         <div class="header-title" id="waiting-title">Ølsmaking</div>
         <div class="header-sub" id="waiting-sub">Venterom</div>
       </div>
     </div>
-    <div class="header-right">
-      <div class="icon-btn" data-action="showQrSheet">📱</div>
-      
-    </div>
   </div>
   <div class="content">
-    <div style="text-align:center;margin-bottom:24px;">
-      <div class="qr-container"><div id="waiting-qr"></div></div>
-      <div class="text-muted">Scan for å bli med</div>
-    </div>
+    <button class="btn btn-secondary" data-action="showQrSheet" style="margin-bottom:24px;padding:16px;font-size:15px;display:flex;align-items:center;justify-content:center;gap:10px;">📱 Vis QR-kode</button>
     <div class="card">
       <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px;">Deltakere inne</div>
       <div id="waiting-participants"></div>
@@ -802,7 +794,7 @@ import { getDatabase, ref, set, get, update, onValue, onChildAdded, remove, runT
 // Make all window functions available immediately
 Object.defineProperty(window, '__moduleReady', { value: true });
 
-const VERSION = 'Avstemning v3.25';
+const VERSION = 'Avstemning v3.26';
 console.log(VERSION);
 
 const FIREBASE_CONFIG = {
@@ -885,6 +877,16 @@ function showScreen(id){
   // Show/hide SEND button only on voting screen - visibility only, never display
   const sendBtn=document.getElementById('submit-vote-btn');
   if(sendBtn){sendBtn.style.visibility=(id==='screen-voting')?'visible':'hidden';}
+  // Update voting UI when showing voting screen
+  if(id==='screen-voting'){
+    setAdminUI(state.isAdmin);
+    requestAnimationFrame(()=>{
+      const h=document.querySelector('.voting-header');
+      const a=document.getElementById('activity-bar');
+      if(h){const hh=h.offsetHeight+'px';document.documentElement.style.setProperty('--voting-header-h',hh);document.documentElement.style.setProperty('--header-h',hh);}
+      if(a)document.documentElement.style.setProperty('--activity-bar-h',a.offsetHeight+'px');
+    });
+  }
 }
 function formatTime(s){if(s<0)s=0;return`${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`;}
 function safeKey(s){return s.replace(/[.#$/\[\]\s]/g,'_');}
@@ -1379,9 +1381,7 @@ function updatePauseUI(isPaused){
   const pauseBtn=document.getElementById('global-pause-btn');
   const sendBtn=document.getElementById('submit-vote-btn');
   if(isPaused){
-    if(!state.isAdmin){
-      if(sendBtn){sendBtn.classList.add('locked');sendBtn.style.opacity='0.3';sendBtn.style.pointerEvents='none';}
-    }
+    if(sendBtn){sendBtn.classList.add('locked');sendBtn.style.opacity='0.3';sendBtn.style.pointerEvents='none';}
     if(pauseBtn){pauseBtn.textContent='▶️';pauseBtn.style.background='#c0392b';pauseBtn.style.border='0.5px solid #e74c3c';}
   }else{
     if(sendBtn){sendBtn.classList.remove('locked');sendBtn.style.opacity='';sendBtn.style.pointerEvents='';}
@@ -1394,8 +1394,7 @@ async function handleSessionState(session){
   const pauseIndicator=document.getElementById('sb-pause-indicator');
   const sendBtn=document.getElementById('submit-vote-btn');
   if(session.paused){
-    if(pauseIndicator)pauseIndicator.style.display='flex';
-    if(sendBtn)sendBtn.style.display='none';
+    if(pauseIndicator)pauseIndicator.style.display=state.isAdmin?'none':'flex';
     if(state.timerInterval){clearInterval(state.timerInterval);state.timerInterval=null;}
     updatePauseUI(true);
     // Don't return - let the normal screen logic run so sliders/leaderboard stay visible
@@ -1501,13 +1500,6 @@ window.startSession=async function(){
 // ========== VOTING ==========
 let lastShownSubjectIdx = -1;
 function showVotingScreen(session){
-  setAdminUI(state.isAdmin);
-  requestAnimationFrame(()=>{
-    const h=document.querySelector('.voting-header');
-    const a=document.getElementById('activity-bar');
-    if(h){const hh=h.offsetHeight+'px';document.documentElement.style.setProperty('--voting-header-h',hh);document.documentElement.style.setProperty('--header-h',hh);}
-    if(a)document.documentElement.style.setProperty('--activity-bar-h',a.offsetHeight+'px');
-  });
   const idx=session.currentSubjectIndex||0;
   const subjects=session.subjects?Object.values(session.subjects):[];
   const subject=subjects[idx];
@@ -1913,7 +1905,7 @@ function showLeaderboardScreen(session){
   const tabBar=document.getElementById('lb-tabs');
   if(tabBar){
     tabBar.innerHTML='';
-    const tabLabels={'toplist':'🏆 Topp','categories':'📊 Kategori','judges':'🎯 Dommere'};
+    const tabLabels={'toplist':'🏆 Topp','categories':'📊 Kategori','judges':'Dine Topp 3'};
     views.forEach((v,i)=>{
       const btn=document.createElement('div');
       btn.className='result-tab';
@@ -2193,9 +2185,9 @@ function showFinalLeaderboard(session){
   // Build dynamic tabs from resultConfig
   const rc = session.resultConfig || { toplist: true, categories: true, judges: false };
   const tabDefs = [
-    { key: 'toplist', label: '🏆 Topp-liste', enabled: rc.toplist !== false },
+    { key: 'toplist', label: 'Topp 3', enabled: rc.toplist !== false },
     { key: 'categories', label: '📊 Kategorier', enabled: !!rc.categories },
-    { key: 'judges', label: '🎯 Dommere', enabled: !!rc.judges },
+    { key: 'judges', label: 'Dine Topp 3', enabled: !!rc.judges },
   ].filter(t => t.enabled);
 
   const tabContainer = document.getElementById('result-tabs-container');
@@ -3020,7 +3012,7 @@ function addActivityWinnerTab(session){
       <div style="font-size:11px;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;color:#c4b5fd;margin-bottom:4px;">Kveldens mest aktive</div>
       <div style="font-size:16px;font-weight:500;color:#f5f0ff;margin-bottom:4px;">${sessionName}</div>
       <div style="font-size:11px;color:#7c5cbf;letter-spacing:0.8px;margin-bottom:16px;">${dateStr}</div>
-      <div style="font-size:44px;margin-bottom:12px;">🔥</div>
+      <div style="font-size:44px;margin-bottom:12px;">🏆</div>
       <div style="margin-bottom:4px;">${winnerNamesHtml}</div>
       <div style="height:1px;background:linear-gradient(90deg,transparent,#7c5cbf,transparent);margin:16px 0;"></div>
       <div style="font-size:15px;color:#f5f0ff;font-weight:500;">${winners[0].pts} reaksjoner gjennom kvelden</div>
@@ -3031,49 +3023,12 @@ function addActivityWinnerTab(session){
       border:0.5px solid #7c5cbf;cursor:pointer;margin-bottom:24px;
     ">Del diplom</button>`;
 
-  // Individual diplomas
-  const emojiList = ['🔥','⚡','✨','🌟','💫','🎉','🎊','🎶','🎸','🎤'];
-  all.forEach((p, i) => {
-    const isWinner = p.rank === 1;
-    const emoji = emojiList[i % emojiList.length];
-    const diplomId = `activity-diplom-${i}`;
-    html += `
-      <div id="${diplomId}" style="
-        background:#0d0820;
-        border-radius:20px;
-        border:${isWinner ? '2px solid #7c5cbf' : '1.5px solid #3a2f5a'};
-        padding:24px 20px 18px;text-align:center;
-        width:100%;max-width:400px;margin-bottom:10px;
-      ">
-        <div style="font-size:11px;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;color:${isWinner?'#c4b5fd':'#5a4a7a'};margin-bottom:4px;">Kveldens mest aktive</div>
-        <div style="font-size:14px;font-weight:500;color:${isWinner?'#f5f0ff':'rgba(255,255,255,0.5)'};margin-bottom:4px;">${sessionName}</div>
-        <div style="font-size:11px;color:#3a2f5a;letter-spacing:0.8px;margin-bottom:12px;">${dateStr}</div>
-        <div style="font-size:36px;margin-bottom:10px;">${emoji}</div>
-        <div style="font-size:22px;font-weight:500;color:${isWinner?'#f5f0ff':'rgba(255,255,255,0.7)'};margin-bottom:4px;">${p.name}</div>
-        <div style="height:1px;background:linear-gradient(90deg,transparent,${isWinner?'#7c5cbf':'#3a2f5a'},transparent);margin:12px 0;"></div>
-        <div style="font-size:13px;color:${isWinner?'#f5f0ff':'rgba(255,255,255,0.5)'};font-weight:500;">${p.pts} reaksjoner</div>
-        <div style="font-size:11px;color:${isWinner?'#7c5cbf':'#3a2f5a'};margin-top:3px;">#${p.rank} av kvelden</div>
-      </div>
-      <button onclick="shareActivityDiplom('${diplomId}','${sessionName.replace(/'/g,"\'")} – #${p.rank} av kvelden')" style="
-        width:100%;max-width:400px;padding:8px;font-size:12px;font-weight:500;
-        border-radius:10px;background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.4);
-        border:0.5px solid rgba(255,255,255,0.08);cursor:pointer;margin-bottom:16px;
-      ">Del diplom</button>`;
-  });
+
 
   html += `</div>`;
   panel.innerHTML = html;
 
-  // Scroll to own diploma
-  if(state.participantName){
-    const myIdx = all.findIndex(p => p.name === state.participantName);
-    if(myIdx >= 0){
-      setTimeout(()=>{
-        const myDiplom = document.getElementById(`activity-diplom-${myIdx}`);
-        if(myDiplom) myDiplom.scrollIntoView({behavior:'smooth', block:'center'});
-      }, 500);
-    }
-  }
+
 }
 
 // Punkt 67: Share individual diploma
