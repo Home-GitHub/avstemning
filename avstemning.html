@@ -156,6 +156,49 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 @keyframes confettiFall{0%{transform:translateY(0) rotate(0deg);opacity:1;}100%{transform:translateY(110vh) rotate(720deg);opacity:0;}}
 @keyframes glitterFly{0%{transform:translate(0,0) scale(1) rotate(0deg);opacity:1;}100%{transform:translate(var(--tx),var(--ty)) scale(0) rotate(360deg);opacity:0;}}
 
+/* ===== DIPLOMA STYLES ===== */
+.diploma-card{
+  background:radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--accent) 20%, #0a0318) 0%, #080012 60%, #000008 100%);
+  border-radius:24px;
+  border:1px solid rgba(var(--accent-rgb, 200,160,100),0.25);
+  padding:44px 28px 36px;
+  text-align:center;
+  position:relative;
+  overflow:hidden;
+  width:100%;
+  max-width:400px;
+  box-shadow:0 0 80px rgba(var(--accent-rgb, 120,40,255),0.15), inset 0 0 60px rgba(var(--accent-rgb, 80,20,180),0.06);
+}
+.diploma-card::before{
+  content:'';
+  position:absolute;
+  top:-60px;left:50%;transform:translateX(-50%);
+  width:300px;height:300px;
+  background:radial-gradient(ellipse, rgba(var(--accent-rgb, 180,120,255),0.12) 0%, transparent 70%);
+  pointer-events:none;
+}
+.diploma-glow-top{
+  position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent 0%,rgba(var(--accent-rgb,255,215,0),0.2) 20%,var(--accent) 50%,rgba(var(--accent-rgb,255,215,0),0.2) 80%,transparent 100%);
+  opacity:0.7;
+}
+.diploma-stars-row{display:flex;justify-content:center;gap:8px;margin-bottom:20px;}
+.diploma-star{font-size:8px;color:var(--accent);opacity:0.5;}
+.diploma-star.lg{font-size:12px;opacity:0.7;}
+.diploma-label{font-size:9px;font-weight:400;letter-spacing:6px;text-transform:uppercase;color:var(--accent);opacity:0.6;margin-bottom:8px;}
+.diploma-session{font-size:22px;font-weight:300;color:var(--text);letter-spacing:2px;margin-bottom:4px;}
+.diploma-date{font-size:10px;font-weight:300;color:var(--accent);opacity:0.5;letter-spacing:3px;text-transform:uppercase;margin-bottom:28px;}
+.diploma-trophy{font-size:52px;margin-bottom:20px;display:block;filter:drop-shadow(0 0 16px var(--accent)) drop-shadow(0 0 32px var(--accent-dim));}
+.diploma-winner{font-size:28px;font-weight:300;color:#ffffff;letter-spacing:2px;margin-bottom:4px;}
+.diploma-divider{display:flex;align-items:center;gap:10px;margin:22px 0;}
+.diploma-divider-line{flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--accent));opacity:0.35;}
+.diploma-divider-line.r{background:linear-gradient(270deg,transparent,var(--accent));}
+.diploma-divider-center{display:flex;gap:4px;align-items:center;}
+.diploma-divider-star{font-size:8px;color:var(--accent);opacity:0.6;}
+.diploma-divider-star.lg{font-size:12px;opacity:0.8;}
+.diploma-subject{font-size:12px;color:var(--text);opacity:0.65;font-weight:300;letter-spacing:0.5px;line-height:1.6;}
+.diploma-bottom-stars{display:flex;justify-content:center;gap:6px;margin-top:20px;}
+
 /* CATEGORIES */
 .voting-categories{flex:1;padding:10px 12px 80px 12px;overflow-y:auto;-webkit-overflow-scrolling:touch;}
 .cat-row{margin-bottom:12px;}
@@ -411,10 +454,6 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
         <div class="header-sub" id="join-participant-count">0 deltakere inne</div>
       </div>
     </div>
-    <div class="header-right">
-      <div class="icon-btn" data-action="showQrSheet">📱</div>
-      
-    </div>
   </div>
   <div class="content">
     <div class="big-title" style="margin-bottom:6px;">Hvem er du?</div>
@@ -440,7 +479,7 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
     </div>
   </div>
   <div class="content">
-    <button class="btn btn-secondary" data-action="showQrSheet" style="margin-bottom:24px;padding:16px;font-size:15px;display:flex;align-items:center;justify-content:center;gap:10px;">📱 Vis QR-kode</button>
+    <button class="btn btn-secondary" data-action="showQrSheet" style="margin-bottom:24px;padding:18px;font-size:16px;font-weight:500;display:flex;align-items:center;justify-content:center;gap:12px;border:0.5px solid rgba(255,255,255,0.15);border-radius:14px;">📱 Vis QR-kode</button>
     <div class="card">
       <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px;">Deltakere inne</div>
       <div id="waiting-participants"></div>
@@ -503,16 +542,12 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
 <!-- ===== SCREEN: LEADERBOARD ===== -->
 <div id="screen-leaderboard" class="screen">
   <div class="header">
-    <div class="header-left" style="display:flex;align-items:center;gap:10px;">
-      
-      <div>
-        <div class="header-title">Resultater</div>
-        <div class="header-sub" id="lb-sub">Etter emne 1</div>
-      </div>
+    <div style="flex:1;text-align:center;">
+      <div class="header-title">Resultater</div>
+      <div class="header-sub" id="lb-sub">Etter emne 1</div>
     </div>
     <div class="header-right">
       <span class="badge badge-live"><span class="live-dot"></span>Live</span>
-      
     </div>
   </div>
   <div id="lb-tabs-fixed"><div id="lb-tabs" style="display:flex;gap:2px;background:rgba(255,255,255,0.04);border-radius:10px;padding:3px;border:0.5px solid rgba(255,255,255,0.06);"></div></div>
@@ -579,15 +614,9 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
 <!-- ===== SCREEN: FINAL ===== -->
 <div id="screen-final" class="screen">
   <div class="header">
-    <div class="header-left" style="display:flex;align-items:center;gap:10px;">
-      
-      <div>
-        <div class="header-title">Endelig resultat</div>
-        <div class="header-sub" id="final-session-name"></div>
-      </div>
-    </div>
-    <div class="header-right">
-      
+    <div style="flex:1;text-align:center;">
+      <div class="header-title">Endelig resultat</div>
+      <div class="header-sub" id="final-session-name"></div>
     </div>
   </div>
   <div id="result-tabs-fixed"><div class="result-tabs" id="result-tabs-container"></div></div>
@@ -613,7 +642,7 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
     </div>
     <div class="result-panel" id="panel-external-winner"></div>
     <div class="result-panel" id="panel-activity-winner"></div>
-    <div class="text-muted text-center mt-24" style="font-size:12px;padding-bottom:32px;">Takk for deltakelse! 🎉</div>
+
   </div>
 </div>
 
@@ -794,7 +823,7 @@ import { getDatabase, ref, set, get, update, onValue, onChildAdded, remove, runT
 // Make all window functions available immediately
 Object.defineProperty(window, '__moduleReady', { value: true });
 
-const VERSION = 'Avstemning v3.26';
+const VERSION = 'Avstemning v3.27';
 console.log(VERSION);
 
 const FIREBASE_CONFIG = {
@@ -1905,7 +1934,7 @@ function showLeaderboardScreen(session){
   const tabBar=document.getElementById('lb-tabs');
   if(tabBar){
     tabBar.innerHTML='';
-    const tabLabels={'toplist':'🏆 Topp','categories':'📊 Kategori','judges':'Dine Topp 3'};
+    const tabLabels={'toplist':'🏆 Topp','categories':'📊 Kategori','judges':'👤 Dine Topp3'};
     views.forEach((v,i)=>{
       const btn=document.createElement('div');
       btn.className='result-tab';
@@ -1939,7 +1968,7 @@ function showLeaderboardScreen(session){
     const isLastView=viewIdx===views.length-1;
     // Update active tab
     views.forEach(v=>{const t=document.getElementById(`lb-tab-${v}`);if(t)t.classList.toggle('active',v===view);});
-    const nextLabel=isLastView?(isLast?'🏆 Endelig resultat':'Neste emne'):views[viewIdx+1]==='categories'?'Kategori-detaljer':views[viewIdx+1]==='judges'?'Dommer-detaljer':'Topp 3';
+    const nextLabel=isLastView?(isLast?'🏆 Endelig resultat':'Neste emne'):views[viewIdx+1]==='categories'?'Kategori-detaljer':views[viewIdx+1]==='judges'?'Dommer-detaljer':'Topp3';
 
     // Always stay on screen-leaderboard, swap content inside
     const lbList=document.getElementById('leaderboard-list');
@@ -2185,9 +2214,9 @@ function showFinalLeaderboard(session){
   // Build dynamic tabs from resultConfig
   const rc = session.resultConfig || { toplist: true, categories: true, judges: false };
   const tabDefs = [
-    { key: 'toplist', label: 'Topp 3', enabled: rc.toplist !== false },
+    { key: 'toplist', label: 'Topp3', enabled: rc.toplist !== false },
     { key: 'categories', label: '📊 Kategorier', enabled: !!rc.categories },
-    { key: 'judges', label: 'Dine Topp 3', enabled: !!rc.judges },
+    { key: 'judges', label: '👤 Dine Topp3', enabled: !!rc.judges },
   ].filter(t => t.enabled);
 
   const tabContainer = document.getElementById('result-tabs-container');
