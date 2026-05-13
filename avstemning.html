@@ -802,7 +802,7 @@ import { getDatabase, ref, set, get, update, onValue, onChildAdded, remove, runT
 // Make all window functions available immediately
 Object.defineProperty(window, '__moduleReady', { value: true });
 
-const VERSION = 'Avstemning v3.24';
+const VERSION = 'Avstemning v3.25';
 console.log(VERSION);
 
 const FIREBASE_CONFIG = {
@@ -1378,39 +1378,38 @@ function watchSkals(){
 async function handleSessionState(session){
   const pauseIndicator=document.getElementById('sb-pause-indicator');
   const sendBtn=document.getElementById('submit-vote-btn');
-  const pauseBtn=document.getElementById('global-pause-btn');
   if(session.paused){
-    // Vis pause-indikator kun for spillere
-    if(pauseIndicator)pauseIndicator.style.display=state.isAdmin?'none':'flex';
-    if(sendBtn){sendBtn.classList.add('locked');sendBtn.style.opacity='0.3';sendBtn.style.pointerEvents='none';}
-    if(pauseBtn){pauseBtn.textContent='▶️';pauseBtn.style.background='#c0392b';pauseBtn.style.border='0.5px solid #e74c3c';}
+    if(pauseIndicator)pauseIndicator.style.display='flex';
+    if(sendBtn)sendBtn.style.display='none';
     if(state.timerInterval){clearInterval(state.timerInterval);state.timerInterval=null;}
+    updatePauseUI(true);
     // Don't return - let the normal screen logic run so sliders/leaderboard stay visible
   }else{
     if(pauseIndicator)pauseIndicator.style.display='none';
-    if(sendBtn){sendBtn.classList.remove('locked');sendBtn.style.opacity='';sendBtn.style.pointerEvents='';}
-    if(pauseBtn){pauseBtn.textContent='⏸';pauseBtn.style.background='';pauseBtn.style.border='';}
     document.getElementById('pause-overlay').classList.remove('active');
+    updatePauseUI(false);
   }
 
   if(session.status==='published'||session.status==='waiting'){showWaitingRoom(session);return;}
   if(session.status==='ended'){
     if(!state.finalShown){showFinalLeaderboard(session);}
-    else if(session.externalResults&&!state.externalWinnerShown){
-      addExternalWinnerTab(session);
+    // Punkt 51/52: show external winner when externalResults arrive
+    if(session.externalResults&&!state.externalWinnerShown){
       state.externalWinnerShown=true;
+      addExternalWinnerTab(session);
       window.switchResultTab('external-winner');
       startGlitter();
       try{window.playSound('fanfare');}catch(e){}
-      // Punkt 64: schedule activity winner after minutesPerSubject – write to Firebase
+      // Punkt 64: schedule activity winner after minutesPerSubject
       const delay=(session.minutesPerSubject||3)*60*1000;
-      setTimeout(async ()=>{
+      setTimeout(async()=>{
         await set(ref(db,`sessions/${state.sessionId}/showActivityWinner`),true);
-      }, delay);
+      },delay);
     }
-    else if(session.showActivityWinner&&!state.activityWinnerShown){
-      addActivityWinnerTab(session);
+    // Punkt 63: show activity winner when showActivityWinner flag arrives
+    if(session.showActivityWinner&&!state.activityWinnerShown){
       state.activityWinnerShown=true;
+      addActivityWinnerTab(session);
       window.switchResultTab('activity-winner');
       startGlitter();
       try{window.playSound('fanfare');}catch(e){}
@@ -1933,7 +1932,7 @@ function showLeaderboardScreen(session){
     const isLastView=viewIdx===views.length-1;
     // Update active tab
     views.forEach(v=>{const t=document.getElementById(`lb-tab-${v}`);if(t)t.classList.toggle('active',v===view);});
-    const nextLabel=isLastView?(isLast?'🏆 Endelig resultat':'Neste emne'):views[viewIdx+1]==='categories'?'Kategori-detaljer':views[viewIdx+1]==='judges'?'Dommer-detaljer':'Topp-liste';
+    const nextLabel=isLastView?(isLast?'🏆 Endelig resultat':'Neste emne'):views[viewIdx+1]==='categories'?'Kategori-detaljer':views[viewIdx+1]==='judges'?'Dommer-detaljer':'Topp 3';
 
     // Always stay on screen-leaderboard, swap content inside
     const lbList=document.getElementById('leaderboard-list');
@@ -2810,7 +2809,7 @@ function addExternalWinnerTab(session){
   const btn = document.createElement('div');
   btn.className = 'result-tab';
   btn.id = 'tab-btn-external-winner';
-  btn.textContent = '🏆 Vinner';
+  btn.textContent = '🏆';
   btn.onclick = () => window.switchResultTab('external-winner');
   tabContainer.appendChild(btn);
 
@@ -2893,7 +2892,7 @@ function addExternalWinnerTab(session){
   });
 
   // Start confetti
-  startConfetti();
+  startGlitter();
 }
 
 // Punkt 53: Confetti animation
@@ -2901,7 +2900,7 @@ function startGlitter(){
   const container = document.getElementById('confetti-container');
   if(!container) return;
   if(container._glitterInterval) return; // already running
-  const colors = ['#fbbf24','#f59e0b','#a78bfa','#c4b5fd','#fde68a','#ede9fe','#ffffff'];
+  const colors = ['#ffd700','#ffb700','#ffa500','#ffe066','#fff0a0','#a78bfa','#ffffff','#fffbe6'];
   const shapes = ['✦','✧','★','✶','·','⬧'];
 
   function spawnBatch(count){
@@ -2938,8 +2937,8 @@ function startGlitter(){
     }
   }
 
-  spawnBatch(80);
-  container._glitterInterval = setInterval(()=>spawnBatch(30), 1200);
+  spawnBatch(150);
+  container._glitterInterval = setInterval(()=>spawnBatch(60), 900);
 }
 
 function stopGlitter(){
@@ -2973,7 +2972,7 @@ function addActivityWinnerTab(session){
   const btn = document.createElement('div');
   btn.className = 'result-tab';
   btn.id = 'tab-btn-activity-winner';
-  btn.textContent = '🔥 Aktiv';
+  btn.textContent = '🔥';
   btn.onclick = () => window.switchResultTab('activity-winner');
   tabContainer.appendChild(btn);
 
