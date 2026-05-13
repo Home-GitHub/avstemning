@@ -1374,6 +1374,21 @@ function watchSkals(){
 // Ikke endre denne seksjonen ved UI/UX-arbeid
 // ================================================================
 
+// ========== PAUSE UI – kalles fra handleSessionState ==========
+function updatePauseUI(isPaused){
+  const pauseBtn=document.getElementById('global-pause-btn');
+  const sendBtn=document.getElementById('submit-vote-btn');
+  if(isPaused){
+    if(!state.isAdmin){
+      if(sendBtn){sendBtn.classList.add('locked');sendBtn.style.opacity='0.3';sendBtn.style.pointerEvents='none';}
+    }
+    if(pauseBtn){pauseBtn.textContent='▶️';pauseBtn.style.background='#c0392b';pauseBtn.style.border='0.5px solid #e74c3c';}
+  }else{
+    if(sendBtn){sendBtn.classList.remove('locked');sendBtn.style.opacity='';sendBtn.style.pointerEvents='';}
+    if(pauseBtn){pauseBtn.textContent='⏸';pauseBtn.style.background='';pauseBtn.style.border='';}
+  }
+}
+
 // ========== HANDLE SESSION STATE ==========
 async function handleSessionState(session){
   const pauseIndicator=document.getElementById('sb-pause-indicator');
