@@ -81,6 +81,8 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .header{padding:13px 14px 11px;display:flex;align-items:center;justify-content:space-between;border-bottom:0.5px solid rgba(255,255,255,0.06);background:var(--hdr-bg);position:fixed;top:0;left:0;right:0;z-index:20;backdrop-filter:blur(12px);}
 #screen-final{padding-top:var(--header-h,56px);}
 #screen-leaderboard{padding-top:var(--header-h,56px);}
+#screen-waiting{padding-top:var(--header-h,56px);}
+#screen-join{padding-top:var(--header-h,56px);}
 #screen-leaderboard .content{overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:0;}
 #lb-tabs-fixed{position:fixed;top:var(--header-h,56px);left:56px;right:0;z-index:15;background:var(--bg);padding:8px 12px 4px;border-bottom:0.5px solid rgba(255,255,255,0.06);}
 #result-tabs-fixed{position:fixed;top:var(--header-h,56px);left:56px;right:0;z-index:15;background:var(--bg);padding:8px 12px 4px;border-bottom:0.5px solid rgba(255,255,255,0.06);}
@@ -93,7 +95,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .icon-btn:active{transform:scale(0.88);}
 
 /* CONTENT */
-.content{flex:1;padding:18px 14px;overflow-y:auto;padding-top:calc(var(--header-h, 56px) + 18px);}
+.content{flex:1;padding:18px 14px;overflow-y:auto;}
 
 /* GLOBAL SIDEBAR - visible on all screens except waiting */
 .global-sidebar{position:fixed;left:0;top:var(--header-h,56px);bottom:var(--activity-bar-h,36px);width:56px;display:none;flex-direction:column;align-items:center;padding:8px 0 8px;gap:6px;background:rgba(0,0,0,0.35);border-right:0.5px solid rgba(255,255,255,0.05);z-index:200;}
@@ -478,7 +480,7 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
       </div>
     </div>
   </div>
-  <div class="content" style="padding-top:24px;">
+  <div class="content">
     <button class="btn btn-secondary" data-action="showQrSheet" style="margin-bottom:24px;padding:18px;font-size:16px;font-weight:500;display:flex;align-items:center;justify-content:center;gap:12px;border:0.5px solid rgba(255,255,255,0.15);border-radius:14px;">📱 Vis QR-kode</button>
     <div class="card">
       <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px;">Deltakere inne</div>
@@ -1496,6 +1498,10 @@ function showWaitingRoom(session){
   var ab = document.getElementById('admin-login-btn');
   if (ab) { ab.onclick = null; ab.addEventListener('click', function() { window.showAdminLoginSheet(); }); }
   showScreen('screen-waiting');
+  requestAnimationFrame(()=>{
+    const h=document.querySelector('#screen-waiting .header');
+    if(h)document.documentElement.style.setProperty('--header-h',h.offsetHeight+'px');
+  });
 }
 
 function renderWaitingParticipants(participants){
