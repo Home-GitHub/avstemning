@@ -81,11 +81,12 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .header{padding:13px 14px 11px;display:flex;align-items:center;justify-content:space-between;border-bottom:0.5px solid rgba(255,255,255,0.06);background:var(--hdr-bg);position:fixed;top:0;left:0;right:0;z-index:20;backdrop-filter:blur(12px);}
 #screen-final{padding-top:var(--header-h,56px);}
 #screen-leaderboard{padding-top:var(--header-h,56px);}
-#screen-waiting{padding-top:var(--header-h,56px);}
-#screen-join{padding-top:var(--header-h,56px);}
 #screen-leaderboard .content{overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:0;}
-#lb-tabs-fixed{position:fixed;top:var(--header-h,56px);left:56px;right:0;z-index:15;background:var(--bg);padding:8px 12px 4px;border-bottom:0.5px solid rgba(255,255,255,0.06);}
-#result-tabs-fixed{position:fixed;top:var(--header-h,56px);left:56px;right:0;z-index:15;background:var(--bg);padding:8px 12px 4px;border-bottom:0.5px solid rgba(255,255,255,0.06);}
+#lb-tabs-fixed{position:fixed;top:var(--header-h,56px);left:56px;right:0;z-index:15;background:var(--bg);padding:8px 12px 4px;border-bottom:0.5px solid rgba(255,255,255,0.06);display:none;}
+#result-tabs-fixed{position:fixed;top:var(--header-h,56px);left:56px;right:0;z-index:15;background:var(--bg);padding:8px 12px 4px;border-bottom:0.5px solid rgba(255,255,255,0.06);display:none;}
+#screen-leaderboard.active ~ #lb-tabs-fixed,
+body.show-lb-tabs #lb-tabs-fixed{display:block;}
+body.show-result-tabs #result-tabs-fixed{display:block;}
 #screen-leaderboard .content{padding-top:52px;}
 #screen-final .content{overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:var(--final-content-top,52px);}
 .header-title{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:1px;color:var(--accent);line-height:1;text-align:center;width:100%;}
@@ -449,15 +450,15 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
 
 <!-- ===== SCREEN: JOIN ===== -->
 <div id="screen-join" class="screen">
-  <div class="header">
-    <div class="header-left">
-      <div>
-        <div class="header-title" id="join-session-name">Ølsmaking</div>
-        <div class="header-sub" id="join-participant-count">0 deltakere inne</div>
-      </div>
+  <div class="voting-header">
+    <div class="voting-subject-wrap">
+      <span class="voting-subject" id="join-session-name" style="font-size:clamp(18px,5vw,32px);">Ølsmaking</span>
+    </div>
+    <div class="voting-meta-row">
+      <span class="voting-meta" id="join-participant-count">0 deltakere inne</span>
     </div>
   </div>
-  <div class="content">
+  <div style="flex:1;padding:18px 14px;overflow-y:auto;">
     <div class="big-title" style="margin-bottom:6px;">Hvem er du?</div>
     <div class="text-muted" style="margin-bottom:20px;">Skriv inn navnet ditt for å delta</div>
     <div class="card">
@@ -472,15 +473,15 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
 
 <!-- ===== SCREEN: WAITING ROOM ===== -->
 <div id="screen-waiting" class="screen">
-  <div class="header">
-    <div class="header-left" style="display:flex;align-items:center;gap:10px;">
-      <div>
-        <div class="header-title" id="waiting-title">Ølsmaking</div>
-        <div class="header-sub" id="waiting-sub">Venterom</div>
-      </div>
+  <div class="voting-header">
+    <div class="voting-subject-wrap">
+      <span class="voting-subject" id="waiting-title" style="font-size:clamp(18px,5vw,32px);">Ølsmaking</span>
+    </div>
+    <div class="voting-meta-row">
+      <span class="voting-meta" id="waiting-sub">Venterom</span>
     </div>
   </div>
-  <div class="content">
+  <div style="flex:1;padding:18px 14px;overflow-y:auto;">
     <button class="btn btn-secondary" data-action="showQrSheet" style="margin-bottom:24px;padding:18px;font-size:16px;font-weight:500;display:flex;align-items:center;justify-content:center;gap:12px;border:0.5px solid rgba(255,255,255,0.15);border-radius:14px;">📱 Vis QR-kode</button>
     <div class="card">
       <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px;">Deltakere inne</div>
@@ -888,6 +889,9 @@ let state = {
 
 function ls(k,v){if(v===undefined)return localStorage.getItem(k);if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v);}
 function showScreen(id){
+  // Hide fixed tab bars on non-leaderboard screens
+  if(id!=='screen-leaderboard'){document.body.classList.remove('show-lb-tabs');}
+  if(id!=='screen-final'){document.body.classList.remove('show-result-tabs');}
   // Clean up final roll interval when leaving final screen
   if(id!=='screen-final'&&state.finalRollInterval){
     clearInterval(state.finalRollInterval);
@@ -1498,10 +1502,6 @@ function showWaitingRoom(session){
   var ab = document.getElementById('admin-login-btn');
   if (ab) { ab.onclick = null; ab.addEventListener('click', function() { window.showAdminLoginSheet(); }); }
   showScreen('screen-waiting');
-  requestAnimationFrame(()=>{
-    const h=document.querySelector('#screen-waiting .header');
-    if(h)document.documentElement.style.setProperty('--header-h',h.offsetHeight+'px');
-  });
 }
 
 function renderWaitingParticipants(participants){
@@ -1986,7 +1986,9 @@ function showLeaderboardScreen(session){
       renderLeaderboard('leaderboard-list',scores);
       document.getElementById('lb-voter-count').textContent=`${vCount} av ${participants.length} stemte`;
       if(!document.getElementById('screen-leaderboard').classList.contains('active'))
-        showScreen('screen-leaderboard');
+        document.body.classList.add('show-lb-tabs');
+  document.body.classList.remove('show-result-tabs');
+  showScreen('screen-leaderboard');
     } else if(view==='categories'){
       if(lbList)lbList.style.display='none';
       if(lbSpot)lbSpot.style.display='';
@@ -2246,6 +2248,8 @@ function showFinalLeaderboard(session){
     if (firstPanel) firstPanel.classList.add('active');
   }
 
+  document.body.classList.add('show-result-tabs');
+  document.body.classList.remove('show-lb-tabs');
   state.session=session; // ensure session is set before showScreen calls initGlobalEmojiMenu
   // Punkt 48: swap force-next btn to trophy on final screen (admin only)
   if(state.isAdmin){
