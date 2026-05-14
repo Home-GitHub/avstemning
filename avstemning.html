@@ -162,7 +162,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .cat-header{display:flex;flex-direction:column;align-items:center;margin-bottom:4px;gap:2px;}
 .cat-name{font-size:20px;color:rgba(255,255,255,0.85);font-weight:700;text-align:center;width:100%;}
 .cat-val{font-size:22px;font-weight:700;color:var(--accent);font-family:monospace;line-height:1;}
-.slider-wrap{position:relative;padding:4px 0;}
+.slider-wrap{position:relative;padding:4px 16px 4px 0;}
 .slider-input{
   width:100%;-webkit-appearance:none;appearance:none;
   height:8px;border-radius:4px;
@@ -170,8 +170,9 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
   outline:none;cursor:pointer;display:block;
   touch-action:manipulation;
 }
-.slider-input::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:32px;height:32px;border-radius:50%;background:var(--accent);cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,0.5);border:2px solid rgba(255,255,255,0.2);}
-.slider-input::-moz-range-thumb{width:32px;height:32px;border-radius:50%;background:var(--accent);cursor:pointer;border:2px solid rgba(255,255,255,0.2);}
+/* PUNKT 62 – dempet thumb */
+.slider-input::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:20px;height:20px;border-radius:50%;background:var(--accent);opacity:0.55;cursor:pointer;box-shadow:none;border:1.5px solid rgba(255,255,255,0.15);}
+.slider-input::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:var(--accent);opacity:0.55;cursor:pointer;border:1.5px solid rgba(255,255,255,0.15);}
 .slider-midmark{position:absolute;top:-6px;bottom:-6px;transform:translateX(-50%);width:3px;background:rgba(255,255,255,0.5);pointer-events:none;border-radius:2px;box-shadow:0 0 4px rgba(255,255,255,0.3);}
 .slider-labels{display:flex;justify-content:space-between;margin-top:1px;}
 .slider-lbl{font-size:9px;color:rgba(255,255,255,0.2);}
@@ -787,7 +788,7 @@ import { getDatabase, ref, set, get, update, onValue, onChildAdded, remove, runT
 // Make all window functions available immediately
 Object.defineProperty(window, '__moduleReady', { value: true });
 
-const VERSION = 'Avstemning v3.32';
+const VERSION = 'Avstemning v3.33';
 console.log(VERSION);
 
 const FIREBASE_CONFIG = {
@@ -1565,7 +1566,7 @@ function buildVotingCategories(session){
           data-key="${catKey}" data-max="${cat.max}">
       </div>
       <div style="display:flex;justify-content:space-between;padding:0 0 2px;">
-        <span style="font-size:13px;color:rgba(255,255,255,0.5);font-weight:600;">0</span>
+        <span id="lbl0-${catKey}" style="font-size:13px;color:rgba(255,255,255,0.5);font-weight:600;">0</span>
         <span style="font-size:13px;color:rgba(255,255,255,0.5);font-weight:600;">${Math.round(cat.max/2)}</span>
         <span style="font-size:13px;color:rgba(255,255,255,0.5);font-weight:600;">${cat.max}</span>
       </div>`;
@@ -1587,6 +1588,12 @@ function buildVotingCategories(session){
         if(!state.currentVotes[si])state.currentVotes[si]={};
         state.currentVotes[si][k]=v;
         document.getElementById('v-'+k).textContent=v;
+        // PUNKT 68 – oppdater 0-etikett live med accent-farge
+        const lbl0=document.getElementById('lbl0-'+k);
+        if(lbl0){
+          if(v>0){lbl0.textContent=v;lbl0.style.color='var(--accent)';}
+          else{lbl0.textContent='0';lbl0.style.color='rgba(255,255,255,0.5)';}
+        }
         updateSlider(slider);
         saveDraft(si);
       });
