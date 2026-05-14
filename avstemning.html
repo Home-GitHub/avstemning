@@ -1945,31 +1945,37 @@ window.forceNext=async function(){
   const isLast=nextIdx>=subjects.length;
 
   if(session.status==='voting'){
+    // Sikre at admin sine stemmer registreres uavhengig av pause-tilstand
+    if(state.participantId&&!state.hasVotedCurrentSubject){
+      await doSubmitVote(idx);
+    }
     if(lbSecs>0){
       const lbTimerEnd=Date.now()+lbSecs*1000;
       await update(ref(db,`sessions/${state.sessionId}`),{
         status:'leaderboard',currentSubjectIndex:idx,
         isLastLeaderboard:isLast,leaderboardSeconds:lbSecs,
-        timerEnd:null,lbTimerEnd
+        timerEnd:null,lbTimerEnd,
+        paused:false,pausedAt:null
       });
       scheduleLbWatchdog(state.sessionId,lbTimerEnd,idx,isLast,session);
     } else {
       if(isLast){
-        await update(ref(db,`sessions/${state.sessionId}`),{status:'ended',timerEnd:null});
+        await update(ref(db,`sessions/${state.sessionId}`),{status:'ended',timerEnd:null,paused:false,pausedAt:null});
       } else {
         const timerEnd=session.minutesPerSubject>0?Date.now()+session.minutesPerSubject*60000:null;
-        await update(ref(db,`sessions/${state.sessionId}`),{status:'voting',currentSubjectIndex:nextIdx,timerEnd:timerEnd||null});
+        await update(ref(db,`sessions/${state.sessionId}`),{status:'voting',currentSubjectIndex:nextIdx,timerEnd:timerEnd||null,paused:false,pausedAt:null});
         if(timerEnd)scheduleWatchdog(state.sessionId,timerEnd,session.minutesPerSubject,nextIdx);
       }
     }
   } else if(session.status==='leaderboard'){
     if(isLast){
-      await update(ref(db,`sessions/${state.sessionId}`),{status:'ended',lbTimerEnd:null});
+      await update(ref(db,`sessions/${state.sessionId}`),{status:'ended',lbTimerEnd:null,paused:false,pausedAt:null});
     } else {
       const timerEnd=session.minutesPerSubject>0?Date.now()+session.minutesPerSubject*60000:null;
       await update(ref(db,`sessions/${state.sessionId}`),{
         status:'voting',currentSubjectIndex:nextIdx,
-        timerEnd:timerEnd||null,lbTimerEnd:null,isLastLeaderboard:false
+        timerEnd:timerEnd||null,lbTimerEnd:null,isLastLeaderboard:false,
+        paused:false,pausedAt:null
       });
       if(timerEnd)scheduleWatchdog(state.sessionId,timerEnd,session.minutesPerSubject,nextIdx);
     }
