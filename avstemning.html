@@ -645,6 +645,9 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
     <div class="result-panel" id="panel-trophy">
       <div id="trophy-diplom-content"></div>
     </div>
+    <div class="result-panel" id="panel-fire">
+      <div id="fire-diplom-content"></div>
+    </div>
   </div>
 </div>
 
@@ -839,7 +842,7 @@ import { getDatabase, ref, set, get, update, onValue, onChildAdded, remove, runT
 // Make all window functions available immediately
 Object.defineProperty(window, '__moduleReady', { value: true });
 
-const VERSION = 'Avstemning v3.35';
+const VERSION = 'Avstemning v3.36';
 console.log(VERSION);
 
 const FIREBASE_CONFIG = {
@@ -899,6 +902,7 @@ let state = {
   lastLbKey: null,
   finalShown: false,
   endedHandled: false,
+  activityWinnerTimer: null,
 };
 
 function ls(k,v){if(v===undefined)return localStorage.getItem(k);if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v);}
@@ -1438,6 +1442,9 @@ async function handleSessionState(session){
     if(!state.endedHandled){handleEndedState(session);}
     if(session.externalWinner&&document.getElementById('screen-final')?.classList.contains('active')){
       showExternalWinnerTab(session);
+    }
+    if(session.activityWinner&&document.getElementById('screen-final')?.classList.contains('active')){
+      showActivityWinnerTab(session);
     }
     return;
   }
@@ -2248,6 +2255,8 @@ function showFinalLeaderboard(session){
     try{ if (rc.judges) renderJudgeBreakdown('final-judge-breakdown', session); }catch(e){console.error('Judge breakdown error:',e);}
     // Vis trophy-fane stille hvis allerede kunngjort (refresh)
     if(session.externalWinner)showExternalWinnerTab(session,true);
+    // Vis aktivitetsvinner stille hvis allerede kunngjort (refresh)
+    if(session.activityWinner)showActivityWinnerTab(session,true);
   }, 200);
   // Auto-roll between tabs continuously using lbSecs as interval
   if(tabDefs.length>1){
@@ -2786,8 +2795,18 @@ window.switchResultTab = function(tab) {
   const panelEl = document.getElementById(`panel-${tab}`);
   if (btnEl) btnEl.classList.add('active');
   if (panelEl) panelEl.classList.add('active');
-  if(tab==='trophy')startGlitter();
+  if(tab==='trophy'||tab==='fire')startGlitter();
   else stopGlitter();
+  // Oppdater padding-top — ny fane kan ha endret høyde på fane-raden
+  requestAnimationFrame(()=>{
+    const h=document.querySelector('#screen-final .header');
+    const tabs=document.getElementById('result-tabs-fixed');
+    const content=document.querySelector('#screen-final .content');
+    if(h&&tabs&&content){
+      document.documentElement.style.setProperty('--header-h',h.offsetHeight+'px');
+      content.style.paddingTop=(h.offsetHeight+tabs.offsetHeight)+'px';
+    }
+  });
 };
 
 // ========== JURY-VINNER UI ==========
@@ -2961,7 +2980,146 @@ function buildDiplom(winnerName,subjectName,sessionName){
   return wrap;
 }
 
-window.shareDiplom=async function(){
+function buildActivityDiplom(winnerName,score,sessionName){
+  const now=new Date();
+  const dato=now.toLocaleDateString('nb-NO',{day:'numeric',month:'long',year:'numeric'});
+  const wrap=document.createElement('div');
+  wrap.className='diplom-wrap';
+  wrap.id='activity-diplom-main';
+  wrap.innerHTML=`
+    <div class="diplom-card">
+      <div class="diplom-rays" id="activity-rays-top"></div>
+      <div class="diplom-body">
+        <span class="diplom-trophy">🔥</span>
+        <div class="diplom-glow"></div>
+        <div class="diplom-label">Kveldens mest aktive</div>
+        <div class="diplom-title">${sessionName}</div>
+        <div class="diplom-divider"></div>
+        <div class="diplom-winner-label">Aktivitetsvinner</div>
+        <div class="diplom-winner">${winnerName}</div>
+        <div class="diplom-emne">« ${score} reaksjoner »</div>
+        <div class="diplom-meta">
+          <div class="diplom-mi"><div>Dato</div><div class="diplom-mv">${dato}</div></div>
+          <div class="diplom-mi"><div>Arrangement</div><div class="diplom-mv">${sessionName}</div></div>
+        </div>
+      </div>
+      <div class="diplom-rays-bot" id="activity-rays-bot"></div>
+      <div class="diplom-sheen"></div>
+      <div class="diplom-border"></div>
+    </div>
+    <button class="diplom-share" onclick="window.shareActivityDiplom()">Del diplom 🎉</button>`;
+  requestAnimationFrame(()=>{
+    ['activity-rays-top','activity-rays-bot'].forEach((id,isBot)=>{
+      const el=document.getElementById(id);
+      if(!el)return;
+      const w=el.offsetWidth||320;
+      const colors=['#3060d0','#5040c0','#a040e0','#e040a0','#e8c36a','#e040a0','#a040e0','#5040c0','#3060d0'];
+      const count=18;
+      for(let i=0;i<count;i++){
+        const frac=i/(count-1);
+        const x=frac*w;
+        const c=colors[Math.floor(frac*(colors.length-1))];
+        const h=16+34*(1-Math.abs(frac-0.5)*2);
+        const angle=(x-w/2)*0.06;
+        const ray=document.createElement('div');
+        ray.className=isBot?'diplom-ray-bot':'diplom-ray';
+        ray.style.cssText=`left:${x}px;height:${h}px;background:linear-gradient(to ${isBot?'bottom':'top'},${c},transparent);opacity:0.7;transform:rotate(${isBot?-angle:angle}deg);`;
+        el.appendChild(ray);
+      }
+    });
+  });
+  return wrap;
+}
+
+window.shareActivityDiplom=async function(){
+  const diplom=document.getElementById('activity-diplom-main');
+  if(!diplom)return;
+  const winnerEl=diplom.querySelector('.diplom-winner');
+  const emneEl=diplom.querySelector('.diplom-emne');
+  const titleEl=diplom.querySelector('.diplom-title');
+  const metaVals=diplom.querySelectorAll('.diplom-mv');
+  const winnerName=winnerEl?.textContent||'';
+  const emne=emneEl?.textContent||'';
+  const sessionName=titleEl?.textContent||'';
+  const dato=metaVals[0]?.textContent||'';
+  const W=640,H=860;
+  const c=document.createElement('canvas');
+  c.width=W;c.height=H;
+  const ctx=c.getContext('2d');
+  const bg=ctx.createLinearGradient(0,0,W,H);
+  bg.addColorStop(0,'#0d0630');bg.addColorStop(0.5,'#1a0840');bg.addColorStop(1,'#0d0630');
+  ctx.fillStyle=bg;
+  if(ctx.roundRect)ctx.roundRect(0,0,W,H,28);else ctx.rect(0,0,W,H);
+  ctx.fill();
+  const topBar=ctx.createLinearGradient(0,0,W,0);
+  topBar.addColorStop(0,'#3060d0');topBar.addColorStop(0.33,'#a040e0');
+  topBar.addColorStop(0.66,'#e040a0');topBar.addColorStop(1,'#e8c36a');
+  ctx.fillStyle=topBar;ctx.fillRect(0,0,W,8);
+  const rayColors=['#3060d0','#5040c0','#a040e0','#e040a0','#e8c36a','#e040a0','#a040e0','#5040c0','#3060d0'];
+  for(let i=0;i<18;i++){
+    const frac=i/17;const x=frac*W;const h=40+80*(1-Math.abs(frac-0.5)*2);
+    const ci=Math.floor(frac*(rayColors.length-1));
+    const rg=ctx.createLinearGradient(x,8+h,x,8);
+    rg.addColorStop(0,rayColors[ci]);rg.addColorStop(1,'transparent');
+    ctx.fillStyle=rg;ctx.globalAlpha=0.6;ctx.fillRect(x-1,8,2,h);
+  }
+  ctx.globalAlpha=1;
+  ctx.font='120px serif';ctx.textAlign='center';
+  ctx.shadowColor='rgba(232,195,106,0.8)';ctx.shadowBlur=40;
+  ctx.fillText('🔥',W/2,200);ctx.shadowBlur=0;
+  const glow=ctx.createRadialGradient(W/2,220,0,W/2,220,90);
+  glow.addColorStop(0,'rgba(160,80,255,0.4)');glow.addColorStop(1,'transparent');
+  ctx.fillStyle=glow;ctx.fillRect(W/2-90,190,180,40);
+  ctx.font='500 22px DM Sans,sans-serif';ctx.fillStyle='rgba(180,140,255,0.7)';
+  ctx.letterSpacing='6px';ctx.fillText('KVELDENS MEST AKTIVE',W/2,270);ctx.letterSpacing='0px';
+  ctx.font='700 44px DM Sans,sans-serif';ctx.fillStyle='#ffffff';
+  ctx.shadowColor='rgba(160,80,255,0.8)';ctx.shadowBlur=20;
+  ctx.fillText(sessionName,W/2,326);ctx.shadowBlur=0;
+  const div=ctx.createLinearGradient(60,0,W-60,0);
+  div.addColorStop(0,'transparent');div.addColorStop(0.3,'rgba(160,80,255,0.6)');
+  div.addColorStop(0.7,'rgba(232,195,106,0.6)');div.addColorStop(1,'transparent');
+  ctx.strokeStyle=div;ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(60,360);ctx.lineTo(W-60,360);ctx.stroke();
+  ctx.font='500 20px DM Sans,sans-serif';ctx.fillStyle='rgba(232,195,106,0.7)';
+  ctx.letterSpacing='4px';ctx.fillText('AKTIVITETSVINNER',W/2,400);ctx.letterSpacing='0px';
+  ctx.font='700 64px DM Sans,sans-serif';
+  const gold=ctx.createLinearGradient(W/2-200,430,W/2,510);
+  gold.addColorStop(0,'#ffffff');gold.addColorStop(0.5,'#e8c36a');gold.addColorStop(1,'#b8922a');
+  ctx.fillStyle=gold;ctx.fillText(winnerName,W/2,490);
+  ctx.font='italic 500 28px DM Sans,sans-serif';ctx.fillStyle='rgba(200,160,255,0.85)';
+  ctx.fillText(emne,W/2,544);
+  ctx.strokeStyle='rgba(160,80,255,0.25)';ctx.lineWidth=0.5;
+  ctx.beginPath();ctx.moveTo(60,580);ctx.lineTo(W-60,580);ctx.stroke();
+  ctx.font='500 20px DM Sans,sans-serif';ctx.fillStyle='rgba(160,120,220,0.7)';
+  ctx.textAlign='left';ctx.fillText('Dato',80,618);
+  ctx.textAlign='right';ctx.fillText('Arrangement',W-80,618);
+  ctx.font='500 22px DM Sans,sans-serif';ctx.fillStyle='rgba(200,170,255,0.9)';
+  ctx.textAlign='left';ctx.fillText(dato,80,648);
+  ctx.textAlign='right';ctx.fillText(sessionName,W-80,648);
+  for(let i=0;i<18;i++){
+    const frac=i/17;const x=frac*W;const h=30+60*(1-Math.abs(frac-0.5)*2);
+    const ci=Math.floor(frac*(rayColors.length-1));
+    const rg=ctx.createLinearGradient(x,H-8,x,H-8-h);
+    rg.addColorStop(0,rayColors[ci]);rg.addColorStop(1,'transparent');
+    ctx.fillStyle=rg;ctx.globalAlpha=0.5;ctx.textAlign='center';ctx.fillRect(x-1,H-8-h,2,h);
+  }
+  ctx.globalAlpha=1;
+  const botBar=ctx.createLinearGradient(0,0,W,0);
+  botBar.addColorStop(0,'#e8c36a');botBar.addColorStop(0.33,'#e040a0');botBar.addColorStop(1,'#3060d0');
+  ctx.fillStyle=botBar;ctx.fillRect(0,H-6,W,6);
+  c.toBlob(async blob=>{
+    if(!blob)return;
+    const file=new File([blob],'aktivitetsvinner.png',{type:'image/png'});
+    if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+      await navigator.share({files:[file],title:'Aktivitetsvinner 🔥'}).catch(()=>{});
+    } else {
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');
+      a.href=url;a.download='aktivitetsvinner.png';a.click();
+      setTimeout(()=>URL.revokeObjectURL(url),2000);
+    }
+  },'image/png');
+};
   const diplom=document.getElementById('diplom-main');
   if(!diplom)return;
   const winnerEl=diplom.querySelector('.diplom-winner');
@@ -3108,6 +3266,50 @@ function showExternalWinnerTab(session,silent){
   // Eksplisitt resume av AudioContext — trigges fra Firebase-callback
   if(_audioCtx&&_audioCtx.state==='suspended')_audioCtx.resume();
   window.switchResultTab('trophy');
+  playSound('fanfare');
+  startGlitter();
+  // Start timer for aktivitetsvinner — kun admin
+  if(state.isAdmin){
+    const secs=session.leaderboardSeconds||60;
+    if(state.activityWinnerTimer)clearTimeout(state.activityWinnerTimer);
+    state.activityWinnerTimer=setTimeout(async()=>{
+      const snap=await get(ref(db,`sessions/${state.sessionId}`));
+      const fresh=snap.exists()?snap.val():session;
+      await calcActivityWinner(fresh);
+    },secs*1000);
+  }
+}
+
+function showActivityWinnerTab(session,silent){
+  const aw=session.activityWinner;
+  if(!aw||!aw.winners)return;
+  state.finalRollStopped=true;
+  const alreadyBuilt=!!document.getElementById('tab-btn-fire');
+  const tabContainer=document.getElementById('result-tabs-container');
+  if(tabContainer&&!alreadyBuilt){
+    const btn=document.createElement('div');
+    btn.className='result-tab';
+    btn.id='tab-btn-fire';
+    btn.textContent='🔥';
+    btn.onclick=()=>window.switchResultTab('fire');
+    tabContainer.appendChild(btn);
+  }
+  if(!alreadyBuilt){
+    const container=document.getElementById('fire-diplom-content');
+    if(container){
+      container.innerHTML='';
+      const winnerName=aw.winners.join(' & ');
+      const diplom=buildActivityDiplom(winnerName,aw.score||0,session.name||'');
+      container.appendChild(diplom);
+    }
+  }
+  if(silent){
+    window.switchResultTab('fire');
+    return;
+  }
+  if(alreadyBuilt)return;
+  if(_audioCtx&&_audioCtx.state==='suspended')_audioCtx.resume();
+  window.switchResultTab('fire');
   playSound('fanfare');
   startGlitter();
 }
