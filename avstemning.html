@@ -2025,6 +2025,9 @@ function showLeaderboardScreen(session){
     }
   }
 
+  if(state.isAdmin&&session.lbTimerEnd){
+    scheduleLbWatchdog(state.sessionId,session.lbTimerEnd,idx,isLast,session);
+  }
   showView(0);
 }
 
