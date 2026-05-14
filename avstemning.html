@@ -460,6 +460,8 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
     </div>
   </div>
   <div class="content">
+    <!-- waiting-qr skjult – brukes av logikk, vises via QR-sheet (punkt 79) -->
+    <div style="display:none;"><div class="qr-container"><div id="waiting-qr"></div></div></div>
     <!-- PUNKT 79 – Stor 📱-knapp erstatter QR direkte i venterom -->
     <div style="margin-bottom:16px;">
       <button class="btn btn-secondary" style="width:100%;font-size:18px;padding:16px;display:flex;align-items:center;justify-content:center;gap:10px;" data-action="showQrSheet">📱 <span style="font-size:15px;">Vis QR-kode</span></button>
