@@ -332,6 +332,32 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
 .is-admin .admin-only{display:flex;}
 .submitted-center{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;text-align:center;padding:40px 20px;}
 ::-webkit-scrollbar{width:0;}
+
+/* ===== DIPLOM ===== */
+.diplom-wrap{background:#06031a;border-radius:16px;padding:20px;display:flex;flex-direction:column;align-items:center;gap:14px;margin:0 auto;max-width:360px;}
+.diplom-card{width:100%;border-radius:16px;overflow:hidden;position:relative;background:#08041e;}
+.diplom-rays{position:relative;height:56px;overflow:hidden;}
+.diplom-ray{position:absolute;bottom:0;width:2px;border-radius:1px 1px 0 0;transform-origin:bottom center;}
+.diplom-ray-bot{position:absolute;top:0;width:2px;border-radius:0 0 1px 1px;transform-origin:top center;}
+.diplom-rays-bot{position:relative;height:44px;overflow:hidden;}
+.diplom-body{padding:0 20px 18px;text-align:center;position:relative;}
+.diplom-trophy{font-size:52px;line-height:1;margin-bottom:4px;display:block;filter:drop-shadow(0 0 14px rgba(232,195,106,0.7)) drop-shadow(0 0 28px rgba(160,80,255,0.4));}
+.diplom-glow{width:80px;height:7px;background:radial-gradient(ellipse,rgba(160,80,255,0.5),transparent 70%);margin:0 auto 10px;border-radius:50%;}
+.diplom-label{font-size:9px;letter-spacing:3px;color:rgba(180,140,255,0.6);text-transform:uppercase;margin-bottom:3px;}
+.diplom-title{font-size:19px;font-weight:700;color:#fff;line-height:1.1;margin-bottom:2px;text-shadow:0 0 20px rgba(160,80,255,0.8);}
+.diplom-divider{height:0.5px;background:linear-gradient(90deg,transparent,rgba(160,80,255,0.6),rgba(232,195,106,0.6),transparent);margin:11px 0;}
+.diplom-winner-label{font-size:9px;letter-spacing:2px;color:rgba(232,195,106,0.6);text-transform:uppercase;margin-bottom:4px;}
+.diplom-winner{font-size:26px;font-weight:700;line-height:1;background:linear-gradient(180deg,#fff 0%,#e8c36a 60%,#b8922a 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.diplom-emne{font-size:12px;color:rgba(200,160,255,0.8);margin-top:5px;font-style:italic;}
+.diplom-meta{display:flex;justify-content:space-between;margin-top:12px;padding:10px 0 0;border-top:0.5px solid rgba(160,80,255,0.2);}
+.diplom-mi{font-size:10px;color:rgba(160,120,220,0.6);text-align:center;}
+.diplom-mv{font-size:11px;color:rgba(200,170,255,0.9);margin-top:2px;}
+.diplom-sheen{position:absolute;top:0;left:0;right:0;height:100%;background:linear-gradient(135deg,rgba(255,255,255,0.04) 0%,transparent 40%,rgba(255,255,255,0.02) 100%);pointer-events:none;border-radius:16px;}
+.diplom-border{position:absolute;inset:0;border-radius:16px;border:1px solid rgba(255,255,255,0.08);pointer-events:none;}
+.diplom-share{background:rgba(255,255,255,0.04);border:0.5px solid rgba(160,80,255,0.4);border-radius:10px;padding:11px;font-size:13px;color:rgba(200,160,255,0.9);cursor:pointer;width:100%;text-align:center;}
+
+/* ===== GLITTER ===== */
+.glitter-canvas{position:fixed;inset:0;pointer-events:none;z-index:260;}
 </style>
 </head>
 <body>
@@ -616,6 +642,35 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
     <div class="result-panel" id="panel-judges">
       <div id="final-judge-breakdown"></div>
     </div>
+    <div class="result-panel" id="panel-trophy">
+      <div id="trophy-diplom-content"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SHEET: EXTERNAL WINNER ===== -->
+<div class="sheet-bg" id="external-winner-sheet">
+  <div class="sheet" style="max-width:480px;">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">🏆 Jury-topp 3</div>
+    <div class="admin-section">
+      <div class="admin-section-label">Velg emner</div>
+      <div class="admin-row">
+        <div class="admin-row-label">🥇 1. plass</div>
+        <select id="ew-place-1" style="background:var(--surface2);border:0.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;padding:8px 10px;"></select>
+      </div>
+      <div class="admin-row">
+        <div class="admin-row-label">🥈 2. plass</div>
+        <select id="ew-place-2" style="background:var(--surface2);border:0.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;padding:8px 10px;"></select>
+      </div>
+      <div class="admin-row">
+        <div class="admin-row-label">🥉 3. plass</div>
+        <select id="ew-place-3" style="background:var(--surface2);border:0.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;padding:8px 10px;"></select>
+      </div>
+    </div>
+    <div id="ew-error" style="color:var(--danger);font-size:13px;text-align:center;margin-bottom:12px;display:none;">Samme emne er valgt flere ganger</div>
+    <button class="btn btn-primary" style="margin-bottom:10px;" data-action="submitExternalWinner">Kunngjør vinner 🏆</button>
+    <button class="btn btn-secondary" onclick="document.getElementById('external-winner-sheet').classList.remove('open')">Avbryt</button>
   </div>
 </div>
 
@@ -784,7 +839,7 @@ import { getDatabase, ref, set, get, update, onValue, onChildAdded, remove, runT
 // Make all window functions available immediately
 Object.defineProperty(window, '__moduleReady', { value: true });
 
-const VERSION = 'Avstemning v3.34';
+const VERSION = 'Avstemning v3.35';
 console.log(VERSION);
 
 const FIREBASE_CONFIG = {
@@ -1102,9 +1157,22 @@ function playSound(type){
         o.stop(ctx.currentTime+i*0.13+0.3);
       });
       return;
-    } else {
-      // Unknown type - no sound
+    } else if(type==='fanfare'){
+      const notes=[523,659,784,1047,1319,1047,1319,1568];
+      notes.forEach((f,i)=>{
+        const o=ctx.createOscillator();
+        const g=ctx.createGain();
+        o.type='triangle';
+        o.connect(g);g.connect(ctx.destination);
+        o.frequency.setValueAtTime(f,ctx.currentTime+i*0.1);
+        g.gain.setValueAtTime(0,ctx.currentTime+i*0.1);
+        g.gain.linearRampToValueAtTime(0.3,ctx.currentTime+i*0.1+0.04);
+        g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+i*0.1+0.35);
+        o.start(ctx.currentTime+i*0.1);
+        o.stop(ctx.currentTime+i*0.1+0.4);
+      });
       return;
+    } else {
     }
   }catch(e){console.log('Sound error:',e);}
 }
@@ -1366,7 +1434,11 @@ async function handleSessionState(session){
   }
 
   if(session.status==='published'||session.status==='waiting'){showWaitingRoom(session);return;}
-  if(session.status==='ended'){if(!state.endedHandled){handleEndedState(session);}return;}
+  if(session.status==='ended'){
+    if(!state.endedHandled){handleEndedState(session);}
+    if(session.externalWinner)showExternalWinnerTab(session);
+    return;
+  }
   if(session.status==='leaderboard'){
     const lbKey=`${state.sessionId}_lb_${session.currentSubjectIndex}`;
     if(state.lastLbKey!==lbKey){
@@ -2709,7 +2781,195 @@ window.switchResultTab = function(tab) {
   const panelEl = document.getElementById(`panel-${tab}`);
   if (btnEl) btnEl.classList.add('active');
   if (panelEl) panelEl.classList.add('active');
+  if(tab==='trophy')startGlitter();
+  else stopGlitter();
 };
+
+// ========== JURY-VINNER UI ==========
+window.openExternalWinner=function(){
+  if(!state.isAdmin)return;
+  const session=state.session;
+  if(!session)return;
+  const subjects=session.subjects?Object.values(session.subjects):[];
+  ['ew-place-1','ew-place-2','ew-place-3'].forEach(id=>{
+    const sel=document.getElementById(id);
+    if(!sel)return;
+    sel.innerHTML='<option value="">— Velg emne —</option>';
+    subjects.forEach(s=>{
+      const opt=document.createElement('option');
+      opt.value=s.name;opt.textContent=s.name;
+      sel.appendChild(opt);
+    });
+  });
+  // Pre-fill if already saved
+  const er=session.externalResults||{};
+  if(er['1'])document.getElementById('ew-place-1').value=er['1'];
+  if(er['2'])document.getElementById('ew-place-2').value=er['2'];
+  if(er['3'])document.getElementById('ew-place-3').value=er['3'];
+  document.getElementById('ew-error').style.display='none';
+  document.getElementById('external-winner-sheet').classList.add('open');
+};
+
+window.submitExternalWinner=async function(){
+  const v1=document.getElementById('ew-place-1').value;
+  const v2=document.getElementById('ew-place-2').value;
+  const v3=document.getElementById('ew-place-3').value;
+  const errEl=document.getElementById('ew-error');
+  // Duplikat-sjekk
+  const chosen=[v1,v2,v3].filter(v=>v);
+  const unique=new Set(chosen);
+  if(chosen.length!==unique.size){errEl.style.display='block';return;}
+  errEl.style.display='none';
+  if(!v1){errEl.textContent='1. plass må velges';errEl.style.display='block';return;}
+  document.getElementById('external-winner-sheet').classList.remove('open');
+  await window.saveExternalResults({'1':v1,'2':v2,'3':v3});
+};
+
+let glitterAnim=null;
+function startGlitter(){
+  let canvas=document.getElementById('glitter-canvas');
+  if(!canvas){
+    canvas=document.createElement('canvas');
+    canvas.id='glitter-canvas';
+    canvas.className='glitter-canvas';
+    document.body.appendChild(canvas);
+  }
+  canvas.width=window.innerWidth;
+  canvas.height=window.innerHeight;
+  const ctx=canvas.getContext('2d');
+  const accent=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#e8c36a';
+  const colors=[accent,'#a040e0','#e040a0','#3060d0','#ffffff'];
+  const particles=Array.from({length:120},()=>({
+    x:Math.random()*canvas.width,
+    y:Math.random()*canvas.height-canvas.height,
+    r:Math.random()*4+2,
+    c:colors[Math.floor(Math.random()*colors.length)],
+    vx:(Math.random()-0.5)*2,
+    vy:Math.random()*3+1.5,
+    op:Math.random()*0.8+0.2
+  }));
+  let frame=0;
+  function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    particles.forEach(p=>{
+      ctx.globalAlpha=p.op;
+      ctx.fillStyle=p.c;
+      ctx.beginPath();
+      ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fill();
+      p.x+=p.vx;p.y+=p.vy;
+      if(p.y>canvas.height){p.y=-10;p.x=Math.random()*canvas.width;}
+    });
+    ctx.globalAlpha=1;
+    frame++;
+    if(frame<300)glitterAnim=requestAnimationFrame(draw);
+    else{ctx.clearRect(0,0,canvas.width,canvas.height);}
+  }
+  if(glitterAnim)cancelAnimationFrame(glitterAnim);
+  draw();
+}
+
+function stopGlitter(){
+  if(glitterAnim){cancelAnimationFrame(glitterAnim);glitterAnim=null;}
+  const canvas=document.getElementById('glitter-canvas');
+  if(canvas)canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
+}
+
+function buildDiplom(winnerName,subjectName,sessionName){
+  const now=new Date();
+  const dato=now.toLocaleDateString('nb-NO',{day:'numeric',month:'long',year:'numeric'});
+  const wrap=document.createElement('div');
+  wrap.className='diplom-wrap';
+  wrap.id='diplom-main';
+  wrap.innerHTML=`
+    <div class="diplom-card">
+      <div class="diplom-rays" id="diplom-rays-top"></div>
+      <div class="diplom-body">
+        <span class="diplom-trophy">🏆</span>
+        <div class="diplom-glow"></div>
+        <div class="diplom-label">Vinneren av</div>
+        <div class="diplom-title">${sessionName}</div>
+        <div class="diplom-divider"></div>
+        <div class="diplom-winner-label">Jury-vinner</div>
+        <div class="diplom-winner">${winnerName}</div>
+        <div class="diplom-emne">« ${subjectName} »</div>
+        <div class="diplom-meta">
+          <div class="diplom-mi"><div>Dato</div><div class="diplom-mv">${dato}</div></div>
+          <div class="diplom-mi"><div>Arrangement</div><div class="diplom-mv">${sessionName}</div></div>
+        </div>
+      </div>
+      <div class="diplom-rays-bot" id="diplom-rays-bot"></div>
+      <div class="diplom-sheen"></div>
+      <div class="diplom-border"></div>
+    </div>
+    <button class="diplom-share" onclick="window.shareDiplom()">Del diplom 🎉</button>`;
+  // Bygg stråler
+  requestAnimationFrame(()=>{
+    ['diplom-rays-top','diplom-rays-bot'].forEach((id,isBot)=>{
+      const el=document.getElementById(id);
+      if(!el)return;
+      const w=el.offsetWidth||320;
+      const colors=['#3060d0','#5040c0','#a040e0','#e040a0','#e8c36a','#e040a0','#a040e0','#5040c0','#3060d0'];
+      const count=18;
+      for(let i=0;i<count;i++){
+        const frac=i/(count-1);
+        const x=frac*w;
+        const c=colors[Math.floor(frac*(colors.length-1))];
+        const h=16+34*(1-Math.abs(frac-0.5)*2);
+        const angle=(x-w/2)*0.06;
+        const ray=document.createElement('div');
+        ray.className=isBot?'diplom-ray-bot':'diplom-ray';
+        ray.style.cssText=`left:${x}px;height:${h}px;background:linear-gradient(to ${isBot?'bottom':'top'},${c},transparent);opacity:0.7;transform:rotate(${isBot?-angle:angle}deg);`;
+        el.appendChild(ray);
+      }
+    });
+  });
+  return wrap;
+}
+
+window.shareDiplom=function(){
+  const diplom=document.getElementById('diplom-main');
+  if(!diplom)return;
+  if(navigator.share){
+    navigator.share({title:'Jury-vinner 🏆',text:diplom.querySelector('.diplom-winner')?.textContent||''}).catch(()=>{});
+  } else {
+    showToast('Hold inne diplomet for å lagre det 📸');
+  }
+};
+
+let externalWinnerShown=false;
+function showExternalWinnerTab(session){
+  if(externalWinnerShown)return;
+  const ew=session.externalWinner;
+  if(!ew||!ew.winners||!ew.subjectName)return;
+  externalWinnerShown=true;
+  // Stopp rulling
+  state.finalRollStopped=true;
+  // Legg til fane hvis ikke finnes
+  const tabContainer=document.getElementById('result-tabs-container');
+  if(tabContainer&&!document.getElementById('tab-btn-trophy')){
+    const btn=document.createElement('div');
+    btn.className='result-tab';
+    btn.id='tab-btn-trophy';
+    btn.textContent='🏆';
+    btn.onclick=()=>window.switchResultTab('trophy');
+    tabContainer.appendChild(btn);
+  }
+  // Bygg diplom-innhold
+  const container=document.getElementById('trophy-diplom-content');
+  if(container){
+    container.innerHTML='';
+    const winnerName=ew.winners.join(' & ');
+    const diplom=buildDiplom(winnerName,ew.subjectName,session.name||'');
+    container.appendChild(diplom);
+  }
+  // Bytt til trophy-fane
+  setTimeout(()=>{
+    window.switchResultTab('trophy');
+    playSound('fanfare');
+    startGlitter();
+  },400);
+}
 
 function buildCategoryBreakdown(session) {
   const cats = session.categories ? Object.values(session.categories) : [];
@@ -3030,7 +3290,7 @@ function updateProgressDots(current,total,containerId){
 }
 
 // ========== CLOSE SHEETS ON BG ==========
-['gear-sheet','qr-sheet','skal-sheet','confirm-sheet','admin-login-sheet'].forEach(id=>{
+['gear-sheet','qr-sheet','skal-sheet','confirm-sheet','admin-login-sheet','external-winner-sheet'].forEach(id=>{
   document.getElementById(id).addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');});
 });
 
