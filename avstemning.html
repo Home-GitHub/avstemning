@@ -343,13 +343,13 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
 .diplom-body{padding:0 20px 18px;text-align:center;position:relative;}
 .diplom-trophy{font-size:52px;line-height:1;margin-bottom:4px;display:block;filter:drop-shadow(0 0 14px rgba(232,195,106,0.7)) drop-shadow(0 0 28px rgba(160,80,255,0.4));}
 .diplom-glow{width:80px;height:7px;background:radial-gradient(ellipse,rgba(160,80,255,0.5),transparent 70%);margin:0 auto 10px;border-radius:50%;}
-.diplom-label{font-size:9px;letter-spacing:3px;color:rgba(180,140,255,0.6);text-transform:uppercase;margin-bottom:3px;}
-.diplom-title{font-size:19px;font-weight:700;color:#fff;line-height:1.1;margin-bottom:2px;text-shadow:0 0 20px rgba(160,80,255,0.8);}
+.diplom-label{font-size:11px;letter-spacing:3px;color:rgba(180,140,255,0.6);text-transform:uppercase;margin-bottom:3px;}
+.diplom-title{font-size:22px;font-weight:700;color:#fff;line-height:1.1;margin-bottom:2px;text-shadow:0 0 20px rgba(160,80,255,0.8);}
 .diplom-divider{height:0.5px;background:linear-gradient(90deg,transparent,rgba(160,80,255,0.6),rgba(232,195,106,0.6),transparent);margin:11px 0;}
 .diplom-winner-label{font-size:9px;letter-spacing:2px;color:rgba(232,195,106,0.6);text-transform:uppercase;margin-bottom:4px;}
 .diplom-winner{font-size:26px;font-weight:700;line-height:1;background:linear-gradient(180deg,#fff 0%,#e8c36a 60%,#b8922a 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
-.diplom-emne{font-size:12px;color:rgba(200,160,255,0.8);margin-top:5px;font-style:italic;}
-.diplom-meta{display:flex;justify-content:space-between;margin-top:12px;padding:10px 0 0;border-top:0.5px solid rgba(160,80,255,0.2);}
+.diplom-emne{font-size:15px;color:rgba(200,160,255,0.8);margin-top:5px;font-style:italic;}
+.diplom-meta{display:flex;justify-content:center;margin-top:12px;padding:10px 0 0;border-top:0.5px solid rgba(160,80,255,0.2);}
 .diplom-mi{font-size:10px;color:rgba(160,120,220,0.6);text-align:center;}
 .diplom-mv{font-size:11px;color:rgba(200,170,255,0.9);margin-top:2px;}
 .diplom-sheen{position:absolute;top:0;left:0;right:0;height:100%;background:linear-gradient(135deg,rgba(255,255,255,0.04) 0%,transparent 40%,rgba(255,255,255,0.02) 100%);pointer-events:none;border-radius:16px;}
@@ -1570,7 +1570,6 @@ function showVotingScreen(session){
     // Clear timer interval on subject change to prevent double intervals
     if(state.timerInterval){clearInterval(state.timerInterval);state.timerInterval=null;}
     eventQueue = []; // clear pending events
-    playSound('newSubject'); // play sound for new subject
   }
   updateProgressDots(idx,subjects.length,'progress-dots');
   updateProgressDots(idx,subjects.length,'submitted-dots');
@@ -1774,6 +1773,7 @@ function startTimer(session){
   const total=(session.minutesPerSubject||3)*60;
   if(state.lastWatchdogSubject!==lockedSubjectIdx){
     state.lastWatchdogSubject=lockedSubjectIdx;
+    playSound('newSubject');
     scheduleWatchdog(state.sessionId,session.timerEnd,session.minutesPerSubject,lockedSubjectIdx);
   }
   function tick(){
@@ -2950,7 +2950,6 @@ function buildDiplom(winnerName,subjectName,sessionName){
         <div class="diplom-emne">« ${subjectName} »</div>
         <div class="diplom-meta">
           <div class="diplom-mi"><div>Dato</div><div class="diplom-mv">${dato}</div></div>
-          <div class="diplom-mi"><div>Arrangement</div><div class="diplom-mv">${sessionName}</div></div>
         </div>
       </div>
       <div class="diplom-rays-bot" id="diplom-rays-bot"></div>
@@ -3002,7 +3001,6 @@ function buildActivityDiplom(winnerName,score,sessionName){
         <div class="diplom-emne">« ${score} reaksjoner »</div>
         <div class="diplom-meta">
           <div class="diplom-mi"><div>Dato</div><div class="diplom-mv">${dato}</div></div>
-          <div class="diplom-mi"><div>Arrangement</div><div class="diplom-mv">${sessionName}</div></div>
         </div>
       </div>
       <div class="diplom-rays-bot" id="activity-rays-bot"></div>
