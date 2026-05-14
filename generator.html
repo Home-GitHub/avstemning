@@ -209,7 +209,9 @@ select option{background:var(--surface2);}
             <strong>Fane 1 – "Emner":</strong><br>
             Kolonne A: Tuborg, Hansa, Ringnes...<br><br>
             <strong>Fane 2 – "Kategorier":</strong><br>
-            A: Navn &nbsp; B: Maks &nbsp; C: Vekting
+            A: Navn &nbsp; B: Maks &nbsp; C: Vekting<br><br>
+            <strong>Fane 3 – "Bingo" (valgfri):</strong><br>
+            Kolonne A: 24 tekster (én per rad)
           </div>
           <div class="import-area" id="drop-area" onclick="document.getElementById('file-input').click()">
             <input type="file" id="file-input" accept=".xlsx,.xls">
@@ -333,11 +335,11 @@ const FIREBASE_CONFIG = {
 
 const app = initializeApp(FIREBASE_CONFIG);
 const db = getDatabase(app);
-const GENERATOR_VERSION = 'Generator v1.1';
+const GENERATOR_VERSION = 'Generator v1.2';
 console.log(GENERATOR_VERSION);
 const APP_URL = "https://home-github.github.io/avstemning/avstemning.html";
 
-let subjects = [], categories = [], blindtestEnabled = false;
+let subjects = [], categories = [], bingoTexts = [], blindtestEnabled = false;
 let resultConfig = { toplist: false, categories: false, judges: true };
 
 window.toggleResult = function(key) {
@@ -421,10 +423,17 @@ function handleFile(file) {
         const catData = XLSX.utils.sheet_to_json(catSheet, {header:1});
         categories = catData.map(r=>({name:r[0]?String(r[0]).trim():null,max:parseInt(r[1])||10,weight:parseInt(r[2])||1})).filter(c=>c.name);
       }
+      const bingoSheet = wb.Sheets['Bingo'] || wb.Sheets[wb.SheetNames[2]];
+      bingoTexts = [];
+      if (bingoSheet) {
+        const bingoData = XLSX.utils.sheet_to_json(bingoSheet, {header:1});
+        bingoTexts = bingoData.map(r=>r[0]).filter(v=>v&&String(v).trim()).map(v=>String(v).trim()).slice(0,24);
+      }
       renderChips();
       const prev = document.getElementById('import-preview');
       prev.style.display = 'block';
-      prev.textContent = `✅ ${subjects.length} emner og ${categories.length} kategorier importert`;
+      const bingoStatus = bingoTexts.length ? `🎯 ${bingoTexts.length} bingo-tekster lastet` : '— Ingen bingo-fane';
+      prev.innerHTML = `✅ ${subjects.length} emner og ${categories.length} kategorier importert<br>${bingoStatus}`;
     } catch(err) { alert(`❌ ${err.message}`); }
   };
   reader.readAsBinaryString(file);
@@ -495,10 +504,12 @@ window.createSession = async () => {
   const safeKey=s=>String(s).trim().replace(/[.#$\[\]/]/g,'_').replace(/\s+/g,'_').substring(0,50)||'key';
   const subjectsObj = {}; subjects.forEach((s,i)=>{subjectsObj[i]={name:s,originalIndex:i};});
   const categoriesObj = {}; categories.forEach((c,i)=>{categoriesObj[i]={name:c.name,key:safeKey(c.name),max:c.max,weight:c.weight};});
+  const bingoObj = bingoTexts.length ? bingoTexts : null;
   await set(ref(db,`sessions/${slug}`),{
     name,password,theme,minutesPerSubject:minutes,leaderboardSeconds:lbSecs,
     blindtest:blindtestEnabled,blindtestLocked:false,blindtestRevealed:false,
     resultConfig:buildResultConfig(),
+    bingo:bingoObj,
     status:'published',currentSubjectIndex:0,subjects:subjectsObj,categories:categoriesObj,createdAt:Date.now()
   });
   document.getElementById('create-btn-text').textContent = 'Publiser avstemning →';
@@ -509,7 +520,7 @@ window.createSession = async () => {
   document.getElementById('success-qr').innerHTML = '';
   new QRCode(document.getElementById('success-qr'),{text:url,width:180,height:180,colorDark:'#000',colorLight:'#fff'});
   document.getElementById('success-modal').classList.add('open');
-  subjects=[]; categories=[]; blindtestEnabled=false;
+  subjects=[]; categories=[]; bingoTexts=[]; blindtestEnabled=false;
   document.getElementById('blindtest-toggle').classList.remove('on');
   document.getElementById('cfg-name').value=''; document.getElementById('cfg-slug').value='';
   renderChips(); document.getElementById('import-preview').style.display='none';

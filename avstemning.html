@@ -388,7 +388,7 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
   <div class="sb-item sb-emoji-toggle" id="global-emoji-toggle" data-action="toggleGlobalEmoji">😊
     <div class="sb-emoji-list" id="global-emoji-list"></div>
   </div>
-  <div style="height:44px;"></div>
+  <div class="sb-item" id="sb-bingo-btn" data-action="openBingo">🎯</div>
   <div class="sb-item sb-admin-btn" data-action="openGear">⚙️</div>
   <div class="sb-pause-indicator" id="sb-pause-indicator">PAUSET</div>
   <div class="sb-spacer"></div>
@@ -789,6 +789,21 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
   </div>
 </div>
 
+<!-- BINGO SHEET -->
+<div class="sheet-bg" id="bingo-sheet">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">🎯 Bingo</div>
+    <div id="bingo-board" style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-bottom:14px;"></div>
+    <div id="bingo-won-msg" style="display:none;text-align:center;padding:12px 0;">
+      <div style="font-size:32px;margin-bottom:6px;">🎯</div>
+      <div style="font-size:18px;font-weight:700;color:var(--accent);margin-bottom:4px;">Du har bingo!</div>
+      <div style="font-size:12px;color:var(--muted);">+30 aktivitetspoeng</div>
+    </div>
+    <button class="btn btn-secondary" style="width:100%;" onclick="document.getElementById('bingo-sheet').classList.remove('open')">Lukk</button>
+  </div>
+</div>
+
 <!-- ADMIN LOGIN SHEET -->
 <div class="sheet-bg" id="admin-login-sheet">
   <div class="sheet">
@@ -829,7 +844,7 @@ var _proxyHandler = function(name) {
     }
   };
 };
-var _fns = ['showAdminLoginSheet','loginFromSheet','openSkalSheet','joinSession','submitVote','toggleEmojiMenu','toggleGlobalEmoji','sendReaction',
+var _fns = ['showAdminLoginSheet','loginFromSheet','openSkalSheet','joinSession','submitVote','toggleEmojiMenu','toggleGlobalEmoji','sendReaction','openBingo',
   'openGear','closeGear','showQrSheet','startSession','togglePause','togglePauseWithMessage',
   'forceNext','goBack','jumpToSubject','updateMinutes','updateLbSecs','addTime',
   'shuffleBlindtest','lockBlindtest','revealBlindtest',
@@ -1270,6 +1285,9 @@ async function init(){
   // This ensures reconnect works for ALL statuses including 'ended'
   if(state.participantId||(savedIsAdmin&&savedSessionId===slug)||session.status==='ended'){
     startSessionListener();
+    // Restore bingo sidebar state
+    const bingoState=getBingoState();
+    if(bingoState.won){const btn=document.getElementById('sb-bingo-btn');if(btn)btn.textContent='✅';}
     return;
   }
 
@@ -1343,6 +1361,7 @@ function startSessionListener(){
     watchReactions();
     watchSkals();
     watchActivity();
+    watchBingoWinners();
   }
   state.sessionListener=onValue(ref(db,`sessions/${state.sessionId}`),snap=>{
     if(!snap.exists())return;
@@ -1369,7 +1388,7 @@ const _activityScores={};
 
 function trackActivity(name,type){
   if(!name||!state.sessionId)return;
-  const pts=type==='skal'?10:1;
+  const pts=type==='skal'?10:type==='bingo'?30:1;
   _activityScores[name]=(_activityScores[name]||0)+pts;
   renderActivityBar();
   // Non-blocking Firebase sync
@@ -2715,6 +2734,141 @@ window.sendCategorySkal=async function(catName,emoji){
   document.getElementById('skal-sheet').classList.remove('open');
 };
 
+// ================================================================
+// BINGO
+// ================================================================
+
+const BINGO_THEME_ICONS={default:'⭐',pub:'🍺',vin:'🍷',mgp:'🎤',mat:'🍽️',party:'🎉'};
+
+function getBingoThemeIcon(){
+  const theme=state.session?.theme||'default';
+  return BINGO_THEME_ICONS[theme]||'⭐';
+}
+
+function getBingoState(){
+  if(!state.sessionId)return{checked:[],won:false};
+  const raw=localStorage.getItem(`bingo_${state.sessionId}`);
+  if(!raw)return{checked:[],won:false};
+  try{return JSON.parse(raw);}catch(e){return{checked:[],won:false};}
+}
+
+function saveBingoState(checked,won){
+  if(!state.sessionId)return;
+  localStorage.setItem(`bingo_${state.sessionId}`,JSON.stringify({checked,won}));
+}
+
+function checkBingo(checked){
+  // 5x5 grid — check rows, cols, diagonals
+  const g=Array(25).fill(false).map((_,i)=>checked.includes(i));
+  for(let r=0;r<5;r++){
+    if([0,1,2,3,4].every(c=>g[r*5+c]))return true;
+  }
+  for(let c=0;c<5;c++){
+    if([0,1,2,3,4].every(r=>g[r*5+c]))return true;
+  }
+  if([0,6,12,18,24].every(i=>g[i]))return true;
+  if([4,8,12,16,20].every(i=>g[i]))return true;
+  return false;
+}
+
+function buildBingoBoard(){
+  const board=document.getElementById('bingo-board');
+  if(!board)return;
+  const texts=state.session?.bingo||null;
+  if(!texts||!texts.length){board.innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;grid-column:span 5;">Ingen bingo i denne sesjonen</div>';return;}
+  const {checked,won}=getBingoState();
+  board.innerHTML='';
+  const themeIcon=getBingoThemeIcon();
+  for(let i=0;i<25;i++){
+    const cell=document.createElement('div');
+    const isCenter=i===12;
+    const isChecked=isCenter||checked.includes(i);
+    cell.style.cssText=`aspect-ratio:1;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:${isCenter?'20px':'9px'};font-weight:${isChecked?'700':'400'};text-align:center;padding:3px;cursor:${won?'default':'pointer'};transition:all 0.15s;background:${isChecked?'rgba(var(--accent-rgb,160,80,255),0.7)':'rgba(255,255,255,0.06)'};color:${isChecked?'#fff':'rgba(255,255,255,0.6)'};`;
+    cell.textContent=isCenter?themeIcon:(texts[i<12?i:i-1]||'');
+    if(!won&&!isCenter){
+      cell.onclick=()=>toggleBingoCell(i);
+    }
+    board.appendChild(cell);
+  }
+  // Vis/skjul bingo-melding
+  const wonMsg=document.getElementById('bingo-won-msg');
+  if(wonMsg)wonMsg.style.display=won?'block':'none';
+}
+
+function toggleBingoCell(idx){
+  if(!state.session?.bingo)return;
+  const {checked,won}=getBingoState();
+  if(won)return;
+  const newChecked=checked.includes(idx)?checked.filter(i=>i!==idx):[...checked,idx];
+  const newWon=checkBingo([...newChecked,12]); // midtrute alltid krysset
+  saveBingoState(newChecked,newWon);
+  buildBingoBoard();
+  if(newWon){
+    announceBingo();
+  }
+}
+
+async function announceBingo(){
+  if(!state.sessionId||!state.participantName)return;
+  // Oppdater sidebar-knapp
+  const btn=document.getElementById('sb-bingo-btn');
+  if(btn)btn.textContent='✅';
+  // 30 aktivitetspoeng
+  trackActivity(state.participantName,'bingo');
+  // Skriv til Firebase
+  await set(ref(db,`sessions/${state.sessionId}/bingoWinners/${safeKey(state.participantName)}`),{
+    name:state.participantName,at:Date.now()
+  });
+}
+
+function watchBingoWinners(){
+  if(!state.sessionId)return;
+  onChildAdded(ref(db,`sessions/${state.sessionId}/bingoWinners`),snap=>{
+    if(!snap.exists())return;
+    const w=snap.val();
+    if(Date.now()-w.at>8000)return;
+    showBingoToast(w.name);
+  });
+}
+
+function showBingoToast(name){
+  const existing=document.getElementById('bingo-toast');
+  if(existing)existing.remove();
+  const toast=document.createElement('div');
+  toast.id='bingo-toast';
+  toast.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0.85);background:rgba(0,0,0,0.97);border:2px solid #a050e0;border-radius:18px;padding:20px 28px;text-align:center;z-index:500;pointer-events:none;opacity:0;transition:opacity 0.3s,transform 0.3s;min-width:180px;box-shadow:0 0 40px rgba(160,80,255,0.4);';
+  toast.innerHTML=`<div style="font-size:32px;margin-bottom:6px;">🎯</div><div style="font-size:11px;color:#a050e0;font-weight:700;letter-spacing:3px;margin-bottom:8px;">BINGO!</div><div style="font-size:20px;font-weight:700;color:#fff;">${name}</div><div style="font-size:11px;color:#666;margin-top:4px;">har fått bingo!</div>`;
+  document.body.appendChild(toast);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    toast.style.opacity='1';
+    toast.style.transform='translate(-50%,-50%) scale(1)';
+    // Glitter
+    const rect=toast.getBoundingClientRect();
+    const cx=rect.left+rect.width/2;
+    const cy=rect.top+rect.height/2;
+    startGlitter();
+    setTimeout(()=>stopGlitter(),7000);
+  }));
+  setTimeout(()=>{
+    toast.style.opacity='0';
+    toast.style.transform='translate(-50%,-50%) scale(0.85)';
+    setTimeout(()=>toast.remove(),400);
+  },7000);
+}
+
+window.openBingo=function(){
+  const texts=state.session?.bingo||null;
+  if(!texts||!texts.length){showToast('Ingen bingo i denne sesjonen');return;}
+  buildBingoBoard();
+  // Oppdater sidebar-knapp om allerede vunnet
+  const {won}=getBingoState();
+  const btn=document.getElementById('sb-bingo-btn');
+  if(btn)btn.textContent=won?'✅':'🎯';
+  document.getElementById('bingo-sheet').classList.add('open');
+};
+
+// trackActivity støtter 'bingo' med 30 poeng
+
 
 
 
@@ -3614,7 +3768,7 @@ function updateProgressDots(current,total,containerId){
 }
 
 // ========== CLOSE SHEETS ON BG ==========
-['gear-sheet','qr-sheet','skal-sheet','confirm-sheet','admin-login-sheet','external-winner-sheet'].forEach(id=>{
+['gear-sheet','qr-sheet','skal-sheet','bingo-sheet','confirm-sheet','admin-login-sheet','external-winner-sheet'].forEach(id=>{
   document.getElementById(id).addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');});
 });
 
