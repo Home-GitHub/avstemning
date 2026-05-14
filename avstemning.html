@@ -2121,13 +2121,6 @@ function renderLeaderboard(containerId,scores){
 
 // ========== FINAL LEADERBOARD ==========
 function showFinalLeaderboard(session){
-  requestAnimationFrame(()=>{
-    const h=document.querySelector('#screen-final .header');
-    if(h)document.documentElement.style.setProperty('--header-h',h.offsetHeight+'px');
-    const tabs=document.getElementById('result-tabs-fixed');
-    const content=document.querySelector('#screen-final .content');
-    if(h&&tabs&&content){content.style.paddingTop=(h.offsetHeight+tabs.offsetHeight)+'px';}
-  });
   if(state.finalShown)return;
   state.finalShown=true;
   setAdminUI(state.isAdmin);
@@ -2215,8 +2208,8 @@ function showFinalLeaderboard(session){
   // Build dynamic tabs from resultConfig
   const rc = session.resultConfig || { toplist: true, categories: true, judges: false };
   const tabDefs = [
-    { key: 'toplist', label: 'Topp3', enabled: rc.toplist !== false },
-    { key: 'categories', label: 'Kategori', enabled: !!rc.categories },
+    { key: 'toplist', label: '🏆 Topp3', enabled: rc.toplist !== false },
+    { key: 'categories', label: '📊 Kategori', enabled: !!rc.categories },
     { key: 'judges', label: '👤 Dine Topp3', enabled: !!rc.judges },
   ].filter(t => t.enabled);
 
@@ -2241,8 +2234,15 @@ function showFinalLeaderboard(session){
     if (firstPanel) firstPanel.classList.add('active');
   }
 
-  state.session=session; // ensure session is set before showScreen calls initGlobalEmojiMenu
+  state.session=session;
   showScreen('screen-final');
+  requestAnimationFrame(()=>{
+    const h=document.querySelector('#screen-final .header');
+    if(h)document.documentElement.style.setProperty('--header-h',h.offsetHeight+'px');
+    const tabs=document.getElementById('result-tabs-fixed');
+    const content=document.querySelector('#screen-final .content');
+    if(h&&tabs&&content){content.style.paddingTop=(h.offsetHeight+tabs.offsetHeight)+'px';}
+  });
   setTimeout(() => {
     try{ if (rc.categories) buildCategoryBreakdown(session); }catch(e){console.error('Category breakdown error:',e);}
     try{ if (rc.judges) renderJudgeBreakdown('final-judge-breakdown', session); }catch(e){console.error('Judge breakdown error:',e);}
@@ -2757,6 +2757,7 @@ function renderJudgeBreakdown(containerId, session) {
   if (!container) return;
   container.innerHTML = '';
   const stats = buildJudgeBreakdown(session);
+  stats.sort((a,b)=>a.name.localeCompare(b.name,'nb'));
   const medals = ['🥇','🥈','🥉'];
 
   stats.forEach((judge) => {
@@ -3118,69 +3119,43 @@ function buildCategoryBreakdown(session) {
   const participants = session.participants ? Object.entries(session.participants) : [];
   const medals = ['🥇','🥈','🥉'];
 
-  // For each category, calculate:
-  // 1. Overall average across all subjects and participants
-  // 2. Per-participant average across all subjects
   const catStats = cats.map(cat => {
     let totalSum = 0, totalCount = 0;
-    const personSums = {};
-    const personCounts = {};
-
     subjects.forEach((sub, idx) => {
-      participants.forEach(([pid, p]) => {
+      participants.forEach(([pid]) => {
         const v = votes[idx] && votes[idx][pid];
         if (!v) return;
-        const k=cat.key||safeKey(cat.name);const pts = (v.votes && v.votes[k]) || 0;
+        const k = cat.key || safeKey(cat.name);
+        const pts = (v.votes && v.votes[k]) || 0;
         totalSum += pts; totalCount++;
-        if (!personSums[pid]) { personSums[pid] = 0; personCounts[pid] = 0; }
-        personSums[pid] += pts; personCounts[pid]++;
       });
     });
-
     const avg = totalCount > 0 ? totalSum / totalCount : 0;
-
-    // Top 3 persons by their average for this category
-    const personAvgs = Object.entries(personSums).map(([pid, sum]) => ({
-      pid, name: session.participants[pid]?.name || pid,
-      avg: personCounts[pid] > 0 ? sum / personCounts[pid] : 0
-    })).sort((a, b) => b.avg - a.avg).slice(0, 3);
-
-    return { name: cat.name, max: cat.max, avg, personAvgs };
-  }).sort((a, b) => (b.avg / b.max) - (a.avg / a.max));
+    return { name: cat.name, max: cat.max, total: totalSum, avg };
+  }).sort((a, b) => b.total - a.total);
 
   const container = document.getElementById('final-category-breakdown');
   if (!container) return;
   container.innerHTML = '';
+  const maxTotal = catStats[0]?.total || 1;
 
   catStats.forEach((cat, i) => {
-    const pct = cat.max > 0 ? (cat.avg / cat.max * 100) : 0;
+    const pct = maxTotal > 0 ? (cat.total / maxTotal * 100) : 0;
     const rankMedal = i < 3 ? medals[i] : `#${i+1}`;
+    const accentColor = i===0?'var(--gold)':i===1?'var(--silver)':i===2?'var(--bronze)':'var(--accent)';
     const div = document.createElement('div');
     div.className = 'cat-breakdown-item';
-    
-    let personsHTML = '';
-    cat.personAvgs.forEach((p, pi) => {
-      personsHTML += `
-        <div class="cat-person-row">
-          <div class="cat-person-rank">${pi+1}.</div>
-          <div class="cat-person-name">${p.name}</div>
-          <div class="cat-person-score">${p.avg.toFixed(1)}</div>
-        </div>`;
-    });
-
     div.innerHTML = `
       <div class="cat-breakdown-header">
-        <div class="cat-breakdown-rank" style="color:${i===0?'var(--gold)':i===1?'var(--silver)':i===2?'var(--bronze)':'var(--muted)'}">${rankMedal}</div>
+        <div class="cat-breakdown-rank" style="color:${accentColor}">${rankMedal}</div>
         <div class="cat-breakdown-name">${cat.name}</div>
         <div style="white-space:nowrap;text-align:right;">
-          <span class="cat-breakdown-avg">${cat.avg.toFixed(1)}</span><span class="cat-breakdown-max"> / ${cat.max} snitt</span>
+          <span class="cat-breakdown-avg">${Math.round(cat.total)}</span><span class="cat-breakdown-max"> poeng · snitt ${cat.avg.toFixed(1)}/${cat.max}</span>
         </div>
       </div>
       <div class="cat-breakdown-bar">
-        <div class="cat-breakdown-fill" style="width:${pct}%;background:${i===0?'var(--gold)':i===1?'var(--silver)':i===2?'var(--bronze)':'var(--accent)'}"></div>
-      </div>
-      ${personsHTML}
-    `;
+        <div class="cat-breakdown-fill" style="width:${pct}%;background:${accentColor}"></div>
+      </div>`;
     container.appendChild(div);
   });
 }
