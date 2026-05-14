@@ -812,7 +812,6 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
 // Proxy functions so onclick works before module loads
 var _calls = [];
@@ -2828,6 +2827,10 @@ window.submitExternalWinner=async function(){
   if(!v1){errEl.textContent='1. plass må velges';errEl.style.display='block';return;}
   document.getElementById('external-winner-sheet').classList.remove('open');
   await window.saveExternalResults({'1':v1,'2':v2,'3':v3});
+  // Beregn og kunngjør vinner umiddelbart — ikke vent på handleEndedState
+  const freshSnap=await get(ref(db,`sessions/${state.sessionId}`));
+  const freshSession=freshSnap.exists()?freshSnap.val():state.session;
+  await calcExternalWinner(freshSession);
 };
 
 let glitterAnim=null;
@@ -2848,20 +2851,20 @@ function startGlitter(){
   const goldColors=['#e8c36a','#f5d98b','#ffeaa0','#d4a843','#fff7cc','#ffffff'];
   function makeParticle(){
     const angle=Math.random()*Math.PI*2;
-    const speed=Math.random()*3+1.5;
+    const speed=Math.random()*6+2;
     return{
       x:cx,y:cy,
       vx:Math.cos(angle)*speed,
-      vy:Math.sin(angle)*speed-2,
-      size:Math.random()*3+1.5,
+      vy:Math.sin(angle)*speed-3,
+      size:Math.random()*5+2,
       c:goldColors[Math.floor(Math.random()*goldColors.length)],
       op:1,
       rot:Math.random()*Math.PI*2,
-      rotV:(Math.random()-0.5)*0.2,
-      life:Math.random()*60+40
+      rotV:(Math.random()-0.5)*0.3,
+      life:Math.random()*90+60
     };
   }
-  const particles=Array.from({length:80},makeParticle);
+  const particles=Array.from({length:160},makeParticle);
   function drawStar(ctx,x,y,r,rot){
     ctx.save();
     ctx.translate(x,y);
@@ -2880,7 +2883,7 @@ function startGlitter(){
   function draw(){
     ctx.clearRect(0,0,canvas.width,canvas.height);
     // Spawn nye partikler for å holde konstant antall
-    while(particles.length<80)particles.push(makeParticle());
+    while(particles.length<160)particles.push(makeParticle());
     particles.forEach((p,i)=>{
       ctx.globalAlpha=p.op;
       ctx.fillStyle=p.c;
@@ -2960,28 +2963,114 @@ function buildDiplom(winnerName,subjectName,sessionName){
 window.shareDiplom=async function(){
   const diplom=document.getElementById('diplom-main');
   if(!diplom)return;
-  if(typeof html2canvas==='undefined'){showToast('Hold inne diplomet for å lagre det 📸');return;}
-  showToast('Lager bilde...');
-  try{
-    const canvas=await html2canvas(diplom.querySelector('.diplom-card'),{
-      backgroundColor:null,
-      scale:2,
-      useCORS:true,
-      logging:false
-    });
-    canvas.toBlob(async blob=>{
-      if(!blob)return;
-      const file=new File([blob],'diplom.png',{type:'image/png'});
-      if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
-        await navigator.share({files:[file],title:'Jury-vinner 🏆'}).catch(()=>{});
-      } else {
-        const url=URL.createObjectURL(blob);
-        const a=document.createElement('a');
-        a.href=url;a.download='diplom.png';a.click();
-        setTimeout(()=>URL.revokeObjectURL(url),2000);
-      }
-    },'image/png');
-  }catch(e){showToast('Hold inne diplomet for å lagre det 📸');}
+  const winnerEl=diplom.querySelector('.diplom-winner');
+  const emneEl=diplom.querySelector('.diplom-emne');
+  const titleEl=diplom.querySelector('.diplom-title');
+  const metaVals=diplom.querySelectorAll('.diplom-mv');
+  const winnerName=winnerEl?.textContent||'';
+  const emne=emneEl?.textContent||'';
+  const sessionName=titleEl?.textContent||'';
+  const dato=metaVals[0]?.textContent||'';
+  // Tegn diplom på canvas
+  const W=640,H=860;
+  const c=document.createElement('canvas');
+  c.width=W;c.height=H;
+  const ctx=c.getContext('2d');
+  // Bakgrunn
+  const bg=ctx.createLinearGradient(0,0,W,H);
+  bg.addColorStop(0,'#0d0630');bg.addColorStop(0.5,'#1a0840');bg.addColorStop(1,'#0d0630');
+  ctx.fillStyle=bg;
+  ctx.roundRect(0,0,W,H,28);ctx.fill();
+  // Fargebånd topp
+  const topBar=ctx.createLinearGradient(0,0,W,0);
+  topBar.addColorStop(0,'#3060d0');topBar.addColorStop(0.33,'#a040e0');
+  topBar.addColorStop(0.66,'#e040a0');topBar.addColorStop(1,'#e8c36a');
+  ctx.fillStyle=topBar;ctx.fillRect(0,0,W,8);
+  // Stråler topp
+  const rayColors=['#3060d0','#5040c0','#a040e0','#e040a0','#e8c36a','#e040a0','#a040e0','#5040c0','#3060d0'];
+  for(let i=0;i<18;i++){
+    const frac=i/17;
+    const x=frac*W;
+    const h=40+80*(1-Math.abs(frac-0.5)*2);
+    const ci=Math.floor(frac*(rayColors.length-1));
+    const rg=ctx.createLinearGradient(x,8+h,x,8);
+    rg.addColorStop(0,rayColors[ci]);rg.addColorStop(1,'transparent');
+    ctx.fillStyle=rg;ctx.globalAlpha=0.6;
+    ctx.fillRect(x-1,8,2,h);
+  }
+  ctx.globalAlpha=1;
+  // Pokal
+  ctx.font='120px serif';ctx.textAlign='center';
+  ctx.shadowColor='rgba(232,195,106,0.8)';ctx.shadowBlur=40;
+  ctx.fillText('🏆',W/2,200);
+  ctx.shadowBlur=0;
+  // Glow under pokal
+  const glow=ctx.createRadialGradient(W/2,220,0,W/2,220,90);
+  glow.addColorStop(0,'rgba(160,80,255,0.4)');glow.addColorStop(1,'transparent');
+  ctx.fillStyle=glow;ctx.fillRect(W/2-90,190,180,40);
+  // «Vinneren av»
+  ctx.font='500 22px DM Sans,sans-serif';ctx.fillStyle='rgba(180,140,255,0.7)';
+  ctx.letterSpacing='6px';ctx.fillText('VINNEREN AV',W/2,270);ctx.letterSpacing='0px';
+  // Sesjonsnavn
+  ctx.font='700 44px DM Sans,sans-serif';ctx.fillStyle='#ffffff';
+  ctx.shadowColor='rgba(160,80,255,0.8)';ctx.shadowBlur=20;
+  ctx.fillText(sessionName,W/2,326);ctx.shadowBlur=0;
+  // Divider
+  const div=ctx.createLinearGradient(60,0,W-60,0);
+  div.addColorStop(0,'transparent');div.addColorStop(0.3,'rgba(160,80,255,0.6)');
+  div.addColorStop(0.7,'rgba(232,195,106,0.6)');div.addColorStop(1,'transparent');
+  ctx.strokeStyle=div;ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(60,360);ctx.lineTo(W-60,360);ctx.stroke();
+  // «Jury-vinner»
+  ctx.font='500 20px DM Sans,sans-serif';ctx.fillStyle='rgba(232,195,106,0.7)';
+  ctx.letterSpacing='4px';ctx.fillText('JURY-VINNER',W/2,400);ctx.letterSpacing='0px';
+  // Vinnernavn - gull gradient
+  ctx.font='700 64px DM Sans,sans-serif';
+  const gold=ctx.createLinearGradient(W/2-200,430,W/2,510);
+  gold.addColorStop(0,'#ffffff');gold.addColorStop(0.5,'#e8c36a');gold.addColorStop(1,'#b8922a');
+  ctx.fillStyle=gold;ctx.fillText(winnerName,W/2,490);
+  // Emne
+  ctx.font='italic 500 28px DM Sans,sans-serif';ctx.fillStyle='rgba(200,160,255,0.85)';
+  ctx.fillText(emne,W/2,544);
+  // Meta-divider
+  ctx.strokeStyle='rgba(160,80,255,0.25)';ctx.lineWidth=0.5;
+  ctx.beginPath();ctx.moveTo(60,580);ctx.lineTo(W-60,580);ctx.stroke();
+  // Meta tekst
+  ctx.font='500 20px DM Sans,sans-serif';ctx.fillStyle='rgba(160,120,220,0.7)';
+  ctx.textAlign='left';ctx.fillText('Dato',80,618);
+  ctx.textAlign='right';ctx.fillText('Arrangement',W-80,618);
+  ctx.font='500 22px DM Sans,sans-serif';ctx.fillStyle='rgba(200,170,255,0.9)';
+  ctx.textAlign='left';ctx.fillText(dato,80,648);
+  ctx.textAlign='right';ctx.fillText(sessionName,W-80,648);
+  // Stråler bunn
+  for(let i=0;i<18;i++){
+    const frac=i/17;
+    const x=frac*W;
+    const h=30+60*(1-Math.abs(frac-0.5)*2);
+    const ci=Math.floor(frac*(rayColors.length-1));
+    const rg=ctx.createLinearGradient(x,H-8,x,H-8-h);
+    rg.addColorStop(0,rayColors[ci]);rg.addColorStop(1,'transparent');
+    ctx.fillStyle=rg;ctx.globalAlpha=0.5;ctx.textAlign='center';
+    ctx.fillRect(x-1,H-8-h,2,h);
+  }
+  ctx.globalAlpha=1;
+  // Fargebånd bunn
+  const botBar=ctx.createLinearGradient(0,0,W,0);
+  botBar.addColorStop(0,'#e8c36a');botBar.addColorStop(0.33,'#e040a0');botBar.addColorStop(1,'#3060d0');
+  ctx.fillStyle=botBar;ctx.fillRect(0,H-6,W,6);
+  // Del
+  c.toBlob(async blob=>{
+    if(!blob)return;
+    const file=new File([blob],'diplom.png',{type:'image/png'});
+    if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+      await navigator.share({files:[file],title:'Jury-vinner 🏆'}).catch(()=>{});
+    } else {
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');
+      a.href=url;a.download='diplom.png';a.click();
+      setTimeout(()=>URL.revokeObjectURL(url),2000);
+    }
+  },'image/png');
 };
 
 function showExternalWinnerTab(session,silent){
@@ -3015,6 +3104,8 @@ function showExternalWinnerTab(session,silent){
     return;
   }
   if(alreadyBuilt)return;
+  // Eksplisitt resume av AudioContext — trigges fra Firebase-callback
+  if(_audioCtx&&_audioCtx.state==='suspended')_audioCtx.resume();
   window.switchResultTab('trophy');
   playSound('fanfare');
   startGlitter();
