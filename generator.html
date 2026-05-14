@@ -275,6 +275,7 @@ select option{background:var(--surface2);}
     <div class="qr-container"><div id="modal-qr"></div></div>
     <div class="url-copy" id="modal-url" data-action="copyUrl">Laster...</div>
     <div class="copy-hint">Trykk for å kopiere</div>
+    <button id="modal-start-reg" class="btn btn-primary btn-full" style="margin-top:8px;display:none;" data-action="startRegistrationFromModal">🚀 Start registrering</button>
     <div id="modal-results" style="display:none;">
       <div class="divider"></div>
       <div class="card-title">Resultater</div>
@@ -558,6 +559,8 @@ function openModal(id,s) {
   const resultsEl = document.getElementById('modal-results');
   if (s.status==='ended'&&s.subjects) { resultsEl.style.display='block'; renderResults(s); }
   else resultsEl.style.display='none';
+  const regBtn = document.getElementById('modal-start-reg');
+  if(regBtn) regBtn.style.display = ['published','waiting'].includes(s.status) ? 'flex' : 'none';
   document.getElementById('session-modal').classList.add('open');
 }
 
@@ -597,6 +600,7 @@ window.confirmDelete = async () => { if (!activeSessionId) return; await remove(
 window.closeModal = () => document.getElementById('session-modal').classList.remove('open');
 window.closeSuccess = () => { document.getElementById('success-modal').classList.remove('open'); switchTab('manage'); };
 window.startRegistration = () => { const url = document.getElementById('success-url').dataset.url; if(url) window.location.href = url; };
+window.startRegistrationFromModal = () => { const url = document.getElementById('modal-url').dataset.url; if(url) window.location.href = url; };
 window.copyUrl = () => { const u=document.getElementById('modal-url').dataset.url; navigator.clipboard.writeText(u).then(()=>{document.getElementById('modal-url').textContent='✅ Kopiert!';setTimeout(()=>document.getElementById('modal-url').textContent=u,2000);}); };
 window.copySuccessUrl = () => { const u=document.getElementById('success-url').dataset.url; navigator.clipboard.writeText(u).then(()=>{document.getElementById('success-url').textContent='✅ Kopiert!';setTimeout(()=>document.getElementById('success-url').textContent=u,2000);}); };
 
