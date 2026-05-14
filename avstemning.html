@@ -593,7 +593,7 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
       <div class="header-sub" id="final-session-name"></div>
     </div>
     <div class="header-right">
-      <div class="icon-btn admin-only" id="trophy-btn" data-action="openExternalWinner" style="display:none;">🏆</div>
+      <div class="icon-btn admin-only" id="trophy-btn" data-action="openExternalWinner">🏆</div>
     </div>
   </div>
   <div id="result-tabs-fixed"><div class="result-tabs" id="result-tabs-container"></div></div>
@@ -2042,6 +2042,9 @@ function showFinalLeaderboard(session){
   requestAnimationFrame(()=>{
     const h=document.querySelector('#screen-final .header');
     if(h)document.documentElement.style.setProperty('--header-h',h.offsetHeight+'px');
+    const tabs=document.getElementById('result-tabs-fixed');
+    const content=document.querySelector('#screen-final .content');
+    if(h&&tabs&&content){content.style.paddingTop=(h.offsetHeight+tabs.offsetHeight)+'px';}
   });
   if(state.finalShown)return;
   state.finalShown=true;
