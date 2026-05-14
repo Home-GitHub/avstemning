@@ -81,6 +81,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .header{padding:13px 14px 11px;display:flex;align-items:center;justify-content:space-between;border-bottom:0.5px solid rgba(255,255,255,0.06);background:var(--hdr-bg);position:fixed;top:0;left:0;right:0;z-index:20;backdrop-filter:blur(12px);}
 #screen-final{padding-top:var(--header-h,56px);}
 #screen-leaderboard{padding-top:var(--header-h,56px);}
+#screen-waiting{padding-top:var(--header-h,56px);}
 #screen-leaderboard .content{overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:0;}
 #lb-tabs-fixed{position:fixed;top:var(--header-h,56px);left:56px;right:0;z-index:15;background:var(--bg);padding:8px 12px 4px;border-bottom:0.5px solid rgba(255,255,255,0.06);}
 #result-tabs-fixed{position:fixed;top:var(--header-h,56px);left:56px;right:0;z-index:15;background:var(--bg);padding:8px 12px 4px;border-bottom:0.5px solid rgba(255,255,255,0.06);}
@@ -786,7 +787,7 @@ import { getDatabase, ref, set, get, update, onValue, onChildAdded, remove, runT
 // Make all window functions available immediately
 Object.defineProperty(window, '__moduleReady', { value: true });
 
-const VERSION = 'Avstemning v3.31';
+const VERSION = 'Avstemning v3.32';
 console.log(VERSION);
 
 const FIREBASE_CONFIG = {
@@ -1410,6 +1411,11 @@ function showWaitingRoom(session){
   var ab = document.getElementById('admin-login-btn');
   if (ab) { ab.onclick = null; ab.addEventListener('click', function() { window.showAdminLoginSheet(); }); }
   showScreen('screen-waiting');
+  // Sett --header-h så content ikke havner bak header
+  requestAnimationFrame(()=>{
+    const h=document.querySelector('#screen-waiting .header');
+    if(h)document.documentElement.style.setProperty('--header-h',h.offsetHeight+'px');
+  });
 }
 
 function renderWaitingParticipants(participants){
