@@ -1945,10 +1945,6 @@ window.forceNext=async function(){
   const isLast=nextIdx>=subjects.length;
 
   if(session.status==='voting'){
-    // Sikre at admin sine stemmer registreres uavhengig av pause-tilstand
-    if(state.participantId&&!state.hasVotedCurrentSubject){
-      await doSubmitVote(idx);
-    }
     if(lbSecs>0){
       const lbTimerEnd=Date.now()+lbSecs*1000;
       await update(ref(db,`sessions/${state.sessionId}`),{
