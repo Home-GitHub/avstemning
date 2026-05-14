@@ -52,14 +52,16 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
   padding:12px 0 0;
   background:var(--hdr-bg);
   backdrop-filter:blur(12px);
-  position:sticky;top:0;z-index:20;
+  position:fixed;top:0;left:0;right:0;z-index:20;
   border-bottom:0.5px solid rgba(255,255,255,0.06);
 }
-.voting-subject-wrap{padding:0 12px;margin-bottom:5px;}
+#screen-voting{padding-top:var(--voting-header-h,110px);}
+.voting-subject-wrap{padding:0 12px;margin-bottom:5px;text-align:center;}
 .voting-subject{
   font-weight:800;line-height:1.1;
   color:var(--accent);
-  white-space:nowrap;overflow:hidden;
+  font-size:26px;
+  text-align:center;
   display:block;width:100%;
 }
 .voting-meta-row{display:flex;justify-content:space-between;padding:0 12px;margin-bottom:6px;}
@@ -76,7 +78,14 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .vdot.active{background:var(--accent);transform:scale(1.5);}
 
 /* STANDARD HEADER */
-.header{padding:13px 14px 11px;display:flex;align-items:center;justify-content:space-between;border-bottom:0.5px solid rgba(255,255,255,0.06);background:var(--hdr-bg);position:sticky;top:0;z-index:20;backdrop-filter:blur(12px);}
+.header{padding:13px 14px 11px;display:flex;align-items:center;justify-content:space-between;border-bottom:0.5px solid rgba(255,255,255,0.06);background:var(--hdr-bg);position:fixed;top:0;left:0;right:0;z-index:20;backdrop-filter:blur(12px);}
+#screen-final{padding-top:var(--header-h,56px);}
+#screen-leaderboard{padding-top:var(--header-h,56px);}
+#screen-leaderboard .content{overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:0;}
+#lb-tabs-fixed{position:fixed;top:var(--header-h,56px);left:56px;right:0;z-index:15;background:var(--bg);padding:8px 12px 4px;border-bottom:0.5px solid rgba(255,255,255,0.06);}
+#result-tabs-fixed{position:fixed;top:var(--header-h,56px);left:56px;right:0;z-index:15;background:var(--bg);padding:8px 12px 4px;border-bottom:0.5px solid rgba(255,255,255,0.06);}
+#screen-leaderboard .content{padding-top:52px;}
+#screen-final .content{overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:52px;}
 .header-title{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:1px;color:var(--accent);line-height:1;}
 .header-sub{font-size:11px;color:var(--muted);margin-top:1px;}
 .header-right{display:flex;align-items:center;gap:8px;}
@@ -87,21 +96,22 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .content{flex:1;padding:18px 14px;overflow-y:auto;}
 
 /* GLOBAL SIDEBAR - visible on all screens except waiting */
-.global-sidebar{position:fixed;left:0;top:0;bottom:0;width:56px;display:none;flex-direction:column;align-items:center;padding:20px 0 12px;gap:6px;background:rgba(0,0,0,0.35);border-right:0.5px solid rgba(255,255,255,0.05);z-index:200;}
+.global-sidebar{position:fixed;left:0;top:var(--header-h,56px);bottom:var(--activity-bar-h,36px);width:56px;display:none;flex-direction:column;align-items:center;padding:8px 0 8px;gap:6px;background:rgba(0,0,0,0.35);border-right:0.5px solid rgba(255,255,255,0.05);z-index:200;}
 .global-sidebar.visible{display:flex;}
 .screens-with-sidebar{padding-left:56px;}
 
 /* VOTING BODY: sidebar + categories */
-.voting-body{display:flex;flex:1;overflow:hidden;}
+.voting-body{display:flex;flex:1;overflow:hidden;height:0;}
 
 /* SIDEBAR */
 
 .sb-item{width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;transition:all 0.15s;}
 .sb-item:active{transform:scale(0.88);}
-.sb-large{width:44px;border-radius:12px;background:rgba(255,255,255,0.06);border:0.5px solid rgba(255,255,255,0.12);font-size:20px;padding:18px 0;height:auto;writing-mode:vertical-rl;}
+.sb-large{width:44px;height:72px;border-radius:12px;background:rgba(255,255,255,0.10);border:0.5px solid rgba(255,255,255,0.18);font-size:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;}
+.sb-large:active{transform:scale(0.93);}
 .sb-spacer{flex:1;}
-.sb-pause-indicator{display:none;width:44px;border-radius:12px;background:var(--accent-dim);border:0.5px solid var(--accent);color:var(--accent);font-size:20px;padding:18px 0;height:auto;writing-mode:vertical-rl;align-items:center;justify-content:center;margin-bottom:8px;}
-.sb-skal{border-color:rgba(255,255,255,0.15);background:var(--accent-dim);}
+.sb-pause-indicator{display:none;width:44px;flex:1;border-radius:12px;background:#c0392b;border:0.5px solid #e74c3c;color:#fff;font-size:11px;font-weight:800;writing-mode:vertical-rl;letter-spacing:1px;align-items:center;justify-content:center;}
+.sb-skal{border-color:var(--accent);background:var(--accent-dim);box-shadow:0 0 8px var(--accent-dim);}
 .sb-divider{width:22px;height:0.5px;background:rgba(255,255,255,0.08);margin:6px 0;}
 .sb-emoji-toggle{position:relative;}
 .sb-emoji-toggle.open{background:var(--accent-dim);border-color:rgba(255,255,255,0.15);}
@@ -110,9 +120,9 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .sb-e{width:40px;height:36px;border-radius:9px;font-size:18px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.03);cursor:pointer;transition:all 0.1s;}
 .sb-e:active{transform:scale(0.85);}
 .final-fans{display:flex;justify-content:center;gap:24px;margin-top:10px;flex-wrap:wrap;}
-.act-item{display:flex;align-items:center;gap:6px;font-size:12px;}
-.act-name{color:rgba(255,255,255,0.8);white-space:nowrap;max-width:120px;overflow:hidden;text-overflow:ellipsis;}
-.act-bar-bg{width:60px;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;flex-shrink:0;}
+.act-item{display:flex;align-items:center;gap:6px;font-size:12px;flex:1;min-width:0;}
+.act-name{color:rgba(255,255,255,0.8);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.act-bar-bg{flex:1;min-width:30px;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;flex-shrink:1;}
 .act-bar-fill{height:4px;border-radius:2px;background:var(--accent);transition:width 0.4s ease;}
 .act-score{color:var(--accent);font-weight:600;white-space:nowrap;}
 .final-fans-col{display:flex;flex-direction:column;align-items:center;gap:4px;}
@@ -132,24 +142,26 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .sb-admin-btn{display:none;}
 .is-admin .sb-admin-btn{display:flex;}
 .sb-send{
-  width:44px;margin-top:auto;margin-bottom:28px;
+  width:44px;height:72px;margin-bottom:8px;
   border-radius:12px;
   background:var(--accent);color:#080808;
-  font-size:11px;font-weight:700;
+  font-size:13px;font-weight:800;
   writing-mode:vertical-rl;letter-spacing:0.8px;
-  padding:18px 0;
-  display:none;align-items:center;justify-content:center;
+  display:flex;align-items:center;justify-content:center;
   cursor:pointer;transition:all 0.15s;
+  visibility:hidden;
 }
 .sb-send:active{transform:scale(0.95);}
+.sb-send.locked{opacity:0.3;pointer-events:none;cursor:not-allowed;}
 
 /* CATEGORIES */
-.voting-categories{flex:1;padding:10px 12px;overflow-y:auto;}
+.voting-categories{flex:1;padding:10px 12px 80px 12px;overflow-y:auto;-webkit-overflow-scrolling:touch;}
 .cat-row{margin-bottom:12px;}
 .cat-row:last-child{margin-bottom:4px;}
 .cat-header{display:flex;flex-direction:column;align-items:center;margin-bottom:4px;gap:2px;}
-.cat-name{font-size:18px;color:rgba(255,255,255,0.8);font-weight:600;text-align:center;width:100%;}
+.cat-name{font-size:20px;color:rgba(255,255,255,0.85);font-weight:700;text-align:center;width:100%;}
 .cat-val{font-size:22px;font-weight:700;color:var(--accent);font-family:monospace;line-height:1;}
+/* PUNKT 78 – padding-right så thumb ikke klippes til høyre */
 .slider-wrap{position:relative;padding:4px 16px 4px 0;}
 .slider-input{
   width:100%;-webkit-appearance:none;appearance:none;
@@ -158,9 +170,10 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
   outline:none;cursor:pointer;display:block;
   touch-action:manipulation;
 }
-.slider-input::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:26px;height:26px;border-radius:50%;background:transparent;cursor:pointer;box-shadow:none;border:none;}
-.slider-input::-moz-range-thumb{width:26px;height:26px;border-radius:50%;background:transparent;cursor:pointer;border:none;}
-.slider-midmark{position:absolute;top:-4px;bottom:-4px;transform:translateX(-50%);width:3px;background:rgba(255,255,255,0.35);pointer-events:none;border-radius:2px;}
+/* PUNKT 62 – dempet thumb, mindre og roligere */
+.slider-input::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:20px;height:20px;border-radius:50%;background:var(--accent);opacity:0.55;cursor:pointer;box-shadow:none;border:1.5px solid rgba(255,255,255,0.15);}
+.slider-input::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:var(--accent);opacity:0.55;cursor:pointer;border:1.5px solid rgba(255,255,255,0.15);}
+.slider-midmark{position:absolute;top:-6px;bottom:-6px;transform:translateX(-50%);width:3px;background:rgba(255,255,255,0.5);pointer-events:none;border-radius:2px;box-shadow:0 0 4px rgba(255,255,255,0.3);}
 .slider-labels{display:flex;justify-content:space-between;margin-top:1px;}
 .slider-lbl{font-size:9px;color:rgba(255,255,255,0.2);}
 
@@ -227,25 +240,6 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
 
 /* QR */
 .qr-container{background:#fff;border-radius:14px;padding:16px;display:flex;align-items:center;justify-content:center;margin:12px 0;}
-.diploma-card{background:radial-gradient(ellipse at 50% 0%,color-mix(in srgb,var(--accent,#a78bfa) 20%,#0a0318) 0%,#080012 60%,#000008 100%);border-radius:24px;border:1px solid rgba(167,124,255,0.25);padding:44px 28px 36px;text-align:center;position:relative;overflow:hidden;width:100%;max-width:400px;box-shadow:0 0 80px rgba(120,40,255,0.15),inset 0 0 60px rgba(80,20,180,0.06);}
-.diploma-card::before{content:'';position:absolute;top:-60px;left:50%;transform:translateX(-50%);width:300px;height:300px;background:radial-gradient(ellipse,rgba(180,120,255,0.12) 0%,transparent 70%);pointer-events:none;}
-.diploma-glow-top{position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent 0%,rgba(167,124,255,0.2) 20%,var(--accent,#a78bfa) 50%,rgba(167,124,255,0.2) 80%,transparent 100%);opacity:0.7;}
-.diploma-stars-row{display:flex;justify-content:center;gap:8px;margin-bottom:20px;}
-.diploma-star{font-size:8px;color:var(--accent,#a78bfa);opacity:0.5;}
-.diploma-star.lg{font-size:12px;opacity:0.7;}
-.diploma-label{font-size:9px;font-weight:400;letter-spacing:6px;text-transform:uppercase;color:var(--accent,#a78bfa);opacity:0.6;margin-bottom:8px;}
-.diploma-session{font-size:22px;font-weight:300;color:var(--text,#f0e8ff);letter-spacing:2px;margin-bottom:4px;}
-.diploma-date{font-size:10px;font-weight:300;color:var(--accent,#a78bfa);opacity:0.5;letter-spacing:3px;text-transform:uppercase;margin-bottom:28px;}
-.diploma-trophy{font-size:52px;margin-bottom:20px;display:block;filter:drop-shadow(0 0 16px var(--accent,#a78bfa)) drop-shadow(0 0 32px var(--accent,#a78bfa));}
-.diploma-divider{display:flex;align-items:center;gap:10px;margin:22px 0;}
-.diploma-divider-line{flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--accent,#a78bfa));opacity:0.35;}
-.diploma-divider-line.r{background:linear-gradient(270deg,transparent,var(--accent,#a78bfa));}
-.diploma-divider-center{display:flex;gap:4px;align-items:center;}
-.diploma-divider-star{font-size:8px;color:var(--accent,#a78bfa);opacity:0.6;}
-.diploma-divider-star.lg{font-size:12px;opacity:0.8;}
-.diploma-subject{font-size:12px;color:var(--text,#f0e8ff);opacity:0.65;font-weight:300;letter-spacing:0.5px;line-height:1.6;}
-.diploma-bottom-stars{display:flex;justify-content:center;gap:6px;margin-top:20px;}
-@keyframes glitterFly{0%{transform:translate(0,0) scale(1) rotate(0deg);opacity:1;}100%{transform:translate(var(--tx),var(--ty)) scale(0) rotate(360deg);opacity:0;}}
 
 /* WAITING */
 .waiting-center{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;text-align:center;padding:40px 20px;}
@@ -338,6 +332,23 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
 .is-admin .admin-only{display:flex;}
 .submitted-center{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;text-align:center;padding:40px 20px;}
 ::-webkit-scrollbar{width:0;}
+
+/* PUNKT 82 – Eurovision-inspirert diplom */
+.diplom-wrap{display:flex;flex-direction:column;align-items:center;padding:16px 12px 24px;}
+.diplom{background:linear-gradient(160deg,#0d0d1a 0%,#1a1228 60%,#0d0d1a 100%);border:1.5px solid rgba(232,195,106,0.5);border-radius:18px;padding:28px 20px 24px;text-align:center;width:100%;max-width:360px;position:relative;box-shadow:0 0 40px rgba(232,195,106,0.1);}
+.diplom-stars{font-size:13px;letter-spacing:4px;color:rgba(232,195,106,0.5);margin-bottom:16px;display:block;}
+.diplom-label{font-size:10px;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px;}
+.diplom-session{font-family:'Bebas Neue',sans-serif;font-size:28px;color:#e8c36a;letter-spacing:1px;line-height:1.1;margin-bottom:4px;}
+.diplom-date{font-size:11px;color:rgba(255,255,255,0.3);margin-bottom:20px;}
+.diplom-trophy{font-size:48px;margin-bottom:12px;display:block;}
+.diplom-winner{font-family:'Bebas Neue',sans-serif;font-size:36px;color:#ffffff;letter-spacing:1px;line-height:1.1;margin-bottom:8px;}
+.diplom-subject{font-size:16px;color:var(--accent);font-weight:600;margin-bottom:20px;}
+.diplom-share{background:rgba(232,195,106,0.15);border:1px solid rgba(232,195,106,0.4);color:#e8c36a;border-radius:10px;padding:10px 20px;font-size:13px;font-weight:600;cursor:pointer;width:100%;}
+
+/* Glitter-partikler */
+.glitter-container{position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:100;overflow:hidden;}
+.glitter-particle{position:absolute;border-radius:2px;animation:glitter-fall 3s ease-in infinite;}
+@keyframes glitter-fall{0%{transform:translateY(-20px) rotate(0deg);opacity:1;}100%{transform:translateY(100vh) rotate(720deg);opacity:0;}}
 </style>
 </head>
 <body>
@@ -367,12 +378,13 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
   <div class="sb-divider"></div>
   <div class="sb-item sb-emoji-toggle" id="global-emoji-toggle" data-action="toggleGlobalEmoji">😊</div>
   <div class="sb-emoji-list" id="global-emoji-list"></div>
-  <div class="sb-spacer"></div>
+  <div style="height:44px;"></div>
   <div class="sb-item sb-admin-btn" data-action="openGear">⚙️</div>
-  <div class="sb-item sb-admin-btn sb-large sb-next" data-action="forceNext">➡️</div>
-  <div class="sb-item sb-admin-btn sb-large" id="global-pause-btn" data-action="togglePause">⏸</div>
-  <div class="sb-send" id="submit-vote-btn" data-action="submitVote">✓<br>SEND</div>
-  <div class="sb-pause-indicator" id="sb-pause-indicator">⏸</div>
+  <div class="sb-pause-indicator" id="sb-pause-indicator">PAUSET</div>
+  <div class="sb-spacer"></div>
+  <div class="sb-large sb-admin-btn sb-next" id="sb-force-next-btn" data-action="forceNext">➡️</div>
+  <div class="sb-large sb-admin-btn" id="global-pause-btn" data-action="togglePause">⏸</div>
+  <div class="sb-send" id="submit-vote-btn" data-action="submitVote">✓ SEND</div>
 </div>
 
 <!-- TOAST -->
@@ -409,9 +421,15 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
 <!-- ===== SCREEN: JOIN ===== -->
 <div id="screen-join" class="screen">
   <div class="header">
-    <div style="flex:1;text-align:center;">
-      <div class="header-title" id="join-session-name">Ølsmaking</div>
-      <div class="header-sub" id="join-participant-count">0 deltakere inne</div>
+    <div class="header-left">
+      <div>
+        <div class="header-title" id="join-session-name">Ølsmaking</div>
+        <div class="header-sub" id="join-participant-count">0 deltakere inne</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="icon-btn" data-action="showQrSheet">📱</div>
+      
     </div>
   </div>
   <div class="content">
@@ -430,13 +448,22 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
 <!-- ===== SCREEN: WAITING ROOM ===== -->
 <div id="screen-waiting" class="screen">
   <div class="header">
-    <div style="flex:1;text-align:center;">
-      <div class="header-title" id="waiting-title">Ølsmaking</div>
-      <div class="header-sub" id="waiting-sub">Venterom</div>
+    <div class="header-left" style="display:flex;align-items:center;gap:10px;">
+      
+      <div>
+        <div class="header-title" id="waiting-title">Ølsmaking</div>
+        <div class="header-sub" id="waiting-sub">Venterom</div>
+      </div>
+    </div>
+    <div class="header-right">
+      
     </div>
   </div>
   <div class="content">
-    <button class="btn btn-secondary" data-action="showQrSheet" style="margin-bottom:24px;padding:18px;font-size:16px;font-weight:500;display:flex;align-items:center;justify-content:center;gap:12px;border:0.5px solid rgba(255,255,255,0.15);border-radius:14px;">📱 Vis QR-kode</button>
+    <!-- PUNKT 79 – Stor 📱-knapp erstatter QR direkte i venterom -->
+    <div style="margin-bottom:16px;">
+      <button class="btn btn-secondary" style="width:100%;font-size:18px;padding:16px;display:flex;align-items:center;justify-content:center;gap:10px;" data-action="showQrSheet">📱 <span style="font-size:15px;">Vis QR-kode</span></button>
+    </div>
     <div class="card">
       <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px;">Deltakere inne</div>
       <div id="waiting-participants"></div>
@@ -498,17 +525,21 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
 
 <!-- ===== SCREEN: LEADERBOARD ===== -->
 <div id="screen-leaderboard" class="screen">
-  <div class="header">
-    <div style="flex:1;text-align:center;">
+  <div class="header" style="position:fixed;top:0;left:0;right:0;">
+    <div class="header-left" style="display:flex;align-items:center;gap:10px;">
+      
+    </div>
+    <div style="position:absolute;left:50%;transform:translateX(-50%);text-align:center;">
       <div class="header-title">Resultater</div>
       <div class="header-sub" id="lb-sub">Etter emne 1</div>
     </div>
     <div class="header-right">
       <span class="badge badge-live"><span class="live-dot"></span>Live</span>
+      
     </div>
   </div>
+  <div id="lb-tabs-fixed"><div id="lb-tabs" style="display:flex;gap:2px;background:rgba(255,255,255,0.04);border-radius:10px;padding:3px;border:0.5px solid rgba(255,255,255,0.06);"></div></div>
   <div class="content">
-    <div id="lb-tabs" style="display:flex;gap:2px;background:rgba(255,255,255,0.04);border-radius:10px;padding:3px;margin-bottom:14px;border:0.5px solid rgba(255,255,255,0.06);"></div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
       <div class="text-muted" id="lb-voter-count"></div>
       <div class="text-muted" id="lb-countdown"></div>
@@ -570,15 +601,20 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
 
 <!-- ===== SCREEN: FINAL ===== -->
 <div id="screen-final" class="screen">
-  <div class="header">
-    <div style="flex:1;text-align:center;">
+  <div class="header" style="position:fixed;top:0;left:0;right:0;">
+    <div class="header-left">
+    </div>
+    <div style="position:absolute;left:50%;transform:translateX(-50%);text-align:center;">
       <div class="header-title">Endelig resultat</div>
       <div class="header-sub" id="final-session-name"></div>
     </div>
-    <div class="header-right" id="final-header-right"></div>
+    <div class="header-right">
+      <!-- PUNKT 48 – 🏆-knapp kun for admin -->
+      <div class="icon-btn admin-only" data-action="openExternalResults" style="font-size:18px;">🏆</div>
+    </div>
   </div>
+  <div id="result-tabs-fixed"><div class="result-tabs" id="result-tabs-container"></div></div>
   <div class="content">
-    <div class="result-tabs" id="result-tabs-container"></div>
     <div class="result-panel active" id="panel-toplist">
       <div id="final-leaderboard"></div>
       <div id="blindtest-reveal-section" style="display:none;">
@@ -598,7 +634,9 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
     <div class="result-panel" id="panel-judges">
       <div id="final-judge-breakdown"></div>
     </div>
+    <!-- PUNKT 53/54/55/56/82 – Jury-vinner panel -->
     <div class="result-panel" id="panel-external-winner"></div>
+    <!-- PUNKT aktivitetsvinner panel -->
     <div class="result-panel" id="panel-activity-winner"></div>
 
   </div>
@@ -666,17 +704,12 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
         </div>
       </div>
 
+      <div class="admin-section-label" style="margin-top:8px;">Bytt emne</div>
       <div class="admin-row">
-        <div><div class="admin-row-label">Bytt emne</div></div>
-        <div class="admin-btn-group">
-          <button class="btn btn-danger btn-sm" data-action="goBack">← Tilbake</button>
-          <button class="btn btn-danger btn-sm" data-action="forceNext">Neste →</button>
-        </div>
+        <button class="btn btn-danger btn-sm" data-action="goBack">← Tilbake</button>
+        <button class="btn btn-danger btn-sm" data-action="forceNext">Neste →</button>
       </div>
-
     </div>
-
-
 
     <!-- PARTICIPANTS -->
     <div class="admin-section">
@@ -684,8 +717,6 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
       <div id="gear-participants"></div>
 
     </div>
-
-
 
     <!-- SESSION -->
     <div class="admin-section">
@@ -748,6 +779,32 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
   </div>
 </div>
 
+<!-- PUNKT 49/50 – EXTERNAL RESULTS SHEET (admin only) -->
+<div class="sheet-bg" id="external-results-sheet">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">🏆 Jury-resultater</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:16px;">Velg hvilke emner juryen kåret</div>
+    <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:16px;">
+      <div>
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:4px;">🥇 1. plass</div>
+        <select id="ext-place-1" class="ext-select" style="width:100%;padding:8px 10px;font-size:13px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text);"></select>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:4px;">🥈 2. plass</div>
+        <select id="ext-place-2" class="ext-select" style="width:100%;padding:8px 10px;font-size:13px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text);"></select>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:4px;">🥉 3. plass</div>
+        <select id="ext-place-3" class="ext-select" style="width:100%;padding:8px 10px;font-size:13px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text);"></select>
+      </div>
+    </div>
+    <div id="ext-duplicate-warning" style="display:none;color:var(--danger);font-size:12px;margin-bottom:10px;">⚠️ Samme emne er valgt på flere plasser</div>
+    <button class="btn btn-primary" id="ext-save-btn" data-action="saveExternalResultsUI">Lagre og kunngjør →</button>
+    <button class="btn btn-secondary mt-8" onclick="document.getElementById('external-results-sheet').classList.remove('open')">Avbryt</button>
+  </div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 // Proxy functions so onclick works before module loads
@@ -763,10 +820,11 @@ var _proxyHandler = function(name) {
   };
 };
 var _fns = ['showAdminLoginSheet','loginFromSheet','openSkalSheet','joinSession','submitVote','toggleEmojiMenu','toggleGlobalEmoji','sendReaction',
-  'openGear','closeGear','showQrSheet','startSession','togglePause','togglePauseWithMessage','openExternalSheet',
+  'openGear','closeGear','showQrSheet','startSession','togglePause','togglePauseWithMessage',
   'forceNext','goBack','jumpToSubject','updateMinutes','updateLbSecs','addTime',
   'shuffleBlindtest','lockBlindtest','revealBlindtest',
-  'endSession','adminLogin','kickParticipant','removeVote','addManualParticipant'];
+  'endSession','adminLogin','kickParticipant','removeVote','addManualParticipant',
+  'openExternalResults','saveExternalResultsUI'];
 _fns.forEach(function(n) { window[n] = _proxyHandler(n); });
 </script>
 <script type="module" id="main-module">
@@ -856,9 +914,9 @@ function showScreen(id){
     el.classList.add('screens-with-sidebar');
     initGlobalEmojiMenu();
   }
-  // Show/hide SEND button only on voting screen
+  // Show/hide SEND button only on voting screen - visibility only, never display
   const sendBtn=document.getElementById('submit-vote-btn');
-  if(sendBtn)sendBtn.style.display=(id==='screen-voting')?'flex':'none';
+  if(sendBtn){sendBtn.style.visibility=(id==='screen-voting')?'visible':'hidden';}
 }
 function formatTime(s){if(s<0)s=0;return`${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`;}
 function safeKey(s){return s.replace(/[.#$/\[\]\s]/g,'_');}
@@ -871,7 +929,9 @@ function generateId(){return Date.now().toString(36)+Math.random().toString(36).
 
 // ========== THEME ==========
 function applyTheme(theme){
+  const isAdmin=document.body.classList.contains('is-admin');
   document.body.className = theme && theme !== 'standard' ? `theme-${theme}` : '';
+  if(isAdmin)document.body.classList.add('is-admin');
   applyThemeBg(theme);
 }
 
@@ -1039,11 +1099,6 @@ function getAudioCtx(){
 }
 // Init audio on first user interaction
 document.addEventListener('click',function(){getAudioCtx();},{once:true});
-window.getAudioCtx=getAudioCtx;
-window.playSound=playSound;
-// Expose to window so UI functions outside module scope can call playSound
-window.getAudioCtx=getAudioCtx;
-window.playSound=playSound;
 
 function playSound(type){
   try{
@@ -1070,19 +1125,6 @@ function playSound(type){
       gain.gain.setValueAtTime(0.5,ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.25);
       osc.start(ctx.currentTime);osc.stop(ctx.currentTime+0.25);
-    } else if(type==='fanfare'){
-      const freqs=[523,659,784,1047];
-      freqs.forEach((f,i)=>{
-        setTimeout(()=>{
-          const o=ctx.createOscillator();
-          const g=ctx.createGain();
-          o.connect(g);g.connect(ctx.destination);
-          o.frequency.value=f;o.type='triangle';
-          g.gain.setValueAtTime(0.18,ctx.currentTime);
-          g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.4);
-          o.start(ctx.currentTime);o.stop(ctx.currentTime+0.4);
-        },i*120);
-      });
     } else if(type==='newSubject'){
       const freqs=[523,659,784,1047];
       freqs.forEach((f,i)=>{
@@ -1342,36 +1384,27 @@ function watchSkals(){
 // Ikke endre denne seksjonen ved UI/UX-arbeid
 // ================================================================
 
-// ========== PAUSE UI – kalles fra handleSessionState ==========
-function updatePauseUI(isPaused){
-  const pauseBtn=document.getElementById('global-pause-btn');
-  const sendBtn=document.getElementById('submit-vote-btn');
-  if(isPaused){
-    if(sendBtn){sendBtn.classList.add('locked');sendBtn.style.opacity='0.3';sendBtn.style.pointerEvents='none';}
-    if(pauseBtn){pauseBtn.textContent='▶️';pauseBtn.style.background='#c0392b';pauseBtn.style.border='0.5px solid #e74c3c';}
-  }else{
-    if(sendBtn){sendBtn.classList.remove('locked');sendBtn.style.opacity='';sendBtn.style.pointerEvents='';}
-    if(pauseBtn){pauseBtn.textContent='⏸';pauseBtn.style.background='';pauseBtn.style.border='';}
-  }
-}
-
 // ========== HANDLE SESSION STATE ==========
 async function handleSessionState(session){
   const pauseIndicator=document.getElementById('sb-pause-indicator');
   const sendBtn=document.getElementById('submit-vote-btn');
+  const pauseBtn=document.getElementById('global-pause-btn');
   if(session.paused){
+    // Vis pause-indikator kun for spillere
     if(pauseIndicator)pauseIndicator.style.display=state.isAdmin?'none':'flex';
+    if(sendBtn){sendBtn.classList.add('locked');sendBtn.style.opacity='0.3';sendBtn.style.pointerEvents='none';}
+    if(pauseBtn){pauseBtn.textContent='▶️';pauseBtn.style.background='#c0392b';pauseBtn.style.border='0.5px solid #e74c3c';}
     if(state.timerInterval){clearInterval(state.timerInterval);state.timerInterval=null;}
-    updatePauseUI(true);
     // Don't return - let the normal screen logic run so sliders/leaderboard stay visible
   }else{
     if(pauseIndicator)pauseIndicator.style.display='none';
+    if(sendBtn){sendBtn.classList.remove('locked');sendBtn.style.opacity='';sendBtn.style.pointerEvents='';}
+    if(pauseBtn){pauseBtn.textContent='⏸';pauseBtn.style.background='';pauseBtn.style.border='';}
     document.getElementById('pause-overlay').classList.remove('active');
-    updatePauseUI(false);
   }
 
   if(session.status==='published'||session.status==='waiting'){showWaitingRoom(session);return;}
-  if(session.status==='ended'){handleEndedState(session);return;}
+  if(session.status==='ended'){if(!state.finalShown){handleEndedState(session);}return;}
   if(session.status==='leaderboard'){
     const lbKey=`${state.sessionId}_lb_${session.currentSubjectIndex}`;
     if(state.lastLbKey!==lbKey){
@@ -1381,9 +1414,7 @@ async function handleSessionState(session){
       if(state.participantId&&!state.hasVotedCurrentSubject){
         await doSubmitVote(vIdx);
       }
-    }
-    // Punkt 75/81: alltid hente fersk sesjon så poeng alltid er oppdatert
-    if(state.lastLbKey===lbKey){
+      // Hent fersk sesjon fra Firebase så vi alltid rendrer med oppdaterte poeng
       const freshSnap=await get(ref(db,`sessions/${state.sessionId}`));
       const freshSession=freshSnap.exists()?freshSnap.val():session;
       showLeaderboardScreen(freshSession);
@@ -1391,6 +1422,27 @@ async function handleSessionState(session){
     return;
   }
   if(session.status==='voting'){showVotingScreen(session);return;}
+  // GRUPPE 8 – vis aktivitetsvinner automatisk når flagget er satt i Firebase
+  if(session.showActivityWinner&&!state.activityWinnerShown){
+    state.activityWinnerShown=true;
+    showActivityWinnerTab(session);
+  }
+}
+
+// ========== PUNKT 64 – HANDLE ENDED STATE ==========
+async function handleEndedState(session){
+  if(state.finalShown)return;
+  state.finalShown=true;
+  // Hent fersk sesjondata fra Firebase
+  const freshSnap=await get(ref(db,`sessions/${state.sessionId}`));
+  const freshSession=freshSnap.exists()?freshSnap.val():session;
+  // Beregn og lagre vinnere (kun admin gjør dette)
+  if(state.isAdmin){
+    await calcExternalWinner(freshSession);
+    await calcActivityWinner(freshSession);
+  }
+  // Vis endelig resultat for alle
+  showFinalLeaderboard(freshSession);
 }
 
 // ========== WAITING ROOM ==========
@@ -1411,10 +1463,6 @@ function showWaitingRoom(session){
   var ab = document.getElementById('admin-login-btn');
   if (ab) { ab.onclick = null; ab.addEventListener('click', function() { window.showAdminLoginSheet(); }); }
   showScreen('screen-waiting');
-  requestAnimationFrame(()=>{
-    const h=document.querySelector('#screen-waiting .header');
-    if(h)document.documentElement.style.setProperty('--header-h',h.offsetHeight+'px');
-  });
 }
 
 function renderWaitingParticipants(participants){
@@ -1448,6 +1496,13 @@ window.startSession=async function(){
 // ========== VOTING ==========
 let lastShownSubjectIdx = -1;
 function showVotingScreen(session){
+  setAdminUI(state.isAdmin);
+  requestAnimationFrame(()=>{
+    const h=document.querySelector('.voting-header');
+    const a=document.getElementById('activity-bar');
+    if(h){const hh=h.offsetHeight+'px';document.documentElement.style.setProperty('--voting-header-h',hh);document.documentElement.style.setProperty('--header-h',hh);}
+    if(a)document.documentElement.style.setProperty('--activity-bar-h',a.offsetHeight+'px');
+  });
   const idx=session.currentSubjectIndex||0;
   const subjects=session.subjects?Object.values(session.subjects):[];
   const subject=subjects[idx];
@@ -1500,6 +1555,10 @@ function showVotingScreen(session){
   if(hasVoted){
     // If all voted, leaderboard is imminent - show transition
     showScreen('screen-submitted');
+    requestAnimationFrame(()=>{
+      const sh=document.querySelector('#screen-submitted .voting-header');
+      if(sh)document.documentElement.style.setProperty('--header-h',sh.offsetHeight+'px');
+    });
     if(pCount>=2&&vCount>=pCount){
       document.getElementById('submitted-voter-count').textContent='⚡ Alle har stemt!';
     }
@@ -1544,25 +1603,16 @@ function buildVotingCategories(session){
     row.innerHTML=`
       <div class="cat-header">
         <div class="cat-name">${cat.name}${cat.weight>1?` <span style="font-size:11px;color:var(--muted);">×${cat.weight}</span>`:''}</div>
+        <div class="cat-val" id="v-${catKey}">${val}</div>
       </div>
-      <div class="slider-wrap" style="position:relative;">
+      <div class="slider-wrap">
         <div class="slider-midmark" style="left:${(Math.round(cat.max/2)/cat.max)*100}%"></div>
         <input type="range" class="slider-input" id="s-${catKey}"
           min="0" max="${cat.max}" value="${val}"
           data-key="${catKey}" data-max="${cat.max}">
-        <div class="thumb-label" id="v-${catKey}" style="
-          position:absolute;top:50%;
-          left:${cat.max>0?(val/cat.max)*100:0}%;
-          transform:translate(-50%,-50%);
-          width:26px;height:26px;border-radius:50%;
-          background:rgba(167,124,255,0.25);border:1.5px solid rgba(167,124,255,0.4);
-          display:flex;align-items:center;justify-content:center;
-          font-size:11px;font-weight:700;color:#c4b5fd;
-          pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,0.4);
-        ">${val}</div>
       </div>
       <div style="display:flex;justify-content:space-between;padding:0 0 2px;">
-        <span class="slider-lbl" id="lbl-${catKey}" style="font-size:13px;color:rgba(255,255,255,0.5);font-weight:600;">0</span>
+        <span id="lbl0-${catKey}" style="font-size:13px;color:rgba(255,255,255,0.5);font-weight:600;">0</span>
         <span style="font-size:13px;color:rgba(255,255,255,0.5);font-weight:600;">${Math.round(cat.max/2)}</span>
         <span style="font-size:13px;color:rgba(255,255,255,0.5);font-weight:600;">${cat.max}</span>
       </div>`;
@@ -1572,19 +1622,7 @@ function buildVotingCategories(session){
   container.querySelectorAll('.slider-input').forEach(slider=>{
     function updateSlider(s){
       const pct=(s.value/s.max)*100;
-      const v=parseInt(s.value);
       s.style.background=`linear-gradient(to right,var(--accent) ${pct}%,var(--border) ${pct}%)`;
-      // Punkt 61: update thumb label
-      const label=document.getElementById('v-'+s.dataset.key);
-      if(label){label.style.left=pct+'%';label.textContent=v;}
-      // Punkt 68: update 0-label live
-      const minLbl=document.getElementById('lbl-'+s.dataset.key);
-      if(minLbl){
-        minLbl.textContent=v>0?v:0;
-        minLbl.style.color=v>0?'var(--accent)':'rgba(255,255,255,0.5)';
-        minLbl.style.fontWeight=v>0?'700':'600';
-        minLbl.style.fontSize=v>0?'14px':'13px';
-      }
     }
     updateSlider(slider);
     ['input','change','touchmove'].forEach(evt=>{
@@ -1595,6 +1633,13 @@ function buildVotingCategories(session){
         const si=session.currentSubjectIndex||0;
         if(!state.currentVotes[si])state.currentVotes[si]={};
         state.currentVotes[si][k]=v;
+        document.getElementById('v-'+k).textContent=v;
+        // PUNKT 68 – oppdater 0-etikett live med accent-farge
+        const lbl0=document.getElementById('lbl0-'+k);
+        if(lbl0){
+          if(v>0){lbl0.textContent=v;lbl0.style.color='var(--accent)';}
+          else{lbl0.textContent='0';lbl0.style.color='rgba(255,255,255,0.5)';}
+        }
         updateSlider(slider);
         saveDraft(si);
       });
@@ -1803,6 +1848,17 @@ async function advanceSubject(sessionId,session,idx){
 
 // ========== LEADERBOARD ==========
 function showLeaderboardScreen(session){
+  setAdminUI(state.isAdmin);
+  requestAnimationFrame(()=>{
+    const h=document.querySelector('#screen-leaderboard .header');
+    if(h)document.documentElement.style.setProperty('--header-h',h.offsetHeight+'px');
+    // PUNKT 59 – padding-top = header + fane-rad så innhold ikke kappes
+    const tabs=document.getElementById('lb-tabs-fixed');
+    const content=document.querySelector('#screen-leaderboard .content');
+    if(h&&tabs&&content){
+      content.style.paddingTop=(h.offsetHeight+tabs.offsetHeight)+'px';
+    }
+  });
   const idx=session.currentSubjectIndex||0;
   const subjects=session.subjects?Object.values(session.subjects):[];
   const cats=session.categories?Object.values(session.categories):[];
@@ -1837,7 +1893,7 @@ function showLeaderboardScreen(session){
   const tabBar=document.getElementById('lb-tabs');
   if(tabBar){
     tabBar.innerHTML='';
-    const tabLabels={'toplist':'Topp3','categories':'Kategori','judges':'👤 Dine Topp3'};
+    const tabLabels={'toplist':'Topp3','categories':'📊 Kategori','judges':'👤 Dine Topp3'};
     views.forEach((v,i)=>{
       const btn=document.createElement('div');
       btn.className='result-tab';
@@ -1871,7 +1927,7 @@ function showLeaderboardScreen(session){
     const isLastView=viewIdx===views.length-1;
     // Update active tab
     views.forEach(v=>{const t=document.getElementById(`lb-tab-${v}`);if(t)t.classList.toggle('active',v===view);});
-    const nextLabel=isLastView?(isLast?'🏆 Endelig resultat':'Neste emne'):views[viewIdx+1]==='categories'?'Kategori-detaljer':views[viewIdx+1]==='judges'?'Dine Topp3':'Topp3';
+    const nextLabel=isLastView?(isLast?'🏆 Endelig resultat':'Neste emne'):views[viewIdx+1]==='categories'?'Kategori-detaljer':views[viewIdx+1]==='judges'?'Dommer-detaljer':'Topp-liste';
 
     // Always stay on screen-leaderboard, swap content inside
     const lbList=document.getElementById('leaderboard-list');
@@ -1993,119 +2049,23 @@ function calcScores(subjects,cats,votes,participants){
 function renderLeaderboard(containerId,scores){
   const container=document.getElementById(containerId);if(!container)return;
   container.innerHTML='';
-  const max=scores[0]?scores[0].total:1;
-  const classes=['gold','silver','bronze'];
-  const medals=['🥇','🥈','🥉'];
+  container.style.cssText='text-align:center;max-width:560px;margin:0 auto;';
   scores.forEach((item,i)=>{
-    const cls=i<3?classes[i]:'other';
-    const medal=i<3?medals[i]:`#${i+1}`;
-    const pct=max>0?(item.total/max*100):0;
     const div=document.createElement('div');
-    div.className=`lb-item ${cls}`;
-    div.innerHTML=`<div class="lb-row"><div class="lb-rank">${medal}</div><div class="lb-name">${item.name}</div><div class="lb-score">${Math.round(item.total)}</div></div><div class="lb-bar-bg"><div class="lb-bar-inner" style="width:${pct}%"></div></div>`;
+    if(i===0){
+      div.className='final-winner';
+      div.innerHTML=`<div class="final-winner-emoji">🥇</div><div class="final-winner-name">${item.name}</div><div class="final-winner-score">${Math.round(item.total)}</div><div style="font-size:12px;color:var(--muted);margin-top:4px;">poeng totalt</div>`;
+    }else if(i===1||i===2){
+      const medal=i===1?'🥈':'🥉';
+      const col=i===1?'var(--silver)':'var(--bronze)';
+      div.style.cssText='background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:12px;';
+      div.innerHTML=`<div style="font-size:24px;">${medal}</div><div style="flex:1;font-size:15px;font-weight:500;">${item.name}</div><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:${col};">${Math.round(item.total)}</div>`;
+    }else{
+      div.style.cssText='display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);';
+      div.innerHTML=`<div style="font-size:13px;color:var(--muted);width:24px;">#${i+1}</div><div style="flex:1;font-size:13px;">${item.name}</div><div style="font-size:14px;color:var(--muted);">${Math.round(item.total)}</div>`;
+    }
     container.appendChild(div);
   });
-}
-
-// ================================================================
-// LOGIKK - Ekstern vinner og aktivitetsvinner
-// Ikke endre denne seksjonen ved UI/UX-arbeid
-// ================================================================
-
-// Punkt 51: Save external results to Firebase
-window.saveExternalResults = async function(){
-  const msgEl = document.getElementById('external-validation-msg');
-  if(msgEl) msgEl.style.display = 'none';
-  const ranks = document.querySelectorAll('.ext-rank');
-  const pts = document.querySelectorAll('.ext-pts');
-  // Punkt 50: Check for duplicate ranks
-  const usedRanks = {};
-  let dupError = false;
-  ranks.forEach(sel => {
-    if(!sel.value) return;
-    if(usedRanks[sel.value]){ dupError = true; }
-    usedRanks[sel.value] = true;
-  });
-  if(dupError){
-    if(msgEl){msgEl.textContent='Samme plassering er brukt på flere emner. Korriger før du lagrer.';msgEl.style.display='block';}
-    return;
-  }
-  const results = {};
-  ranks.forEach((sel, i) => {
-    if(!sel.value) return;
-    results[sel.dataset.idx] = { rank: parseInt(sel.value), points: parseInt(pts[i].value)||0 };
-  });
-  const hasFirst = Object.values(results).some(r => r.rank === 1);
-  if(!hasFirst){
-    if(msgEl){msgEl.textContent='Du må angi minst én 1. plass.';msgEl.style.display='block';}
-    return;
-  }
-  await set(ref(db,`sessions/${state.sessionId}/externalResults`), results);
-  document.getElementById('external-sheet').classList.remove('open');
-};
-
-// Punkt 52: Calculate external winner
-function calcExternalWinner(session){
-  const results = session.externalResults || {};
-  const firstPlaceIdx = Object.entries(results).find(([,v]) => v.rank === 1)?.[0];
-  if(firstPlaceIdx === undefined) return {winners:[], subjectName:''};
-  const subjectIdx = parseInt(firstPlaceIdx);
-  const votes = session.votes || {};
-  const subjectVotes = votes[subjectIdx] || {};
-  const cats = session.categories ? Object.values(session.categories) : [];
-  const participants = session.participants || {};
-  let best = -1;
-  let winners = [];
-  Object.entries(participants).forEach(([pid, p]) => {
-    const v = subjectVotes[pid];
-    if(!v) return;
-    let score = 0;
-    cats.forEach(cat => {
-      const k = cat.key || safeKey(cat.name);
-      score += ((v.votes && v.votes[k]) || 0) * (cat.weight || 1);
-    });
-    score = Math.round(score);
-    if(score > best){ best = score; winners = [{name: p.name||pid, score}]; }
-    else if(score === best){ winners.push({name: p.name||pid, score}); }
-  });
-  const subjectName = session.subjects ? Object.values(session.subjects)[subjectIdx]?.name : '';
-  return { winners, subjectName };
-}
-
-// Punkt 63: Calculate activity winner
-function calcActivityWinner(){
-  const entries = Object.entries(_activityScores);
-  if(!entries.length) return {winners:[], all:[]};
-  const sorted = entries.sort((a,b) => b[1]-a[1]);
-  const best = sorted[0][1];
-  const winners = sorted.filter(([,pts]) => pts===best).map(([name,pts]) => ({name,pts}));
-  const all = sorted.map(([name,pts],i) => ({name,pts,rank:i+1}));
-  return {winners, all};
-}
-
-// Punkt 64: Handle session state for external/activity winner
-// Called from handleSessionState when status=ended
-function handleEndedState(session){
-  if(!state.finalShown){ showFinalLeaderboard(session); }
-  if(session.externalResults && !state.externalWinnerShown){
-    state.externalWinnerShown = true;
-    addExternalWinnerTab(session);
-    window.switchResultTab('external-winner');
-    startGlitter();
-    try{ window.playSound('fanfare'); }catch(e){}
-    // Punkt 64: schedule activity winner after minutesPerSubject
-    const delay = (session.minutesPerSubject||3)*60*1000;
-    setTimeout(async()=>{
-      await set(ref(db,`sessions/${state.sessionId}/showActivityWinner`), true);
-    }, delay);
-  }
-  if(session.showActivityWinner && !state.activityWinnerShown){
-    state.activityWinnerShown = true;
-    addActivityWinnerTab(session);
-    window.switchResultTab('activity-winner');
-    startGlitter();
-    try{ window.playSound('fanfare'); }catch(e){}
-  }
 }
 
 // ================================================================
@@ -2115,13 +2075,12 @@ function handleEndedState(session){
 
 // ========== FINAL LEADERBOARD ==========
 function showFinalLeaderboard(session){
+  requestAnimationFrame(()=>{
+    const h=document.querySelector('#screen-final .header');
+    if(h)document.documentElement.style.setProperty('--header-h',h.offsetHeight+'px');
+  });
   if(state.finalShown)return;
   state.finalShown=true;
-  // Punkt 48: swap force-next btn to trophy on final screen (admin only)
-  if(state.isAdmin){
-    const fn=document.getElementById('sb-force-next');
-    if(fn){fn.textContent='🏆';fn.dataset.action='openExternalSheet';}
-  }
   setAdminUI(state.isAdmin);
   // Ensure reactions and skals work on final screen
   if(state.sessionId&&!state.sessionListener){
@@ -2208,10 +2167,8 @@ function showFinalLeaderboard(session){
   const rc = session.resultConfig || { toplist: true, categories: true, judges: false };
   const tabDefs = [
     { key: 'toplist', label: 'Topp3', enabled: rc.toplist !== false },
-    { key: 'categories', label: 'Kategorier', enabled: !!rc.categories },
+    { key: 'categories', label: '📊 Kategorier', enabled: !!rc.categories },
     { key: 'judges', label: '👤 Dine Topp3', enabled: !!rc.judges },
-    { key: 'external-winner', label: '🏆', enabled: false },
-    { key: 'activity-winner', label: '🔥', enabled: false },
   ].filter(t => t.enabled);
 
   const tabContainer = document.getElementById('result-tabs-container');
@@ -2313,6 +2270,63 @@ window.openGear=function(){
   }
 };
 window.closeGear=function(){document.getElementById('gear-sheet').classList.remove('open');};
+
+// ========== PUNKT 49/50 – EXTERNAL RESULTS UI ==========
+window.openExternalResults=function(){
+  if(!state.isAdmin||!state.session)return;
+  const subjects=state.session.subjects?Object.values(state.session.subjects):[];
+  const selects=['ext-place-1','ext-place-2','ext-place-3'];
+  // Fyll dropdowns med emner
+  selects.forEach(id=>{
+    const sel=document.getElementById(id);
+    if(!sel)return;
+    sel.innerHTML='<option value="">-- Velg emne --</option>';
+    subjects.forEach(s=>{
+      const opt=document.createElement('option');
+      opt.value=s.name;
+      opt.textContent=s.name;
+      sel.appendChild(opt);
+    });
+    sel.onchange=validateExternalSelects;
+  });
+  // Fyll inn eksisterende verdier hvis de finnes
+  const existing=state.session.externalResults||{};
+  if(existing['1'])document.getElementById('ext-place-1').value=existing['1'];
+  if(existing['2'])document.getElementById('ext-place-2').value=existing['2'];
+  if(existing['3'])document.getElementById('ext-place-3').value=existing['3'];
+  validateExternalSelects();
+  document.getElementById('external-results-sheet').classList.add('open');
+};
+
+function validateExternalSelects(){
+  const v1=document.getElementById('ext-place-1').value;
+  const v2=document.getElementById('ext-place-2').value;
+  const v3=document.getElementById('ext-place-3').value;
+  const vals=[v1,v2,v3].filter(Boolean);
+  const hasDuplicate=vals.length!==new Set(vals).size;
+  const warning=document.getElementById('ext-duplicate-warning');
+  const saveBtn=document.getElementById('ext-save-btn');
+  if(warning)warning.style.display=hasDuplicate?'block':'none';
+  if(saveBtn)saveBtn.disabled=hasDuplicate||vals.length<3;
+}
+
+window.saveExternalResultsUI=async function(){
+  const v1=document.getElementById('ext-place-1').value;
+  const v2=document.getElementById('ext-place-2').value;
+  const v3=document.getElementById('ext-place-3').value;
+  if(!v1||!v2||!v3)return;
+  document.getElementById('external-results-sheet').classList.remove('open');
+  await window.saveExternalResults({'1':v1,'2':v2,'3':v3});
+  // Kunngjør jury-vinner for alle
+  const snap=await get(ref(db,`sessions/${state.sessionId}`));
+  if(snap.exists()){
+    const freshSession=snap.val();
+    await calcExternalWinner(freshSession);
+    showExternalWinnerTab(freshSession);
+    // GRUPPE 8 – start aktivitetsvinner-timer etter emnetid
+    scheduleActivityWinnerTimer(freshSession);
+  }
+};
 
 function renderGearParticipants(){
   const container=document.getElementById('gear-participants');
@@ -2479,6 +2493,72 @@ window.lockBlindtest=async function(){
   document.getElementById('gear-blindtest-section').style.display='none';
   showToast('Fasit låst! Ingen kan se den før avsløringen.');
 };
+
+// ========== PUNKT 51 – SAVE EXTERNAL RESULTS ==========
+window.saveExternalResults=async function(results){
+  // results = { "1": "Emnenavn", "2": "Emnenavn", "3": "Emnenavn" }
+  if(!state.isAdmin||!state.sessionId)return;
+  await update(ref(db,`sessions/${state.sessionId}`),{externalResults:results});
+};
+
+// ========== PUNKT 52 – CALC EXTERNAL WINNER ==========
+async function calcExternalWinner(session){
+  const externalResults=session.externalResults||null;
+  if(!externalResults||!externalResults['1'])return null;
+  const juryFirstPlace=externalResults['1'];
+
+  // Finn indeksen til juryens 1. plass-emne i subjects
+  const subjects=session.subjects?Object.values(session.subjects):[];
+  const subjectIdx=subjects.findIndex(s=>s.name===juryFirstPlace);
+  if(subjectIdx===-1)return null;
+
+  // Hent alle stemmer på dette emnet
+  const votes=session.votes||{};
+  const subjectVotes=votes[subjectIdx]||{};
+
+  // Summer alle kategorier per deltaker på dette emnet
+  let highestScore=-1;
+  let winners=[];
+  Object.values(subjectVotes).forEach(v=>{
+    const catScores=v.votes||{};
+    const total=Object.values(catScores).reduce((sum,val)=>sum+(val||0),0);
+    if(total>highestScore){highestScore=total;winners=[v.participantName];}
+    else if(total===highestScore){winners.push(v.participantName);}
+  });
+
+  if(winners.length===0)return null;
+
+  // Lagre vinner(e) til Firebase
+  await update(ref(db,`sessions/${state.sessionId}`),{
+    externalWinner:{winners,subjectName:juryFirstPlace}
+  });
+  return{winners,subjectName:juryFirstPlace};
+}
+
+// ========== PUNKT 63 – CALC ACTIVITY WINNER ==========
+async function calcActivityWinner(session){
+  const activity=session.activity||null;
+  if(!activity)return null;
+
+  // Finn høyeste score
+  let highestScore=-1;
+  let winners=[];
+  Object.values(activity).forEach(entry=>{
+    const score=entry.pts||0;
+    const name=entry.name||null;
+    if(!name)return;
+    if(score>highestScore){highestScore=score;winners=[name];}
+    else if(score===highestScore){winners.push(name);}
+  });
+
+  if(winners.length===0)return null;
+
+  // Lagre vinner(e) til Firebase
+  await update(ref(db,`sessions/${state.sessionId}`),{
+    activityWinner:{winners,score:highestScore}
+  });
+  return{winners,score:highestScore};
+}
 
 // ================================================================
 // UI/UX - Skål og reaksjoner
@@ -2709,221 +2789,6 @@ function renderJudgeBreakdown(containerId, session) {
 }
 
 // ========== RESULT TABS ==========
-// ================================================================
-// UI/UX – Jury-vinner og ekstern-panel
-// ================================================================
-
-// Punkt 70: Glitter
-function startGlitter(){
-  const container=document.getElementById('confetti-container');
-  if(!container)return;
-  if(container._glitterInterval)return;
-  const colors=['#ffd700','#ffb700','#ffa500','#ffe066','#fff0a0','#a78bfa','#ffffff','#fffbe6'];
-  const shapes=['✦','✧','★','✶','·','⬧'];
-  function spawnBatch(count){
-    const cx=window.innerWidth/2;
-    const cy=window.innerHeight/2;
-    for(let i=0;i<count;i++){
-      setTimeout(()=>{
-        const el=document.createElement('div');
-        const angle=Math.random()*Math.PI*2;
-        const speed=80+Math.random()*200;
-        const tx=Math.cos(angle)*speed;
-        const ty=Math.sin(angle)*speed;
-        const size=10+Math.random()*16;
-        const duration=1.2+Math.random()*1.5;
-        const color=colors[Math.floor(Math.random()*colors.length)];
-        const shape=shapes[Math.floor(Math.random()*shapes.length)];
-        el.textContent=shape;
-        el.style.cssText=`position:fixed;left:${cx+(Math.random()-0.5)*120}px;top:${cy+(Math.random()-0.5)*120}px;font-size:${size}px;color:${color};opacity:1;pointer-events:none;z-index:9999;animation:glitterFly ${duration}s ease-out forwards;--tx:${tx}px;--ty:${ty}px;`;
-        document.body.appendChild(el);
-        setTimeout(()=>el.remove(),duration*1000+100);
-      },Math.random()*800);
-    }
-  }
-  spawnBatch(150);
-  container._glitterInterval=setInterval(()=>spawnBatch(60),900);
-}
-
-function stopGlitter(){
-  const container=document.getElementById('confetti-container');
-  if(!container)return;
-  if(container._glitterInterval){clearInterval(container._glitterInterval);container._glitterInterval=null;}
-}
-
-// Punkt 49/50: External sheet HTML
-window.openExternalSheet = function(){
-  const session=state.session;
-  if(!session)return;
-  const subjects=session.subjects?Object.values(session.subjects):[];
-  const sheet=document.getElementById('external-sheet');
-  if(!sheet)return;
-  const list=document.getElementById('external-subjects-list');
-  if(!list)return;
-  list.innerHTML=subjects.map((s,i)=>`
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-      <div style="flex:1;font-size:13px;color:var(--text);">${s.name}</div>
-      <select class="ext-rank" data-idx="${i}" style="padding:6px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:13px;">
-        <option value="">–</option>
-        ${[1,2,3].map(r=>`<option value="${r}">${r}. plass</option>`).join('')}
-      </select>
-      <input class="ext-pts" type="number" min="0" max="999" value="0" style="width:56px;padding:6px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:13px;text-align:center;">
-    </div>`).join('');
-  sheet.classList.add('open');
-};
-
-// Punkt 55/56: Add external winner tab with diploma
-function addExternalWinnerTab(session){
-  const tabContainer=document.getElementById('result-tabs-container');
-  if(!tabContainer||document.getElementById('tab-btn-external-winner'))return;
-  const btn=document.createElement('div');
-  btn.className='result-tab';
-  btn.id='tab-btn-external-winner';
-  btn.textContent='🏆';
-  btn.onclick=()=>window.switchResultTab('external-winner');
-  tabContainer.appendChild(btn);
-
-  const panel=document.getElementById('panel-external-winner');
-  if(!panel)return;
-
-  const result=calcExternalWinner(session);
-  const sessionName=session.name||'';
-  const now=new Date();
-  const dateStr=now.toLocaleDateString('nb-NO',{day:'numeric',month:'long',year:'numeric'});
-
-  const namesHtml=result.winners.length>1
-    ? result.winners.map(w=>`<div style="display:inline-flex;align-items:center;gap:6px;background:rgba(var(--accent-rgb,167,124,255),0.15);border:0.5px solid var(--accent);border-radius:24px;padding:6px 14px;font-size:15px;color:var(--text);margin:4px;">${w.name}</div>`).join('')
-    : `<div style="font-size:28px;font-weight:300;color:var(--text);margin:4px 0;letter-spacing:1px;">${result.winners[0]?.name||''}</div>`;
-
-  panel.innerHTML=`
-    <div style="padding:24px 16px 16px;display:flex;flex-direction:column;align-items:center;">
-      <div class="diploma-card" id="diplom-card">
-        <div class="diploma-glow-top"></div>
-        <div class="diploma-stars-row">
-          <span class="diploma-star">✦</span><span class="diploma-star">✦</span>
-          <span class="diploma-star lg">★</span>
-          <span class="diploma-star">✦</span><span class="diploma-star">✦</span>
-        </div>
-        <div class="diploma-label">Vinneren av</div>
-        <div class="diploma-session">${sessionName}</div>
-        <div class="diploma-date">${dateStr}</div>
-        <span class="diploma-trophy">🏆</span>
-        <div style="margin-bottom:4px;">${namesHtml}</div>
-        <div class="diploma-divider">
-          <div class="diploma-divider-line"></div>
-          <div class="diploma-divider-center">
-            <span class="diploma-divider-star">✦</span>
-            <span class="diploma-divider-star lg">★</span>
-            <span class="diploma-divider-star">✦</span>
-          </div>
-          <div class="diploma-divider-line r"></div>
-        </div>
-        <div class="diploma-subject">${result.subjectName}</div>
-        <div class="diploma-bottom-stars">
-          <span class="diploma-star">✦</span>
-          <span class="diploma-star lg">★</span>
-          <span class="diploma-star">✦</span>
-        </div>
-      </div>
-      <button onclick="shareDiplom('diplom-card','${sessionName.replace(/'/g,"\'")} – Vinneren')" style="width:100%;max-width:400px;padding:10px;font-size:13px;font-weight:500;border-radius:12px;background:var(--accent-dim,rgba(167,124,255,0.15));color:var(--accent);border:0.5px solid var(--accent);cursor:pointer;margin-top:12px;">Del diplom</button>
-    </div>`;
-}
-
-// Punkt 56: Share diploma
-window.shareDiplom = async function(diplomId, title){
-  const diplom=document.getElementById(diplomId);
-  if(!diplom)return;
-  try{
-    if(!window.html2canvas){
-      const script=document.createElement('script');
-      script.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-      document.head.appendChild(script);
-      await new Promise(res=>{script.onload=res;});
-    }
-    const canvas=await html2canvas(diplom,{backgroundColor:'#0d0820',scale:2});
-    canvas.toBlob(async blob=>{
-      const file=new File([blob],'diplom.png',{type:'image/png'});
-      if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
-        await navigator.share({files:[file],title});
-      }else{
-        const a=document.createElement('a');
-        a.href=URL.createObjectURL(blob);
-        a.download='diplom.png';
-        a.click();
-      }
-    });
-  }catch(e){console.error('Share error:',e);}
-};
-
-// ================================================================
-// UI/UX – Aktivitetsvinner
-// ================================================================
-
-// Punkt 65/66/67: Build activity winner tab
-function addActivityWinnerTab(session){
-  const tabContainer=document.getElementById('result-tabs-container');
-  if(!tabContainer||document.getElementById('tab-btn-activity-winner'))return;
-  const btn=document.createElement('div');
-  btn.className='result-tab';
-  btn.id='tab-btn-activity-winner';
-  btn.textContent='🔥';
-  btn.onclick=()=>window.switchResultTab('activity-winner');
-  tabContainer.appendChild(btn);
-
-  const panel=document.getElementById('panel-activity-winner');
-  if(!panel)return;
-
-  const {winners}=calcActivityWinner();
-  if(!winners.length){
-    panel.innerHTML='<div style="text-align:center;padding:32px;color:var(--muted);">Ingen aktivitet registrert.</div>';
-    return;
-  }
-
-  const sessionName=session.name||'';
-  const now=new Date();
-  const dateStr=now.toLocaleDateString('nb-NO',{day:'numeric',month:'long',year:'numeric'});
-
-  const winnerNamesHtml=winners.length>1
-    ? winners.map(w=>`<div style="display:inline-flex;align-items:center;gap:6px;background:rgba(var(--accent-rgb,167,124,255),0.15);border:0.5px solid var(--accent);border-radius:24px;padding:6px 14px;font-size:15px;color:var(--text);margin:4px;">${w.name}</div>`).join('')
-    : `<div style="font-size:28px;font-weight:300;color:var(--text);margin:4px 0;letter-spacing:1px;">${winners[0].name}</div>`;
-
-  panel.innerHTML=`
-    <div style="padding:24px 16px 16px;display:flex;flex-direction:column;align-items:center;">
-      <div class="diploma-card" id="activity-diplom-winner">
-        <div class="diploma-glow-top"></div>
-        <div class="diploma-stars-row">
-          <span class="diploma-star">✦</span><span class="diploma-star">✦</span>
-          <span class="diploma-star lg">★</span>
-          <span class="diploma-star">✦</span><span class="diploma-star">✦</span>
-        </div>
-        <div class="diploma-label">Kveldens mest aktive</div>
-        <div class="diploma-session">${sessionName}</div>
-        <div class="diploma-date">${dateStr}</div>
-        <span class="diploma-trophy">🏆</span>
-        <div style="margin-bottom:4px;">${winnerNamesHtml}</div>
-        <div class="diploma-divider">
-          <div class="diploma-divider-line"></div>
-          <div class="diploma-divider-center">
-            <span class="diploma-divider-star">✦</span>
-            <span class="diploma-divider-star lg">★</span>
-            <span class="diploma-divider-star">✦</span>
-          </div>
-          <div class="diploma-divider-line r"></div>
-        </div>
-        <div class="diploma-subject">${winners[0].pts} reaksjoner gjennom kvelden</div>
-        <div class="diploma-bottom-stars">
-          <span class="diploma-star">✦</span>
-          <span class="diploma-star lg">★</span>
-          <span class="diploma-star">✦</span>
-        </div>
-      </div>
-      <button onclick="window.shareDiplom('activity-diplom-winner','${sessionName.replace(/'/g,"\'")} – Kveldens mest aktive')" style="width:100%;max-width:400px;padding:10px;font-size:13px;font-weight:500;border-radius:12px;background:var(--accent-dim,rgba(167,124,255,0.15));color:var(--accent);border:0.5px solid var(--accent);cursor:pointer;margin-top:12px;">Del diplom</button>
-    </div>`;
-
-  // Punkt 69: fanfare sound
-  try{window.playSound('fanfare');}catch(e){}
-}
-
 window.switchResultTab = function(tab) {
   document.querySelectorAll('.result-tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.result-panel').forEach(p => p.classList.remove('active'));
@@ -2931,7 +2796,154 @@ window.switchResultTab = function(tab) {
   const panelEl = document.getElementById(`panel-${tab}`);
   if (btnEl) btnEl.classList.add('active');
   if (panelEl) panelEl.classList.add('active');
+  // PUNKT 57/58 – stopp rulleringen når vinner-fane vises
+  if(tab==='external-winner'||tab==='activity-winner'){
+    if(state.finalRollInterval){clearInterval(state.finalRollInterval);state.finalRollInterval=null;}
+    // PUNKT 60/70 – start glitter når vinner-fane vises
+    startGlitter();
+  } else {
+    // Stopp glitter når man bytter til annen fane
+    stopGlitter();
+  }
 };
+
+// ========== PUNKT 53/54/55/56/60/70/82 – JURY-VINNER TAB OG DIPLOM ==========
+function showExternalWinnerTab(session){
+  const winner=session.externalWinner;
+  if(!winner)return;
+
+  // Legg til fane hvis den ikke finnes
+  const tabContainer=document.getElementById('result-tabs-container');
+  if(tabContainer&&!document.getElementById('tab-btn-external-winner')){
+    const btn=document.createElement('div');
+    btn.className='result-tab';
+    btn.id='tab-btn-external-winner';
+    btn.textContent='🏆 Jury';
+    btn.onclick=()=>{
+      window.switchResultTab('external-winner');
+      startGlitter();
+    };
+    tabContainer.appendChild(btn);
+  }
+
+  // Bygg diplom-innhold
+  const panel=document.getElementById('panel-external-winner');
+  if(!panel)return;
+  const sessionName=session.name||'';
+  const dato=new Date().toLocaleDateString('nb-NO',{day:'numeric',month:'long',year:'numeric'});
+  const winnersHtml=winner.winners.map(n=>`<div class="diplom-winner">${n}</div>`).join('');
+
+  panel.innerHTML=`
+    <div class="diplom-wrap">
+      <div class="diplom">
+        <span class="diplom-stars">★ ★ ★ ★ ★ ★ ★</span>
+        <div class="diplom-label">Vinneren av</div>
+        <div class="diplom-session">${sessionName}</div>
+        <div class="diplom-date">${dato}</div>
+        <span class="diplom-trophy">🏆</span>
+        ${winnersHtml}
+        <div class="diplom-subject">${winner.subjectName}</div>
+        <span class="diplom-stars">★ ★ ★ ★ ★ ★ ★</span>
+        <button class="diplom-share" onclick="shareDiplom('external')">📤 Del diplom</button>
+      </div>
+    </div>`;
+
+  // Vis fanen, stopp rulling, start glitter og fanfare
+  window.switchResultTab('external-winner');
+  playSound('fanfare');
+  startGlitter();
+}
+
+function startGlitter(){
+  // Fjern eksisterende glitter
+  const existing=document.getElementById('glitter-container');
+  if(existing)existing.remove();
+  const container=document.createElement('div');
+  container.className='glitter-container';
+  container.id='glitter-container';
+  const colors=['#e8c36a','#a078dc','#ffffff','#f0d080','#c8a0ff'];
+  for(let i=0;i<60;i++){
+    const p=document.createElement('div');
+    p.className='glitter-particle';
+    const size=3+Math.random()*5;
+    const color=colors[Math.floor(Math.random()*colors.length)];
+    p.style.cssText=`width:${size}px;height:${size}px;background:${color};left:${Math.random()*100}%;animation-delay:${Math.random()*3}s;animation-duration:${2+Math.random()*2}s;`;
+    container.appendChild(p);
+  }
+  document.body.appendChild(container);
+}
+
+function stopGlitter(){
+  const c=document.getElementById('glitter-container');
+  if(c)c.remove();
+}
+
+function shareDiplom(type){
+  const panel=type==='external'?document.getElementById('panel-external-winner'):document.getElementById('panel-activity-winner');
+  const diplom=panel?panel.querySelector('.diplom'):null;
+  if(!diplom)return;
+  if(navigator.share){
+    navigator.share({title:'Diplom',text:diplom.innerText}).catch(()=>{});
+  }
+}
+
+// ========== GRUPPE 8 – AKTIVITETSVINNER TIMER OG TAB ==========
+function scheduleActivityWinnerTimer(session){
+  // Kun admin starter timeren
+  if(!state.isAdmin)return;
+  const minutes=session.minutesPerSubject||5;
+  const delay=minutes*60*1000;
+  setTimeout(async()=>{
+    // Skriv flagg til Firebase — alle klienter reagerer via handleSessionState
+    await update(ref(db,`sessions/${state.sessionId}`),{showActivityWinner:true});
+  },delay);
+}
+
+function showActivityWinnerTab(session){
+  const winner=session.activityWinner;
+  if(!winner)return;
+
+  // Legg til fane hvis den ikke finnes
+  const tabContainer=document.getElementById('result-tabs-container');
+  if(tabContainer&&!document.getElementById('tab-btn-activity-winner')){
+    const btn=document.createElement('div');
+    btn.className='result-tab';
+    btn.id='tab-btn-activity-winner';
+    btn.textContent='🔥 Aktiv';
+    btn.onclick=()=>{
+      window.switchResultTab('activity-winner');
+      startGlitter();
+    };
+    tabContainer.appendChild(btn);
+  }
+
+  // Bygg diplom-innhold
+  const panel=document.getElementById('panel-activity-winner');
+  if(!panel)return;
+  const sessionName=session.name||'';
+  const dato=new Date().toLocaleDateString('nb-NO',{day:'numeric',month:'long',year:'numeric'});
+  const winnersHtml=winner.winners.map(n=>`<div class="diplom-winner">${n}</div>`).join('');
+
+  panel.innerHTML=`
+    <div class="diplom-wrap">
+      <div class="diplom">
+        <span class="diplom-stars">★ ★ ★ ★ ★ ★ ★</span>
+        <div class="diplom-label">Kveldens mest aktive</div>
+        <div class="diplom-session">${sessionName}</div>
+        <div class="diplom-date">${dato}</div>
+        <span class="diplom-trophy">🔥</span>
+        ${winnersHtml}
+        <div class="diplom-subject">${winner.score} reaksjoner</div>
+        <span class="diplom-stars">★ ★ ★ ★ ★ ★ ★</span>
+        <button class="diplom-share" onclick="shareDiplom('activity')">📤 Del diplom</button>
+      </div>
+    </div>`;
+
+  // Vis fanen, start glitter og fanfare
+  window.switchResultTab('activity-winner');
+  playSound('fanfare');
+  startGlitter();
+}
 
 function buildCategoryBreakdown(session) {
   const cats = session.categories ? Object.values(session.categories) : [];
@@ -3090,7 +3102,7 @@ function showJudgeInLeaderboard(session,idx,container){
     const medals=['🥇','🥈','🥉'];
     const div=document.createElement('div');
     div.style.cssText='background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;max-width:480px;margin-left:auto;margin-right:auto;';
-    div.innerHTML=`<div style="font-size:15px;font-weight:600;margin-bottom:8px;">${p.name||pid}</div>${subjectScores.slice(0,3).map((s,si)=>`<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-top:1px solid var(--border);"><div style="font-size:14px;width:24px;">${medals[si]}</div><div style="flex:1;font-size:13px;">${s.name}</div><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--accent);">${s.total}p</div></div>`).join('')}`;
+    div.innerHTML=`<div style="font-size:15px;font-weight:600;margin-bottom:8px;text-align:center;width:100%;">${p.name||pid}</div>${subjectScores.slice(0,3).map((s,si)=>`<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-top:1px solid var(--border);"><div style="font-size:14px;width:24px;">${medals[si]}</div><div style="flex:1;font-size:13px;">${s.name}</div><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--accent);">${s.total}p</div></div>`).join('')}`;
     container.appendChild(div);
   });
 }
@@ -3274,7 +3286,7 @@ init().then(() => {
 
 </script>
 <!-- ACTIVITY BAR -->
-<div id="activity-bar" style="display:none;position:fixed;bottom:0;left:56px;right:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);border-top:0.5px solid rgba(255,255,255,0.06);padding:6px 12px;gap:12px;z-index:190;align-items:center;justify-content:center;flex-wrap:wrap;"></div>
+<div id="activity-bar" style="display:none;position:fixed;bottom:0;left:56px;right:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);border-top:0.5px solid rgba(255,255,255,0.06);padding:6px 12px;gap:16px;z-index:190;align-items:center;justify-content:center;flex-wrap:nowrap;overflow:hidden;"></div>
 
 <script>
 // Global event delegator - handles all data-action clicks
