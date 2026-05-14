@@ -1373,6 +1373,8 @@ async function handleSessionState(session){
           state.hasVotedCurrentSubject=true;
         }
       }
+      // Vent kort så alle spilleres stemmer rekker å skrives til Firebase
+      await new Promise(resolve=>setTimeout(resolve,1500));
       // Hent fersk sesjon fra Firebase så vi alltid rendrer med oppdaterte poeng
       const freshSnap=await get(ref(db,`sessions/${state.sessionId}`));
       const freshSession=freshSnap.exists()?freshSnap.val():session;
