@@ -511,12 +511,11 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
 <!-- ===== SCREEN: LEADERBOARD ===== -->
 <div id="screen-leaderboard" class="screen">
   <div class="header">
-    <div class="header-left" style="display:flex;align-items:center;gap:10px;">
-      
-      <div>
-        <div class="header-title">Resultater</div>
-        <div class="header-sub" id="lb-sub">Etter emne 1</div>
-      </div>
+    <div class="header-left">
+    </div>
+    <div style="position:absolute;left:50%;transform:translateX(-50%);text-align:center;">
+      <div class="header-title">Resultater</div>
+      <div class="header-sub" id="lb-sub">Etter emne 1</div>
     </div>
     <div class="header-right">
       <span class="badge badge-live"><span class="live-dot"></span>Live</span>
@@ -1806,6 +1805,12 @@ function showLeaderboardScreen(session){
   requestAnimationFrame(()=>{
     const h=document.querySelector('#screen-leaderboard .header');
     if(h)document.documentElement.style.setProperty('--header-h',h.offsetHeight+'px');
+    // PUNKT 59 – padding-top = header + fane-rad
+    const tabs=document.getElementById('lb-tabs-fixed');
+    const content=document.querySelector('#screen-leaderboard .content');
+    if(h&&tabs&&content){
+      content.style.paddingTop=(h.offsetHeight+tabs.offsetHeight)+'px';
+    }
   });
   const idx=session.currentSubjectIndex||0;
   const subjects=session.subjects?Object.values(session.subjects):[];
@@ -1841,7 +1846,7 @@ function showLeaderboardScreen(session){
   const tabBar=document.getElementById('lb-tabs');
   if(tabBar){
     tabBar.innerHTML='';
-    const tabLabels={'toplist':'🏆 Topp','categories':'📊 Kategori','judges':'🎯 Dommere'};
+    const tabLabels={'toplist':'🏆 Topp3','categories':'📊 Kategori','judges':'👤 Dine Topp3'};
     views.forEach((v,i)=>{
       const btn=document.createElement('div');
       btn.className='result-tab';
@@ -2216,7 +2221,8 @@ window.openGear=function(){
     }else{document.getElementById('gear-blindtest-section').style.display='none';}
     renderGearParticipants();
     const isPaused=state.session.paused;
-    document.getElementById('pause-toggle-btn').textContent=isPaused?'▶ Fortsett':'⏸ Sett på pause';
+    const ptb=document.getElementById('pause-toggle-btn');
+    if(ptb)ptb.textContent=isPaused?'▶ Fortsett':'⏸ Sett på pause';
   }
 };
 window.closeGear=function(){document.getElementById('gear-sheet').classList.remove('open');};
@@ -2342,7 +2348,8 @@ window.togglePauseWithMessage=async function(){
       paused:true,pauseMessage:msg,pausedAt:Date.now()
     });
   }
-  document.getElementById('pause-toggle-btn').textContent=!isPaused?'▶ Fortsett':'⏸ Sett på pause';
+  const ptb=document.getElementById('pause-toggle-btn');
+  if(ptb)ptb.textContent=!isPaused?'▶ Fortsett':'⏸ Sett på pause';
   ['pause-btn','pause-btn2'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=!isPaused?'▶':'⏸';});
 };
 
