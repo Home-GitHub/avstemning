@@ -261,8 +261,8 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
 .final-winner-score{font-family:'Bebas Neue',sans-serif;font-size:64px;color:var(--accent);line-height:1;}
 
 /* RESULT TABS */
-.result-tabs{display:flex;gap:2px;background:rgba(255,255,255,0.04);border-radius:10px;padding:3px;margin-bottom:18px;border:0.5px solid rgba(255,255,255,0.06);}
-.result-tab{flex:1;padding:14px 9px;text-align:center;font-size:13px;font-weight:500;border-radius:8px;cursor:pointer;color:var(--muted);transition:all 0.2s;}
+.result-tabs{display:flex;gap:2px;background:rgba(255,255,255,0.04);border-radius:10px;padding:3px;margin-bottom:18px;border:0.5px solid rgba(255,255,255,0.06);overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;}
+.result-tab{flex:0 0 auto;padding:14px 9px;text-align:center;font-size:13px;font-weight:500;border-radius:8px;cursor:pointer;color:var(--muted);transition:all 0.2s;white-space:nowrap;}
 .result-tab.active{background:rgba(255,255,255,0.07);color:var(--text);}
 .result-panel{display:none;}
 .result-panel.active{display:block;}
@@ -2244,6 +2244,8 @@ function showFinalLeaderboard(session){
   setTimeout(() => {
     try{ if (rc.categories) buildCategoryBreakdown(session); }catch(e){console.error('Category breakdown error:',e);}
     try{ if (rc.judges) renderJudgeBreakdown('final-judge-breakdown', session); }catch(e){console.error('Judge breakdown error:',e);}
+    // Vis trophy-fane stille hvis allerede kunngjort (refresh)
+    if(session.externalWinner)showExternalWinnerTab(session,true);
   }, 200);
   // Auto-roll between tabs continuously using lbSecs as interval
   if(tabDefs.length>1){
@@ -2937,12 +2939,9 @@ window.shareDiplom=function(){
   }
 };
 
-let externalWinnerShown=false;
-function showExternalWinnerTab(session){
-  if(externalWinnerShown)return;
+function showExternalWinnerTab(session,silent){
   const ew=session.externalWinner;
   if(!ew||!ew.winners||!ew.subjectName)return;
-  externalWinnerShown=true;
   // Stopp rulling
   state.finalRollStopped=true;
   // Legg til fane hvis ikke finnes
@@ -2963,7 +2962,12 @@ function showExternalWinnerTab(session){
     const diplom=buildDiplom(winnerName,ew.subjectName,session.name||'');
     container.appendChild(diplom);
   }
-  // Bytt til trophy-fane
+  if(silent){
+    // Refresh: bare vis fanen, ingen animasjon
+    window.switchResultTab('trophy');
+    return;
+  }
+  // Ny annonsering: fanfare og glitter
   setTimeout(()=>{
     window.switchResultTab('trophy');
     playSound('fanfare');
