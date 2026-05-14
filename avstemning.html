@@ -593,7 +593,6 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
       <div class="header-sub" id="final-session-name"></div>
     </div>
     <div class="header-right">
-      <div class="icon-btn admin-only" id="trophy-btn" data-action="openExternalWinner">🏆</div>
     </div>
   </div>
   <div id="result-tabs-fixed"><div class="result-tabs" id="result-tabs-container"></div></div>
@@ -869,9 +868,17 @@ function showScreen(id){
   // Show/hide SEND button only on voting screen - visibility only, never display
   const sendBtn=document.getElementById('submit-vote-btn');
   if(sendBtn){sendBtn.style.visibility=(id==='screen-voting')?'visible':'hidden';}
-  // Show/hide Force Next in sidebar — hidden on final screen (replaced by trophy btn in header)
+  // Show/hide Force Next in sidebar — replaced by 🏆 on final screen
   const forceNextBtn=document.getElementById('sb-force-next-btn');
-  if(forceNextBtn){forceNextBtn.style.display=(id==='screen-final')?'none':'';}
+  if(forceNextBtn){
+    if(id==='screen-final'){
+      forceNextBtn.textContent='🏆';
+      forceNextBtn.setAttribute('data-action','openExternalWinner');
+    } else {
+      forceNextBtn.textContent='➡️';
+      forceNextBtn.setAttribute('data-action','forceNext');
+    }
+  }
 }
 function formatTime(s){if(s<0)s=0;return`${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`;}
 function safeKey(s){return s.replace(/[.#$/\[\]\s]/g,'_');}
