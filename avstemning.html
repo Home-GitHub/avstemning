@@ -844,6 +844,7 @@ let state = {
   reactionsStarted: false,
   lastLbKey: null,
   finalShown: false,
+  endedHandled: false,
 };
 
 function ls(k,v){if(v===undefined)return localStorage.getItem(k);if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v);}
@@ -1358,7 +1359,7 @@ async function handleSessionState(session){
   }
 
   if(session.status==='published'||session.status==='waiting'){showWaitingRoom(session);return;}
-  if(session.status==='ended'){if(!state.finalShown){handleEndedState(session);}return;}
+  if(session.status==='ended'){if(!state.endedHandled){handleEndedState(session);}return;}
   if(session.status==='leaderboard'){
     const lbKey=`${state.sessionId}_lb_${session.currentSubjectIndex}`;
     if(state.lastLbKey!==lbKey){
@@ -1388,8 +1389,8 @@ async function handleSessionState(session){
 
 // ========== PUNKT 64 – HANDLE ENDED STATE ==========
 async function handleEndedState(session){
-  if(state.finalShown)return;
-  state.finalShown=true;
+  if(state.endedHandled)return;
+  state.endedHandled=true;
   // Hent fersk data fra Firebase
   const freshSnap=await get(ref(db,`sessions/${state.sessionId}`));
   const freshSession=freshSnap.exists()?freshSnap.val():session;
