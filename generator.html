@@ -560,7 +560,7 @@ function openModal(id,s) {
   if (s.status==='ended'&&s.subjects) { resultsEl.style.display='block'; renderResults(s); }
   else resultsEl.style.display='none';
   const regBtn = document.getElementById('modal-start-reg');
-  if(regBtn) regBtn.style.display = ['published','waiting'].includes(s.status) ? 'inline-flex' : 'none';
+  if(regBtn) regBtn.style.display = s.status !== 'ended' ? 'inline-flex' : 'none';
   document.getElementById('session-modal').classList.add('open');
 }
 
