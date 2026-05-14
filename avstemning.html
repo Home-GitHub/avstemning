@@ -586,15 +586,14 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
 <!-- ===== SCREEN: FINAL ===== -->
 <div id="screen-final" class="screen">
   <div class="header">
-    <div class="header-left" style="display:flex;align-items:center;gap:10px;">
-      
-      <div>
-        <div class="header-title">Endelig resultat</div>
-        <div class="header-sub" id="final-session-name"></div>
-      </div>
+    <div class="header-left">
+    </div>
+    <div style="position:absolute;left:50%;transform:translateX(-50%);text-align:center;">
+      <div class="header-title">Endelig resultat</div>
+      <div class="header-sub" id="final-session-name"></div>
     </div>
     <div class="header-right">
-      
+      <div class="icon-btn admin-only" id="trophy-btn" data-action="openExternalWinner" style="display:none;">🏆</div>
     </div>
   </div>
   <div id="result-tabs-fixed"><div class="result-tabs" id="result-tabs-container"></div></div>
@@ -618,7 +617,6 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
     <div class="result-panel" id="panel-judges">
       <div id="final-judge-breakdown"></div>
     </div>
-    <div class="text-muted text-center mt-24" style="font-size:12px;padding-bottom:32px;">Takk for deltakelse! 🎉</div>
   </div>
 </div>
 
@@ -870,6 +868,9 @@ function showScreen(id){
   // Show/hide SEND button only on voting screen - visibility only, never display
   const sendBtn=document.getElementById('submit-vote-btn');
   if(sendBtn){sendBtn.style.visibility=(id==='screen-voting')?'visible':'hidden';}
+  // Show/hide Force Next in sidebar — hidden on final screen (replaced by trophy btn in header)
+  const forceNextBtn=document.getElementById('sb-force-next-btn');
+  if(forceNextBtn){forceNextBtn.style.display=(id==='screen-final')?'none':'';}
 }
 function formatTime(s){if(s<0)s=0;return`${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`;}
 function safeKey(s){return s.replace(/[.#$/\[\]\s]/g,'_');}
@@ -2129,9 +2130,9 @@ function showFinalLeaderboard(session){
   // Build dynamic tabs from resultConfig
   const rc = session.resultConfig || { toplist: true, categories: true, judges: false };
   const tabDefs = [
-    { key: 'toplist', label: '🏆 Topp-liste', enabled: rc.toplist !== false },
-    { key: 'categories', label: '📊 Kategorier', enabled: !!rc.categories },
-    { key: 'judges', label: '🎯 Dommere', enabled: !!rc.judges },
+    { key: 'toplist', label: 'Topp3', enabled: rc.toplist !== false },
+    { key: 'categories', label: 'Kategori', enabled: !!rc.categories },
+    { key: 'judges', label: '👤 Dine Topp3', enabled: !!rc.judges },
   ].filter(t => t.enabled);
 
   const tabContainer = document.getElementById('result-tabs-container');
@@ -2167,6 +2168,7 @@ function showFinalLeaderboard(session){
     let currentTabIdx=0;
     if(state.finalRollInterval)clearInterval(state.finalRollInterval);
     state.finalRollInterval=setInterval(()=>{
+      if(state.finalRollStopped){clearInterval(state.finalRollInterval);state.finalRollInterval=null;return;}
       currentTabIdx=(currentTabIdx+1)%tabDefs.length;
       window.switchResultTab(tabDefs[currentTabIdx].key);
     },intervalMs);
