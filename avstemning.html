@@ -116,8 +116,8 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .sb-divider{width:22px;height:0.5px;background:rgba(255,255,255,0.08);margin:6px 0;}
 .sb-emoji-toggle{position:relative;}
 .sb-emoji-toggle.open{background:var(--accent-dim);border-color:rgba(255,255,255,0.15);}
-.sb-emoji-list{display:flex;flex-direction:column;gap:3px;overflow:hidden;max-height:0;transition:max-height 0.25s ease,opacity 0.25s;opacity:0;}
-.sb-emoji-list.open{max-height:200px;opacity:1;}
+.sb-emoji-list{position:absolute;left:56px;top:auto;display:flex;flex-direction:row;gap:4px;overflow:hidden;max-width:0;transition:max-width 0.25s ease,opacity 0.25s;opacity:0;background:rgba(10,10,10,0.95);border-radius:0 12px 12px 0;padding:0;border:0.5px solid rgba(255,255,255,0.08);z-index:201;}
+.sb-emoji-list.open{max-width:300px;opacity:1;padding:6px 8px;}
 .sb-e{width:40px;height:36px;border-radius:9px;font-size:18px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.03);cursor:pointer;transition:all 0.1s;}
 .sb-e:active{transform:scale(0.85);}
 .final-fans{display:flex;justify-content:center;gap:24px;margin-top:10px;flex-wrap:wrap;}
@@ -1189,7 +1189,11 @@ window.sendReaction = async function sendReaction(emoji){
   if(state.reactionCooldown||!state.sessionId)return;
   state.reactionCooldown=true;
   setTimeout(()=>state.reactionCooldown=false,5000);
-  showFloatingReaction(emoji,state.participantName); // local feedback for sender
+  const list=document.getElementById('global-emoji-list');
+  const toggle=document.getElementById('global-emoji-toggle');
+  if(list){list.classList.remove('open');}
+  if(toggle){toggle.classList.remove('open');}
+  showFloatingReaction(emoji,state.participantName);
   await set(ref(db,`sessions/${state.sessionId}/reactions/${generateId()}`),{emoji,participantName:state.participantName,at:Date.now()});
 }
 
