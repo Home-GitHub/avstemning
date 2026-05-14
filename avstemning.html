@@ -1485,7 +1485,6 @@ async function handleEndedState(session){
   // Beregn og lagre vinnere – kun admin gjør dette
   if(state.isAdmin){
     await calcExternalWinner(freshSession);
-    await calcActivityWinner(freshSession);
   }
   // Vis endelig resultat for alle
   showFinalLeaderboard(freshSession);
