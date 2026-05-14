@@ -432,7 +432,15 @@ function handleFile(file) {
       renderChips();
       const prev = document.getElementById('import-preview');
       prev.style.display = 'block';
-      const bingoStatus = bingoTexts.length ? `🎯 ${bingoTexts.length} bingo-tekster lastet` : '— Ingen bingo-fane';
+      let bingoStatus;
+      if(bingoTexts.length===24){
+        bingoStatus='<span style="color:#4caf50;">🎯 24 bingo-tekster lastet — bingo aktivert</span>';
+      } else if(bingoTexts.length>0){
+        bingoStatus=`<span style="color:#e05555;">⚠️ Bingo krever nøyaktig 24 tekster — du har ${bingoTexts.length}. Bingo deaktiveres i spillet.</span>`;
+        bingoTexts=[];
+      } else {
+        bingoStatus='<span style="color:#555;">— Ingen bingo-fane</span>';
+      }
       prev.innerHTML = `✅ ${subjects.length} emner og ${categories.length} kategorier importert<br>${bingoStatus}`;
     } catch(err) { alert(`❌ ${err.message}`); }
   };

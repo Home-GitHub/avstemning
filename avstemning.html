@@ -790,17 +790,12 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
 </div>
 
 <!-- BINGO SHEET -->
-<div class="sheet-bg" id="bingo-sheet">
-  <div class="sheet">
+<div class="sheet-bg" id="bingo-sheet" style="z-index:250;">
+  <div class="sheet" style="display:flex;flex-direction:column;max-height:88vh;">
     <div class="sheet-handle"></div>
     <div class="sheet-title">🎯 Bingo</div>
-    <div id="bingo-board" style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-bottom:14px;"></div>
-    <div id="bingo-won-msg" style="display:none;text-align:center;padding:12px 0;">
-      <div style="font-size:32px;margin-bottom:6px;">🎯</div>
-      <div style="font-size:18px;font-weight:700;color:var(--accent);margin-bottom:4px;">Du har bingo!</div>
-      <div style="font-size:12px;color:var(--muted);">+30 aktivitetspoeng</div>
-    </div>
-    <button class="btn btn-secondary" style="width:100%;" onclick="document.getElementById('bingo-sheet').classList.remove('open')">Lukk</button>
+    <div id="bingo-board" style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px;flex:1;overflow-y:auto;margin-bottom:14px;"></div>
+    <button class="btn btn-secondary" style="width:100%;flex-shrink:0;" onclick="document.getElementById('bingo-sheet').classList.remove('open')">Lukk</button>
   </div>
 </div>
 
@@ -1285,9 +1280,6 @@ async function init(){
   // This ensures reconnect works for ALL statuses including 'ended'
   if(state.participantId||(savedIsAdmin&&savedSessionId===slug)||session.status==='ended'){
     startSessionListener();
-    // Restore bingo sidebar state
-    const bingoState=getBingoState();
-    if(bingoState.won){const btn=document.getElementById('sb-bingo-btn');if(btn)btn.textContent='✅';}
     return;
   }
 
@@ -2746,29 +2738,31 @@ function getBingoThemeIcon(){
 }
 
 function getBingoState(){
-  if(!state.sessionId)return{checked:[],won:false};
+  if(!state.sessionId)return{checked:[],announcedLines:[]};
   const raw=localStorage.getItem(`bingo_${state.sessionId}`);
-  if(!raw)return{checked:[],won:false};
-  try{return JSON.parse(raw);}catch(e){return{checked:[],won:false};}
+  if(!raw)return{checked:[],announcedLines:[]};
+  try{return JSON.parse(raw);}catch(e){return{checked:[],announcedLines:[]};}
 }
 
-function saveBingoState(checked,won){
+function saveBingoState(checked,announcedLines){
   if(!state.sessionId)return;
-  localStorage.setItem(`bingo_${state.sessionId}`,JSON.stringify({checked,won}));
+  localStorage.setItem(`bingo_${state.sessionId}`,JSON.stringify({checked,announcedLines}));
 }
 
-function checkBingo(checked){
-  // 5x5 grid — check rows, cols, diagonals
-  const g=Array(25).fill(false).map((_,i)=>checked.includes(i));
+// Returnerer array av linje-id-er som er fullført
+function getCompletedLines(checked){
+  const all=[...checked,12]; // midtrute alltid med
+  const g=Array(25).fill(false).map((_,i)=>all.includes(i));
+  const lines=[];
   for(let r=0;r<5;r++){
-    if([0,1,2,3,4].every(c=>g[r*5+c]))return true;
+    if([0,1,2,3,4].every(c=>g[r*5+c]))lines.push(`r${r}`);
   }
   for(let c=0;c<5;c++){
-    if([0,1,2,3,4].every(r=>g[r*5+c]))return true;
+    if([0,1,2,3,4].every(r=>g[r*5+c]))lines.push(`c${c}`);
   }
-  if([0,6,12,18,24].every(i=>g[i]))return true;
-  if([4,8,12,16,20].every(i=>g[i]))return true;
-  return false;
+  if([0,6,12,18,24].every(i=>g[i]))lines.push('d1');
+  if([4,8,12,16,20].every(i=>g[i]))lines.push('d2');
+  return lines;
 }
 
 function buildBingoBoard(){
@@ -2776,47 +2770,42 @@ function buildBingoBoard(){
   if(!board)return;
   const texts=state.session?.bingo||null;
   if(!texts||!texts.length){board.innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;grid-column:span 5;">Ingen bingo i denne sesjonen</div>';return;}
-  const {checked,won}=getBingoState();
+  const {checked}=getBingoState();
   board.innerHTML='';
   const themeIcon=getBingoThemeIcon();
   for(let i=0;i<25;i++){
     const cell=document.createElement('div');
     const isCenter=i===12;
     const isChecked=isCenter||checked.includes(i);
-    cell.style.cssText=`aspect-ratio:1;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:${isCenter?'20px':'9px'};font-weight:${isChecked?'700':'400'};text-align:center;padding:3px;cursor:${won?'default':'pointer'};transition:all 0.15s;background:${isChecked?'rgba(var(--accent-rgb,160,80,255),0.7)':'rgba(255,255,255,0.06)'};color:${isChecked?'#fff':'rgba(255,255,255,0.6)'};`;
+    cell.style.cssText=`aspect-ratio:1;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:${isCenter?'20px':'9px'};font-weight:${isChecked?'700':'400'};text-align:center;padding:3px;word-break:break-word;line-height:1.2;cursor:${isCenter?'default':'pointer'};transition:all 0.15s;background:${isChecked?'rgba(160,80,255,0.7)':'rgba(255,255,255,0.06)'};color:#fff;`;
     cell.textContent=isCenter?themeIcon:(texts[i<12?i:i-1]||'');
-    if(!won&&!isCenter){
+    if(!isCenter){
       cell.onclick=()=>toggleBingoCell(i);
     }
     board.appendChild(cell);
   }
-  // Vis/skjul bingo-melding
-  const wonMsg=document.getElementById('bingo-won-msg');
-  if(wonMsg)wonMsg.style.display=won?'block':'none';
 }
 
 function toggleBingoCell(idx){
   if(!state.session?.bingo)return;
-  const {checked,won}=getBingoState();
-  if(won)return;
+  const {checked,announcedLines}=getBingoState();
   const newChecked=checked.includes(idx)?checked.filter(i=>i!==idx):[...checked,idx];
-  const newWon=checkBingo([...newChecked,12]); // midtrute alltid krysset
-  saveBingoState(newChecked,newWon);
+  const completedLines=getCompletedLines(newChecked);
+  const newLines=completedLines.filter(l=>!announcedLines.includes(l));
+  const newAnnouncedLines=[...announcedLines,...newLines];
+  saveBingoState(newChecked,newAnnouncedLines);
   buildBingoBoard();
-  if(newWon){
+  if(newLines.length>0){
     announceBingo();
   }
 }
 
 async function announceBingo(){
   if(!state.sessionId||!state.participantName)return;
-  // Oppdater sidebar-knapp
-  const btn=document.getElementById('sb-bingo-btn');
-  if(btn)btn.textContent='✅';
   // 30 aktivitetspoeng
   trackActivity(state.participantName,'bingo');
-  // Skriv til Firebase
-  await set(ref(db,`sessions/${state.sessionId}/bingoWinners/${safeKey(state.participantName)}`),{
+  // Skriv til Firebase med unik id per bingo
+  await set(ref(db,`sessions/${state.sessionId}/bingoWinners/${generateId()}`),{
     name:state.participantName,at:Date.now()
   });
 }
@@ -2860,10 +2849,6 @@ window.openBingo=function(){
   const texts=state.session?.bingo||null;
   if(!texts||!texts.length){showToast('Ingen bingo i denne sesjonen');return;}
   buildBingoBoard();
-  // Oppdater sidebar-knapp om allerede vunnet
-  const {won}=getBingoState();
-  const btn=document.getElementById('sb-bingo-btn');
-  if(btn)btn.textContent=won?'✅':'🎯';
   document.getElementById('bingo-sheet').classList.add('open');
 };
 
