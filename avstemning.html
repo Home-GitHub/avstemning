@@ -1436,7 +1436,9 @@ async function handleSessionState(session){
   if(session.status==='published'||session.status==='waiting'){showWaitingRoom(session);return;}
   if(session.status==='ended'){
     if(!state.endedHandled){handleEndedState(session);}
-    if(session.externalWinner)showExternalWinnerTab(session);
+    if(session.externalWinner&&document.getElementById('screen-final')?.classList.contains('active')){
+      showExternalWinnerTab(session);
+    }
     return;
   }
   if(session.status==='leaderboard'){
@@ -2944,9 +2946,10 @@ function showExternalWinnerTab(session,silent){
   if(!ew||!ew.winners||!ew.subjectName)return;
   // Stopp rulling
   state.finalRollStopped=true;
+  const alreadyBuilt=!!document.getElementById('tab-btn-trophy');
   // Legg til fane hvis ikke finnes
   const tabContainer=document.getElementById('result-tabs-container');
-  if(tabContainer&&!document.getElementById('tab-btn-trophy')){
+  if(tabContainer&&!alreadyBuilt){
     const btn=document.createElement('div');
     btn.className='result-tab';
     btn.id='tab-btn-trophy';
@@ -2954,20 +2957,21 @@ function showExternalWinnerTab(session,silent){
     btn.onclick=()=>window.switchResultTab('trophy');
     tabContainer.appendChild(btn);
   }
-  // Bygg diplom-innhold
-  const container=document.getElementById('trophy-diplom-content');
-  if(container){
-    container.innerHTML='';
-    const winnerName=ew.winners.join(' & ');
-    const diplom=buildDiplom(winnerName,ew.subjectName,session.name||'');
-    container.appendChild(diplom);
+  // Bygg diplom-innhold kun første gang
+  if(!alreadyBuilt){
+    const container=document.getElementById('trophy-diplom-content');
+    if(container){
+      container.innerHTML='';
+      const winnerName=ew.winners.join(' & ');
+      const diplom=buildDiplom(winnerName,ew.subjectName,session.name||'');
+      container.appendChild(diplom);
+    }
   }
   if(silent){
-    // Refresh: bare vis fanen, ingen animasjon
     window.switchResultTab('trophy');
     return;
   }
-  // Ny annonsering: fanfare og glitter
+  if(alreadyBuilt)return;
   setTimeout(()=>{
     window.switchResultTab('trophy');
     playSound('fanfare');
