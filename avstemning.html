@@ -161,8 +161,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .cat-header{display:flex;flex-direction:column;align-items:center;margin-bottom:4px;gap:2px;}
 .cat-name{font-size:20px;color:rgba(255,255,255,0.85);font-weight:700;text-align:center;width:100%;}
 .cat-val{font-size:22px;font-weight:700;color:var(--accent);font-family:monospace;line-height:1;}
-/* PUNKT 78 – padding-right så thumb ikke klippes til høyre */
-.slider-wrap{position:relative;padding:4px 16px 4px 0;}
+.slider-wrap{position:relative;padding:4px 0;}
 .slider-input{
   width:100%;-webkit-appearance:none;appearance:none;
   height:8px;border-radius:4px;
@@ -170,9 +169,8 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
   outline:none;cursor:pointer;display:block;
   touch-action:manipulation;
 }
-/* PUNKT 62 – dempet thumb, mindre og roligere */
-.slider-input::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:20px;height:20px;border-radius:50%;background:var(--accent);opacity:0.55;cursor:pointer;box-shadow:none;border:1.5px solid rgba(255,255,255,0.15);}
-.slider-input::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:var(--accent);opacity:0.55;cursor:pointer;border:1.5px solid rgba(255,255,255,0.15);}
+.slider-input::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:32px;height:32px;border-radius:50%;background:var(--accent);cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,0.5);border:2px solid rgba(255,255,255,0.2);}
+.slider-input::-moz-range-thumb{width:32px;height:32px;border-radius:50%;background:var(--accent);cursor:pointer;border:2px solid rgba(255,255,255,0.2);}
 .slider-midmark{position:absolute;top:-6px;bottom:-6px;transform:translateX(-50%);width:3px;background:rgba(255,255,255,0.5);pointer-events:none;border-radius:2px;box-shadow:0 0 4px rgba(255,255,255,0.3);}
 .slider-labels{display:flex;justify-content:space-between;margin-top:1px;}
 .slider-lbl{font-size:9px;color:rgba(255,255,255,0.2);}
@@ -332,23 +330,6 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
 .is-admin .admin-only{display:flex;}
 .submitted-center{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;text-align:center;padding:40px 20px;}
 ::-webkit-scrollbar{width:0;}
-
-/* PUNKT 82 – Eurovision-inspirert diplom */
-.diplom-wrap{display:flex;flex-direction:column;align-items:center;padding:16px 12px 24px;}
-.diplom{background:linear-gradient(160deg,#0d0d1a 0%,#1a1228 60%,#0d0d1a 100%);border:1.5px solid rgba(232,195,106,0.5);border-radius:18px;padding:28px 20px 24px;text-align:center;width:100%;max-width:360px;position:relative;box-shadow:0 0 40px rgba(232,195,106,0.1);}
-.diplom-stars{font-size:13px;letter-spacing:4px;color:rgba(232,195,106,0.5);margin-bottom:16px;display:block;}
-.diplom-label{font-size:10px;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px;}
-.diplom-session{font-family:'Bebas Neue',sans-serif;font-size:28px;color:#e8c36a;letter-spacing:1px;line-height:1.1;margin-bottom:4px;}
-.diplom-date{font-size:11px;color:rgba(255,255,255,0.3);margin-bottom:20px;}
-.diplom-trophy{font-size:48px;margin-bottom:12px;display:block;}
-.diplom-winner{font-family:'Bebas Neue',sans-serif;font-size:36px;color:#ffffff;letter-spacing:1px;line-height:1.1;margin-bottom:8px;}
-.diplom-subject{font-size:16px;color:var(--accent);font-weight:600;margin-bottom:20px;}
-.diplom-share{background:rgba(232,195,106,0.15);border:1px solid rgba(232,195,106,0.4);color:#e8c36a;border-radius:10px;padding:10px 20px;font-size:13px;font-weight:600;cursor:pointer;width:100%;}
-
-/* Glitter-partikler */
-.glitter-container{position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:100;overflow:hidden;}
-.glitter-particle{position:absolute;border-radius:2px;animation:glitter-fall 3s ease-in infinite;}
-@keyframes glitter-fall{0%{transform:translateY(-20px) rotate(0deg);opacity:1;}100%{transform:translateY(100vh) rotate(720deg);opacity:0;}}
 </style>
 </head>
 <body>
@@ -527,13 +508,13 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
 
 <!-- ===== SCREEN: LEADERBOARD ===== -->
 <div id="screen-leaderboard" class="screen">
-  <div class="header" style="position:fixed;top:0;left:0;right:0;">
+  <div class="header">
     <div class="header-left" style="display:flex;align-items:center;gap:10px;">
       
-    </div>
-    <div style="position:absolute;left:50%;transform:translateX(-50%);text-align:center;">
-      <div class="header-title">Resultater</div>
-      <div class="header-sub" id="lb-sub">Etter emne 1</div>
+      <div>
+        <div class="header-title">Resultater</div>
+        <div class="header-sub" id="lb-sub">Etter emne 1</div>
+      </div>
     </div>
     <div class="header-right">
       <span class="badge badge-live"><span class="live-dot"></span>Live</span>
@@ -603,16 +584,16 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
 
 <!-- ===== SCREEN: FINAL ===== -->
 <div id="screen-final" class="screen">
-  <div class="header" style="position:fixed;top:0;left:0;right:0;">
-    <div class="header-left">
-    </div>
-    <div style="position:absolute;left:50%;transform:translateX(-50%);text-align:center;">
-      <div class="header-title">Endelig resultat</div>
-      <div class="header-sub" id="final-session-name"></div>
+  <div class="header">
+    <div class="header-left" style="display:flex;align-items:center;gap:10px;">
+      
+      <div>
+        <div class="header-title">Endelig resultat</div>
+        <div class="header-sub" id="final-session-name"></div>
+      </div>
     </div>
     <div class="header-right">
-      <!-- PUNKT 48 – 🏆-knapp kun for admin -->
-      <div class="icon-btn admin-only" data-action="openExternalResults" style="font-size:18px;">🏆</div>
+      
     </div>
   </div>
   <div id="result-tabs-fixed"><div class="result-tabs" id="result-tabs-container"></div></div>
@@ -636,11 +617,7 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
     <div class="result-panel" id="panel-judges">
       <div id="final-judge-breakdown"></div>
     </div>
-    <!-- PUNKT 53/54/55/56/82 – Jury-vinner panel -->
-    <div class="result-panel" id="panel-external-winner"></div>
-    <!-- PUNKT aktivitetsvinner panel -->
-    <div class="result-panel" id="panel-activity-winner"></div>
-
+    <div class="text-muted text-center mt-24" style="font-size:12px;padding-bottom:32px;">Takk for deltakelse! 🎉</div>
   </div>
 </div>
 
@@ -781,32 +758,6 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
   </div>
 </div>
 
-<!-- PUNKT 49/50 – EXTERNAL RESULTS SHEET (admin only) -->
-<div class="sheet-bg" id="external-results-sheet">
-  <div class="sheet">
-    <div class="sheet-handle"></div>
-    <div class="sheet-title">🏆 Jury-resultater</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:16px;">Velg hvilke emner juryen kåret</div>
-    <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:16px;">
-      <div>
-        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:4px;">🥇 1. plass</div>
-        <select id="ext-place-1" class="ext-select" style="width:100%;padding:8px 10px;font-size:13px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text);"></select>
-      </div>
-      <div>
-        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:4px;">🥈 2. plass</div>
-        <select id="ext-place-2" class="ext-select" style="width:100%;padding:8px 10px;font-size:13px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text);"></select>
-      </div>
-      <div>
-        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:4px;">🥉 3. plass</div>
-        <select id="ext-place-3" class="ext-select" style="width:100%;padding:8px 10px;font-size:13px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text);"></select>
-      </div>
-    </div>
-    <div id="ext-duplicate-warning" style="display:none;color:var(--danger);font-size:12px;margin-bottom:10px;">⚠️ Samme emne er valgt på flere plasser</div>
-    <button class="btn btn-primary" id="ext-save-btn" data-action="saveExternalResultsUI">Lagre og kunngjør →</button>
-    <button class="btn btn-secondary mt-8" onclick="document.getElementById('external-results-sheet').classList.remove('open')">Avbryt</button>
-  </div>
-</div>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 // Proxy functions so onclick works before module loads
@@ -825,8 +776,7 @@ var _fns = ['showAdminLoginSheet','loginFromSheet','openSkalSheet','joinSession'
   'openGear','closeGear','showQrSheet','startSession','togglePause','togglePauseWithMessage',
   'forceNext','goBack','jumpToSubject','updateMinutes','updateLbSecs','addTime',
   'shuffleBlindtest','lockBlindtest','revealBlindtest',
-  'endSession','adminLogin','kickParticipant','removeVote','addManualParticipant',
-  'openExternalResults','saveExternalResultsUI'];
+  'endSession','adminLogin','kickParticipant','removeVote','addManualParticipant'];
 _fns.forEach(function(n) { window[n] = _proxyHandler(n); });
 </script>
 <script type="module" id="main-module">
@@ -836,7 +786,7 @@ import { getDatabase, ref, set, get, update, onValue, onChildAdded, remove, runT
 // Make all window functions available immediately
 Object.defineProperty(window, '__moduleReady', { value: true });
 
-const VERSION = 'Avstemning v3.30';
+const VERSION = 'Avstemning v3.31';
 console.log(VERSION);
 
 const FIREBASE_CONFIG = {
@@ -1424,21 +1374,16 @@ async function handleSessionState(session){
     return;
   }
   if(session.status==='voting'){showVotingScreen(session);return;}
-  // GRUPPE 8 – vis aktivitetsvinner automatisk når flagget er satt i Firebase
-  if(session.showActivityWinner&&!state.activityWinnerShown){
-    state.activityWinnerShown=true;
-    showActivityWinnerTab(session);
-  }
 }
 
 // ========== PUNKT 64 – HANDLE ENDED STATE ==========
 async function handleEndedState(session){
   if(state.finalShown)return;
   state.finalShown=true;
-  // Hent fersk sesjondata fra Firebase
+  // Hent fersk data fra Firebase
   const freshSnap=await get(ref(db,`sessions/${state.sessionId}`));
   const freshSession=freshSnap.exists()?freshSnap.val():session;
-  // Beregn og lagre vinnere (kun admin gjør dette)
+  // Beregn og lagre vinnere – kun admin gjør dette
   if(state.isAdmin){
     await calcExternalWinner(freshSession);
     await calcActivityWinner(freshSession);
@@ -1614,7 +1559,7 @@ function buildVotingCategories(session){
           data-key="${catKey}" data-max="${cat.max}">
       </div>
       <div style="display:flex;justify-content:space-between;padding:0 0 2px;">
-        <span id="lbl0-${catKey}" style="font-size:13px;color:rgba(255,255,255,0.5);font-weight:600;">0</span>
+        <span style="font-size:13px;color:rgba(255,255,255,0.5);font-weight:600;">0</span>
         <span style="font-size:13px;color:rgba(255,255,255,0.5);font-weight:600;">${Math.round(cat.max/2)}</span>
         <span style="font-size:13px;color:rgba(255,255,255,0.5);font-weight:600;">${cat.max}</span>
       </div>`;
@@ -1636,12 +1581,6 @@ function buildVotingCategories(session){
         if(!state.currentVotes[si])state.currentVotes[si]={};
         state.currentVotes[si][k]=v;
         document.getElementById('v-'+k).textContent=v;
-        // PUNKT 68 – oppdater 0-etikett live med accent-farge
-        const lbl0=document.getElementById('lbl0-'+k);
-        if(lbl0){
-          if(v>0){lbl0.textContent=v;lbl0.style.color='var(--accent)';}
-          else{lbl0.textContent='0';lbl0.style.color='rgba(255,255,255,0.5)';}
-        }
         updateSlider(slider);
         saveDraft(si);
       });
@@ -1854,12 +1793,6 @@ function showLeaderboardScreen(session){
   requestAnimationFrame(()=>{
     const h=document.querySelector('#screen-leaderboard .header');
     if(h)document.documentElement.style.setProperty('--header-h',h.offsetHeight+'px');
-    // PUNKT 59 – padding-top = header + fane-rad så innhold ikke kappes
-    const tabs=document.getElementById('lb-tabs-fixed');
-    const content=document.querySelector('#screen-leaderboard .content');
-    if(h&&tabs&&content){
-      content.style.paddingTop=(h.offsetHeight+tabs.offsetHeight)+'px';
-    }
   });
   const idx=session.currentSubjectIndex||0;
   const subjects=session.subjects?Object.values(session.subjects):[];
@@ -1895,7 +1828,7 @@ function showLeaderboardScreen(session){
   const tabBar=document.getElementById('lb-tabs');
   if(tabBar){
     tabBar.innerHTML='';
-    const tabLabels={'toplist':'Topp3','categories':'📊 Kategori','judges':'👤 Dine Topp3'};
+    const tabLabels={'toplist':'🏆 Topp','categories':'📊 Kategori','judges':'🎯 Dommere'};
     views.forEach((v,i)=>{
       const btn=document.createElement('div');
       btn.className='result-tab';
@@ -2168,9 +2101,9 @@ function showFinalLeaderboard(session){
   // Build dynamic tabs from resultConfig
   const rc = session.resultConfig || { toplist: true, categories: true, judges: false };
   const tabDefs = [
-    { key: 'toplist', label: 'Topp3', enabled: rc.toplist !== false },
+    { key: 'toplist', label: '🏆 Topp-liste', enabled: rc.toplist !== false },
     { key: 'categories', label: '📊 Kategorier', enabled: !!rc.categories },
-    { key: 'judges', label: '👤 Dine Topp3', enabled: !!rc.judges },
+    { key: 'judges', label: '🎯 Dommere', enabled: !!rc.judges },
   ].filter(t => t.enabled);
 
   const tabContainer = document.getElementById('result-tabs-container');
@@ -2272,63 +2205,6 @@ window.openGear=function(){
   }
 };
 window.closeGear=function(){document.getElementById('gear-sheet').classList.remove('open');};
-
-// ========== PUNKT 49/50 – EXTERNAL RESULTS UI ==========
-window.openExternalResults=function(){
-  if(!state.isAdmin||!state.session)return;
-  const subjects=state.session.subjects?Object.values(state.session.subjects):[];
-  const selects=['ext-place-1','ext-place-2','ext-place-3'];
-  // Fyll dropdowns med emner
-  selects.forEach(id=>{
-    const sel=document.getElementById(id);
-    if(!sel)return;
-    sel.innerHTML='<option value="">-- Velg emne --</option>';
-    subjects.forEach(s=>{
-      const opt=document.createElement('option');
-      opt.value=s.name;
-      opt.textContent=s.name;
-      sel.appendChild(opt);
-    });
-    sel.onchange=validateExternalSelects;
-  });
-  // Fyll inn eksisterende verdier hvis de finnes
-  const existing=state.session.externalResults||{};
-  if(existing['1'])document.getElementById('ext-place-1').value=existing['1'];
-  if(existing['2'])document.getElementById('ext-place-2').value=existing['2'];
-  if(existing['3'])document.getElementById('ext-place-3').value=existing['3'];
-  validateExternalSelects();
-  document.getElementById('external-results-sheet').classList.add('open');
-};
-
-function validateExternalSelects(){
-  const v1=document.getElementById('ext-place-1').value;
-  const v2=document.getElementById('ext-place-2').value;
-  const v3=document.getElementById('ext-place-3').value;
-  const vals=[v1,v2,v3].filter(Boolean);
-  const hasDuplicate=vals.length!==new Set(vals).size;
-  const warning=document.getElementById('ext-duplicate-warning');
-  const saveBtn=document.getElementById('ext-save-btn');
-  if(warning)warning.style.display=hasDuplicate?'block':'none';
-  if(saveBtn)saveBtn.disabled=hasDuplicate||vals.length<3;
-}
-
-window.saveExternalResultsUI=async function(){
-  const v1=document.getElementById('ext-place-1').value;
-  const v2=document.getElementById('ext-place-2').value;
-  const v3=document.getElementById('ext-place-3').value;
-  if(!v1||!v2||!v3)return;
-  document.getElementById('external-results-sheet').classList.remove('open');
-  await window.saveExternalResults({'1':v1,'2':v2,'3':v3});
-  // Kunngjør jury-vinner for alle
-  const snap=await get(ref(db,`sessions/${state.sessionId}`));
-  if(snap.exists()){
-    const freshSession=snap.val();
-    await calcExternalWinner(freshSession);
-    showExternalWinnerTab(freshSession);
-    // GRUPPE 8 – start aktivitetsvinner-timer etter emnetid
-    scheduleActivityWinnerTimer(freshSession);
-  }
-};
 
 function renderGearParticipants(){
   const container=document.getElementById('gear-participants');
@@ -2508,17 +2384,14 @@ async function calcExternalWinner(session){
   const externalResults=session.externalResults||null;
   if(!externalResults||!externalResults['1'])return null;
   const juryFirstPlace=externalResults['1'];
-
-  // Finn indeksen til juryens 1. plass-emne i subjects
+  // Finn indeksen til juryens 1. plass-emne
   const subjects=session.subjects?Object.values(session.subjects):[];
   const subjectIdx=subjects.findIndex(s=>s.name===juryFirstPlace);
   if(subjectIdx===-1)return null;
-
-  // Hent alle stemmer på dette emnet
+  // Hent stemmer på dette emnet
   const votes=session.votes||{};
   const subjectVotes=votes[subjectIdx]||{};
-
-  // Summer alle kategorier per deltaker på dette emnet
+  // Summer alle kategorier per deltaker og finn høyeste score
   let highestScore=-1;
   let winners=[];
   Object.values(subjectVotes).forEach(v=>{
@@ -2527,9 +2400,7 @@ async function calcExternalWinner(session){
     if(total>highestScore){highestScore=total;winners=[v.participantName];}
     else if(total===highestScore){winners.push(v.participantName);}
   });
-
   if(winners.length===0)return null;
-
   // Lagre vinner(e) til Firebase
   await update(ref(db,`sessions/${state.sessionId}`),{
     externalWinner:{winners,subjectName:juryFirstPlace}
@@ -2541,7 +2412,6 @@ async function calcExternalWinner(session){
 async function calcActivityWinner(session){
   const activity=session.activity||null;
   if(!activity)return null;
-
   // Finn høyeste score
   let highestScore=-1;
   let winners=[];
@@ -2552,9 +2422,7 @@ async function calcActivityWinner(session){
     if(score>highestScore){highestScore=score;winners=[name];}
     else if(score===highestScore){winners.push(name);}
   });
-
   if(winners.length===0)return null;
-
   // Lagre vinner(e) til Firebase
   await update(ref(db,`sessions/${state.sessionId}`),{
     activityWinner:{winners,score:highestScore}
@@ -2798,154 +2666,7 @@ window.switchResultTab = function(tab) {
   const panelEl = document.getElementById(`panel-${tab}`);
   if (btnEl) btnEl.classList.add('active');
   if (panelEl) panelEl.classList.add('active');
-  // PUNKT 57/58 – stopp rulleringen når vinner-fane vises
-  if(tab==='external-winner'||tab==='activity-winner'){
-    if(state.finalRollInterval){clearInterval(state.finalRollInterval);state.finalRollInterval=null;}
-    // PUNKT 60/70 – start glitter når vinner-fane vises
-    startGlitter();
-  } else {
-    // Stopp glitter når man bytter til annen fane
-    stopGlitter();
-  }
 };
-
-// ========== PUNKT 53/54/55/56/60/70/82 – JURY-VINNER TAB OG DIPLOM ==========
-function showExternalWinnerTab(session){
-  const winner=session.externalWinner;
-  if(!winner)return;
-
-  // Legg til fane hvis den ikke finnes
-  const tabContainer=document.getElementById('result-tabs-container');
-  if(tabContainer&&!document.getElementById('tab-btn-external-winner')){
-    const btn=document.createElement('div');
-    btn.className='result-tab';
-    btn.id='tab-btn-external-winner';
-    btn.textContent='🏆 Jury';
-    btn.onclick=()=>{
-      window.switchResultTab('external-winner');
-      startGlitter();
-    };
-    tabContainer.appendChild(btn);
-  }
-
-  // Bygg diplom-innhold
-  const panel=document.getElementById('panel-external-winner');
-  if(!panel)return;
-  const sessionName=session.name||'';
-  const dato=new Date().toLocaleDateString('nb-NO',{day:'numeric',month:'long',year:'numeric'});
-  const winnersHtml=winner.winners.map(n=>`<div class="diplom-winner">${n}</div>`).join('');
-
-  panel.innerHTML=`
-    <div class="diplom-wrap">
-      <div class="diplom">
-        <span class="diplom-stars">★ ★ ★ ★ ★ ★ ★</span>
-        <div class="diplom-label">Vinneren av</div>
-        <div class="diplom-session">${sessionName}</div>
-        <div class="diplom-date">${dato}</div>
-        <span class="diplom-trophy">🏆</span>
-        ${winnersHtml}
-        <div class="diplom-subject">${winner.subjectName}</div>
-        <span class="diplom-stars">★ ★ ★ ★ ★ ★ ★</span>
-        <button class="diplom-share" onclick="shareDiplom('external')">📤 Del diplom</button>
-      </div>
-    </div>`;
-
-  // Vis fanen, stopp rulling, start glitter og fanfare
-  window.switchResultTab('external-winner');
-  playSound('fanfare');
-  startGlitter();
-}
-
-function startGlitter(){
-  // Fjern eksisterende glitter
-  const existing=document.getElementById('glitter-container');
-  if(existing)existing.remove();
-  const container=document.createElement('div');
-  container.className='glitter-container';
-  container.id='glitter-container';
-  const colors=['#e8c36a','#a078dc','#ffffff','#f0d080','#c8a0ff'];
-  for(let i=0;i<60;i++){
-    const p=document.createElement('div');
-    p.className='glitter-particle';
-    const size=3+Math.random()*5;
-    const color=colors[Math.floor(Math.random()*colors.length)];
-    p.style.cssText=`width:${size}px;height:${size}px;background:${color};left:${Math.random()*100}%;animation-delay:${Math.random()*3}s;animation-duration:${2+Math.random()*2}s;`;
-    container.appendChild(p);
-  }
-  document.body.appendChild(container);
-}
-
-function stopGlitter(){
-  const c=document.getElementById('glitter-container');
-  if(c)c.remove();
-}
-
-function shareDiplom(type){
-  const panel=type==='external'?document.getElementById('panel-external-winner'):document.getElementById('panel-activity-winner');
-  const diplom=panel?panel.querySelector('.diplom'):null;
-  if(!diplom)return;
-  if(navigator.share){
-    navigator.share({title:'Diplom',text:diplom.innerText}).catch(()=>{});
-  }
-}
-
-// ========== GRUPPE 8 – AKTIVITETSVINNER TIMER OG TAB ==========
-function scheduleActivityWinnerTimer(session){
-  // Kun admin starter timeren
-  if(!state.isAdmin)return;
-  const minutes=session.minutesPerSubject||5;
-  const delay=minutes*60*1000;
-  setTimeout(async()=>{
-    // Skriv flagg til Firebase — alle klienter reagerer via handleSessionState
-    await update(ref(db,`sessions/${state.sessionId}`),{showActivityWinner:true});
-  },delay);
-}
-
-function showActivityWinnerTab(session){
-  const winner=session.activityWinner;
-  if(!winner)return;
-
-  // Legg til fane hvis den ikke finnes
-  const tabContainer=document.getElementById('result-tabs-container');
-  if(tabContainer&&!document.getElementById('tab-btn-activity-winner')){
-    const btn=document.createElement('div');
-    btn.className='result-tab';
-    btn.id='tab-btn-activity-winner';
-    btn.textContent='🔥 Aktiv';
-    btn.onclick=()=>{
-      window.switchResultTab('activity-winner');
-      startGlitter();
-    };
-    tabContainer.appendChild(btn);
-  }
-
-  // Bygg diplom-innhold
-  const panel=document.getElementById('panel-activity-winner');
-  if(!panel)return;
-  const sessionName=session.name||'';
-  const dato=new Date().toLocaleDateString('nb-NO',{day:'numeric',month:'long',year:'numeric'});
-  const winnersHtml=winner.winners.map(n=>`<div class="diplom-winner">${n}</div>`).join('');
-
-  panel.innerHTML=`
-    <div class="diplom-wrap">
-      <div class="diplom">
-        <span class="diplom-stars">★ ★ ★ ★ ★ ★ ★</span>
-        <div class="diplom-label">Kveldens mest aktive</div>
-        <div class="diplom-session">${sessionName}</div>
-        <div class="diplom-date">${dato}</div>
-        <span class="diplom-trophy">🔥</span>
-        ${winnersHtml}
-        <div class="diplom-subject">${winner.score} reaksjoner</div>
-        <span class="diplom-stars">★ ★ ★ ★ ★ ★ ★</span>
-        <button class="diplom-share" onclick="shareDiplom('activity')">📤 Del diplom</button>
-      </div>
-    </div>`;
-
-  // Vis fanen, start glitter og fanfare
-  window.switchResultTab('activity-winner');
-  playSound('fanfare');
-  startGlitter();
-}
 
 function buildCategoryBreakdown(session) {
   const cats = session.categories ? Object.values(session.categories) : [];
