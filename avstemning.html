@@ -1766,11 +1766,10 @@ window.submitVote=async function(){
   if(errEl)errEl.style.display='none';
   const ok=await doSubmitVote(idx);
   if(ok){
-    // Check if all participants have now voted - fetch fresh count from Firebase
+    // Check if all participants have now voted - if so advance immediately
     const session=state.session;
     const pCount=session.participants?Object.keys(session.participants).length:0;
-    const freshSnap=await get(ref(db,`sessions/${state.sessionId}/votes/${idx}`));
-    const vCount=freshSnap.exists()?Object.keys(freshSnap.val()).length:0;
+    const vCount=session.votes&&session.votes[idx]?Object.keys(session.votes[idx]).length:0;
     if(pCount>=2&&vCount>=pCount&&!state.allVotedAdvanced){
       state.allVotedAdvanced=true;
       if(state.timerInterval){clearInterval(state.timerInterval);state.timerInterval=null;}
