@@ -116,8 +116,8 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .sb-divider{width:22px;height:0.5px;background:rgba(255,255,255,0.08);margin:6px 0;}
 .sb-emoji-toggle{position:relative;}
 .sb-emoji-toggle.open{background:var(--accent-dim);border-color:rgba(255,255,255,0.15);}
-.sb-emoji-list{position:absolute;left:44px;top:0;display:flex;flex-direction:row;gap:4px;overflow:hidden;max-width:0;transition:max-width 0.25s ease,opacity 0.25s;opacity:0;background:rgba(10,10,10,0.95);border-radius:0 12px 12px 0;padding:0;border:0.5px solid rgba(255,255,255,0.08);z-index:201;}
-.sb-emoji-list.open{max-width:300px;opacity:1;padding:6px 8px;}
+.sb-emoji-list{display:flex;flex-direction:column;gap:3px;overflow:hidden;max-height:0;transition:max-height 0.25s ease,opacity 0.25s;opacity:0;}
+.sb-emoji-list.open{max-height:200px;opacity:1;}
 .sb-e{width:40px;height:36px;border-radius:9px;font-size:18px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.03);cursor:pointer;transition:all 0.1s;}
 .sb-e:active{transform:scale(0.85);}
 .final-fans{display:flex;justify-content:center;gap:24px;margin-top:10px;flex-wrap:wrap;}
@@ -343,13 +343,13 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
 .diplom-body{padding:0 20px 18px;text-align:center;position:relative;}
 .diplom-trophy{font-size:52px;line-height:1;margin-bottom:4px;display:block;filter:drop-shadow(0 0 14px rgba(232,195,106,0.7)) drop-shadow(0 0 28px rgba(160,80,255,0.4));}
 .diplom-glow{width:80px;height:7px;background:radial-gradient(ellipse,rgba(160,80,255,0.5),transparent 70%);margin:0 auto 10px;border-radius:50%;}
-.diplom-label{font-size:11px;letter-spacing:3px;color:rgba(180,140,255,0.6);text-transform:uppercase;margin-bottom:3px;}
-.diplom-title{font-size:22px;font-weight:700;color:#fff;line-height:1.1;margin-bottom:2px;text-shadow:0 0 20px rgba(160,80,255,0.8);}
+.diplom-label{font-size:9px;letter-spacing:3px;color:rgba(180,140,255,0.6);text-transform:uppercase;margin-bottom:3px;}
+.diplom-title{font-size:19px;font-weight:700;color:#fff;line-height:1.1;margin-bottom:2px;text-shadow:0 0 20px rgba(160,80,255,0.8);}
 .diplom-divider{height:0.5px;background:linear-gradient(90deg,transparent,rgba(160,80,255,0.6),rgba(232,195,106,0.6),transparent);margin:11px 0;}
 .diplom-winner-label{font-size:9px;letter-spacing:2px;color:rgba(232,195,106,0.6);text-transform:uppercase;margin-bottom:4px;}
 .diplom-winner{font-size:26px;font-weight:700;line-height:1;background:linear-gradient(180deg,#fff 0%,#e8c36a 60%,#b8922a 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
-.diplom-emne{font-size:15px;color:rgba(200,160,255,0.8);margin-top:5px;font-style:italic;}
-.diplom-meta{display:flex;justify-content:center;margin-top:12px;padding:10px 0 0;border-top:0.5px solid rgba(160,80,255,0.2);}
+.diplom-emne{font-size:12px;color:rgba(200,160,255,0.8);margin-top:5px;font-style:italic;}
+.diplom-meta{display:flex;justify-content:space-between;margin-top:12px;padding:10px 0 0;border-top:0.5px solid rgba(160,80,255,0.2);}
 .diplom-mi{font-size:10px;color:rgba(160,120,220,0.6);text-align:center;}
 .diplom-mv{font-size:11px;color:rgba(200,170,255,0.9);margin-top:2px;}
 .diplom-sheen{position:absolute;top:0;left:0;right:0;height:100%;background:linear-gradient(135deg,rgba(255,255,255,0.04) 0%,transparent 40%,rgba(255,255,255,0.02) 100%);pointer-events:none;border-radius:16px;}
@@ -385,10 +385,9 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
 <div class="global-sidebar" id="global-sidebar">
   <div class="sb-item sb-skal sb-large" data-action="openSkalSheet">🥂</div>
   <div class="sb-divider"></div>
-  <div class="sb-item sb-emoji-toggle" id="global-emoji-toggle" data-action="toggleGlobalEmoji">😊
-    <div class="sb-emoji-list" id="global-emoji-list"></div>
-  </div>
-  <div class="sb-item" id="sb-bingo-btn" data-action="openBingo">🎯</div>
+  <div class="sb-item sb-emoji-toggle" id="global-emoji-toggle" data-action="toggleGlobalEmoji">😊</div>
+  <div class="sb-emoji-list" id="global-emoji-list"></div>
+  <div style="height:44px;"></div>
   <div class="sb-item sb-admin-btn" data-action="openGear">⚙️</div>
   <div class="sb-pause-indicator" id="sb-pause-indicator">PAUSET</div>
   <div class="sb-spacer"></div>
@@ -789,16 +788,6 @@ label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;text-tra
   </div>
 </div>
 
-<!-- BINGO SHEET -->
-<div class="sheet-bg" id="bingo-sheet" style="z-index:250;">
-  <div class="sheet" style="display:flex;flex-direction:column;max-height:88vh;">
-    <div class="sheet-handle"></div>
-    <div class="sheet-title">🎯 Bingo</div>
-    <div id="bingo-board" style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px;flex:1;overflow-y:auto;margin-bottom:14px;"></div>
-    <button class="btn btn-secondary" style="width:100%;flex-shrink:0;" onclick="document.getElementById('bingo-sheet').classList.remove('open')">Lukk</button>
-  </div>
-</div>
-
 <!-- ADMIN LOGIN SHEET -->
 <div class="sheet-bg" id="admin-login-sheet">
   <div class="sheet">
@@ -839,7 +828,7 @@ var _proxyHandler = function(name) {
     }
   };
 };
-var _fns = ['showAdminLoginSheet','loginFromSheet','openSkalSheet','joinSession','submitVote','toggleEmojiMenu','toggleGlobalEmoji','sendReaction','openBingo',
+var _fns = ['showAdminLoginSheet','loginFromSheet','openSkalSheet','joinSession','submitVote','toggleEmojiMenu','toggleGlobalEmoji','sendReaction',
   'openGear','closeGear','showQrSheet','startSession','togglePause','togglePauseWithMessage',
   'forceNext','goBack','jumpToSubject','updateMinutes','updateLbSecs','addTime',
   'shuffleBlindtest','lockBlindtest','revealBlindtest',
@@ -1200,11 +1189,7 @@ window.sendReaction = async function sendReaction(emoji){
   if(state.reactionCooldown||!state.sessionId)return;
   state.reactionCooldown=true;
   setTimeout(()=>state.reactionCooldown=false,5000);
-  const list=document.getElementById('global-emoji-list');
-  const toggle=document.getElementById('global-emoji-toggle');
-  if(list){list.classList.remove('open');}
-  if(toggle){toggle.classList.remove('open');}
-  showFloatingReaction(emoji,state.participantName);
+  showFloatingReaction(emoji,state.participantName); // local feedback for sender
   await set(ref(db,`sessions/${state.sessionId}/reactions/${generateId()}`),{emoji,participantName:state.participantName,at:Date.now()});
 }
 
@@ -1353,7 +1338,6 @@ function startSessionListener(){
     watchReactions();
     watchSkals();
     watchActivity();
-    watchBingoWinners();
   }
   state.sessionListener=onValue(ref(db,`sessions/${state.sessionId}`),snap=>{
     if(!snap.exists())return;
@@ -1380,7 +1364,7 @@ const _activityScores={};
 
 function trackActivity(name,type){
   if(!name||!state.sessionId)return;
-  const pts=type==='skal'?10:type==='bingo'?30:1;
+  const pts=type==='skal'?10:1;
   _activityScores[name]=(_activityScores[name]||0)+pts;
   renderActivityBar();
   // Non-blocking Firebase sync
@@ -1454,13 +1438,6 @@ async function handleSessionState(session){
   }
 
   if(session.status==='published'||session.status==='waiting'){showWaitingRoom(session);return;}
-  // Lukk bingo-sheet og toast ved status-skifte
-  if(session.status!=='ended'){
-    const bingoSheet=document.getElementById('bingo-sheet');
-    if(bingoSheet)bingoSheet.classList.remove('open');
-    const bingoToast=document.getElementById('bingo-toast');
-    if(bingoToast)bingoToast.remove();
-  }
   if(session.status==='ended'){
     if(!state.endedHandled){handleEndedState(session);}
     if(session.externalWinner&&document.getElementById('screen-final')?.classList.contains('active')){
@@ -1487,7 +1464,7 @@ async function handleSessionState(session){
         }
       }
       // Vent kort så alle spilleres stemmer rekker å skrives til Firebase
-      await new Promise(resolve=>setTimeout(resolve,0));
+      await new Promise(resolve=>setTimeout(resolve,1500));
       // Hent fersk sesjon fra Firebase så vi alltid rendrer med oppdaterte poeng
       const freshSnap=await get(ref(db,`sessions/${state.sessionId}`));
       const freshSession=freshSnap.exists()?freshSnap.val():session;
@@ -1593,6 +1570,7 @@ function showVotingScreen(session){
     // Clear timer interval on subject change to prevent double intervals
     if(state.timerInterval){clearInterval(state.timerInterval);state.timerInterval=null;}
     eventQueue = []; // clear pending events
+    playSound('newSubject'); // play sound for new subject
   }
   updateProgressDots(idx,subjects.length,'progress-dots');
   updateProgressDots(idx,subjects.length,'submitted-dots');
@@ -1796,7 +1774,6 @@ function startTimer(session){
   const total=(session.minutesPerSubject||3)*60;
   if(state.lastWatchdogSubject!==lockedSubjectIdx){
     state.lastWatchdogSubject=lockedSubjectIdx;
-    playSound('newSubject');
     scheduleWatchdog(state.sessionId,session.timerEnd,session.minutesPerSubject,lockedSubjectIdx);
   }
   function tick(){
@@ -2048,9 +2025,6 @@ function showLeaderboardScreen(session){
     }
   }
 
-  if(state.isAdmin&&session.lbTimerEnd){
-    scheduleLbWatchdog(state.sessionId,session.lbTimerEnd,idx,isLast,session);
-  }
   showView(0);
 }
 
@@ -2741,117 +2715,6 @@ window.sendCategorySkal=async function(catName,emoji){
 
 
 
-// ================================================================
-// BINGO
-// ================================================================
-
-const BINGO_THEME_ICONS={default:'⭐',pub:'🍺',vin:'🍷',mgp:'🎤',mat:'🍽️',party:'🎉'};
-
-function getBingoThemeIcon(){
-  const theme=state.session?.theme||'default';
-  return BINGO_THEME_ICONS[theme]||'⭐';
-}
-
-function getBingoState(){
-  if(!state.sessionId)return{checked:[],announcedLines:[]};
-  const raw=localStorage.getItem(`bingo_${state.sessionId}`);
-  if(!raw)return{checked:[],announcedLines:[]};
-  try{return JSON.parse(raw);}catch(e){return{checked:[],announcedLines:[]};}
-}
-
-function saveBingoState(checked,announcedLines){
-  if(!state.sessionId)return;
-  localStorage.setItem(`bingo_${state.sessionId}`,JSON.stringify({checked,announcedLines}));
-}
-
-function getCompletedLines(checked){
-  const all=[...checked,12];
-  const g=Array(25).fill(false).map((_,i)=>all.includes(i));
-  const lines=[];
-  for(let r=0;r<5;r++){if([0,1,2,3,4].every(c=>g[r*5+c]))lines.push(`r${r}`);}
-  for(let c=0;c<5;c++){if([0,1,2,3,4].every(r=>g[r*5+c]))lines.push(`c${c}`);}
-  if([0,6,12,18,24].every(i=>g[i]))lines.push('d1');
-  if([4,8,12,16,20].every(i=>g[i]))lines.push('d2');
-  return lines;
-}
-
-function buildBingoBoard(){
-  const board=document.getElementById('bingo-board');
-  if(!board)return;
-  const texts=state.session?.bingo||null;
-  if(!texts||!texts.length){board.innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;grid-column:span 5;">Ingen bingo i denne sesjonen</div>';return;}
-  const {checked}=getBingoState();
-  board.innerHTML='';
-  const themeIcon=getBingoThemeIcon();
-  for(let i=0;i<25;i++){
-    const cell=document.createElement('div');
-    const isCenter=i===12;
-    const isChecked=isCenter||checked.includes(i);
-    cell.style.cssText=`aspect-ratio:1;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:${isCenter?'20px':'9px'};font-weight:${isChecked?'700':'400'};text-align:center;padding:3px;word-break:break-word;line-height:1.2;cursor:${isCenter?'default':'pointer'};transition:all 0.15s;background:${isChecked?'rgba(160,80,255,0.7)':'rgba(255,255,255,0.06)'};color:#fff;`;
-    cell.textContent=isCenter?themeIcon:(texts[i<12?i:i-1]||'');
-    if(!isCenter){cell.onclick=()=>toggleBingoCell(i);}
-    board.appendChild(cell);
-  }
-}
-
-function toggleBingoCell(idx){
-  if(!state.session?.bingo)return;
-  const {checked,announcedLines}=getBingoState();
-  const newChecked=checked.includes(idx)?checked.filter(i=>i!==idx):[...checked,idx];
-  const completedLines=getCompletedLines(newChecked);
-  const newLines=completedLines.filter(l=>!announcedLines.includes(l));
-  const newAnnouncedLines=[...announcedLines,...newLines];
-  saveBingoState(newChecked,newAnnouncedLines);
-  buildBingoBoard();
-  if(newLines.length>0){announceBingo();}
-}
-
-async function announceBingo(){
-  if(!state.sessionId||!state.participantName)return;
-  trackActivity(state.participantName,'bingo');
-  await set(ref(db,`sessions/${state.sessionId}/bingoWinners/${generateId()}`),{
-    name:state.participantName,at:Date.now()
-  });
-}
-
-function watchBingoWinners(){
-  if(!state.sessionId)return;
-  onChildAdded(ref(db,`sessions/${state.sessionId}/bingoWinners`),snap=>{
-    if(!snap.exists())return;
-    const w=snap.val();
-    if(Date.now()-w.at>8000)return;
-    showBingoToast(w.name);
-  });
-}
-
-function showBingoToast(name){
-  const existing=document.getElementById('bingo-toast');
-  if(existing)existing.remove();
-  const toast=document.createElement('div');
-  toast.id='bingo-toast';
-  toast.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0.85);background:rgba(0,0,0,0.97);border:2px solid #a050e0;border-radius:18px;padding:20px 28px;text-align:center;z-index:500;pointer-events:none;opacity:0;transition:opacity 0.3s,transform 0.3s;min-width:180px;box-shadow:0 0 40px rgba(160,80,255,0.4);';
-  toast.innerHTML=`<div style="font-size:32px;margin-bottom:6px;">🎯</div><div style="font-size:11px;color:#a050e0;font-weight:700;letter-spacing:3px;margin-bottom:8px;">BINGO!</div><div style="font-size:20px;font-weight:700;color:#fff;">${name}</div><div style="font-size:11px;color:#666;margin-top:4px;">har fått bingo!</div>`;
-  document.body.appendChild(toast);
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{
-    toast.style.opacity='1';
-    toast.style.transform='translate(-50%,-50%) scale(1)';
-    startGlitter();
-    setTimeout(()=>stopGlitter(),7000);
-  }));
-  setTimeout(()=>{
-    toast.style.opacity='0';
-    toast.style.transform='translate(-50%,-50%) scale(0.85)';
-    setTimeout(()=>toast.remove(),400);
-  },7000);
-}
-
-window.openBingo=function(){
-  const texts=state.session?.bingo||null;
-  if(!texts||!texts.length){showToast('Ingen bingo i denne sesjonen');return;}
-  buildBingoBoard();
-  document.getElementById('bingo-sheet').classList.add('open');
-};
-
 // ========== PARTY EVENTS ==========
 let eventQueue=[];let eventShowing=false;
 function showEvent(icon,title,sub){
@@ -3084,6 +2947,7 @@ function buildDiplom(winnerName,subjectName,sessionName){
         <div class="diplom-emne">« ${subjectName} »</div>
         <div class="diplom-meta">
           <div class="diplom-mi"><div>Dato</div><div class="diplom-mv">${dato}</div></div>
+          <div class="diplom-mi"><div>Arrangement</div><div class="diplom-mv">${sessionName}</div></div>
         </div>
       </div>
       <div class="diplom-rays-bot" id="diplom-rays-bot"></div>
@@ -3135,6 +2999,7 @@ function buildActivityDiplom(winnerName,score,sessionName){
         <div class="diplom-emne">« ${score} reaksjoner »</div>
         <div class="diplom-meta">
           <div class="diplom-mi"><div>Dato</div><div class="diplom-mv">${dato}</div></div>
+          <div class="diplom-mi"><div>Arrangement</div><div class="diplom-mv">${sessionName}</div></div>
         </div>
       </div>
       <div class="diplom-rays-bot" id="activity-rays-bot"></div>
@@ -3743,7 +3608,7 @@ function updateProgressDots(current,total,containerId){
 }
 
 // ========== CLOSE SHEETS ON BG ==========
-['gear-sheet','qr-sheet','skal-sheet','bingo-sheet','confirm-sheet','admin-login-sheet','external-winner-sheet'].forEach(id=>{
+['gear-sheet','qr-sheet','skal-sheet','confirm-sheet','admin-login-sheet','external-winner-sheet'].forEach(id=>{
   document.getElementById(id).addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');});
 });
 
