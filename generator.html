@@ -143,7 +143,7 @@ select option{background:var(--surface2);}
           <label>Navn på avstemningen</label>
           <input type="text" id="cfg-name" placeholder="f.eks. Ølsmaking Juni 2025">
           <label>Admin-passord</label>
-          <input type="password" id="cfg-password" value="123">
+          <input type="password" id="cfg-password" value="mgp2026">
           <label>Tema</label>
           <select id="cfg-theme" style="margin-bottom:14px;">
             <option value="standard">🖤 Standard</option>
@@ -173,8 +173,8 @@ select option{background:var(--surface2);}
               <div class="toggle-sub">Emner rangert etter poengsum</div>
             </div>
             <div style="display:flex;align-items:center;gap:8px;">
-              <input type="number" id="order-toplist" value="3" min="1" max="99" style="width:44px;text-align:center;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;padding:4px;">
-              <div class="toggle" id="toggle-toplist" onclick="toggleResult('toplist')"></div>
+              <input type="number" id="order-toplist" value="1" min="1" max="99" style="width:44px;text-align:center;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;padding:4px;">
+              <div class="toggle on" id="toggle-toplist" onclick="toggleResult('toplist')"></div>
             </div>
           </div>
           <div class="toggle-row">
@@ -184,7 +184,7 @@ select option{background:var(--surface2);}
             </div>
             <div style="display:flex;align-items:center;gap:8px;">
               <input type="number" id="order-categories" value="2" min="1" max="99" style="width:44px;text-align:center;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;padding:4px;">
-              <div class="toggle" id="toggle-categories" onclick="toggleResult('categories')"></div>
+              <div class="toggle on" id="toggle-categories" onclick="toggleResult('categories')"></div>
             </div>
           </div>
           <div class="toggle-row">
@@ -193,8 +193,8 @@ select option{background:var(--surface2);}
               <div class="toggle-sub">Hvem likte hva best</div>
             </div>
             <div style="display:flex;align-items:center;gap:8px;">
-              <input type="number" id="order-judges" value="1" min="1" max="99" style="width:44px;text-align:center;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;padding:4px;">
-              <div class="toggle on" id="toggle-judges" onclick="toggleResult('judges')"></div>
+              <input type="number" id="order-judges" value="3" min="1" max="99" style="width:44px;text-align:center;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;padding:4px;">
+              <div class="toggle" id="toggle-judges" onclick="toggleResult('judges')"></div>
             </div>
           </div>
           <label style="margin-top:14px;">App-ID (brukes i URL)</label>
@@ -209,9 +209,7 @@ select option{background:var(--surface2);}
             <strong>Fane 1 – "Emner":</strong><br>
             Kolonne A: Tuborg, Hansa, Ringnes...<br><br>
             <strong>Fane 2 – "Kategorier":</strong><br>
-            A: Navn &nbsp; B: Maks &nbsp; C: Vekting<br><br>
-            <strong>Fane 3 – "Bingo" (valgfri):</strong><br>
-            Kolonne A: 24 tekster (én per rad)
+            A: Navn &nbsp; B: Maks &nbsp; C: Vekting
           </div>
           <div class="import-area" id="drop-area" onclick="document.getElementById('file-input').click()">
             <input type="file" id="file-input" accept=".xlsx,.xls">
@@ -277,7 +275,6 @@ select option{background:var(--surface2);}
     <div class="qr-container"><div id="modal-qr"></div></div>
     <div class="url-copy" id="modal-url" data-action="copyUrl">Laster...</div>
     <div class="copy-hint">Trykk for å kopiere</div>
-    <button id="modal-start-reg" class="btn btn-primary btn-full" style="margin-top:8px;display:none;" data-action="startRegistrationFromModal">🚀 Start registrering</button>
     <div id="modal-results" style="display:none;">
       <div class="divider"></div>
       <div class="card-title">Resultater</div>
@@ -312,8 +309,7 @@ select option{background:var(--surface2);}
     <div class="qr-container"><div id="success-qr"></div></div>
     <div class="url-copy" id="success-url" data-action="copySuccessUrl"></div>
     <div class="copy-hint">Trykk for å kopiere · Del med deltakerne</div>
-    <button class="btn btn-primary btn-full" style="margin-top:8px;" data-action="startRegistration">🚀 Start registrering</button>
-    <button class="btn btn-secondary btn-full" style="margin-top:8px;" data-action="closeSuccess">Ferdig</button>
+    <button class="btn btn-primary btn-full" style="margin-top:8px;" data-action="closeSuccess">Ferdig</button>
   </div>
 </div>
 
@@ -335,12 +331,12 @@ const FIREBASE_CONFIG = {
 
 const app = initializeApp(FIREBASE_CONFIG);
 const db = getDatabase(app);
-const GENERATOR_VERSION = 'Generator v1.2';
+const GENERATOR_VERSION = 'Generator v1.1';
 console.log(GENERATOR_VERSION);
 const APP_URL = "https://home-github.github.io/avstemning/avstemning.html";
 
-let subjects = [], categories = [], bingoTexts = [], blindtestEnabled = false;
-let resultConfig = { toplist: false, categories: false, judges: true };
+let subjects = [], categories = [], blindtestEnabled = false;
+let resultConfig = { toplist: true, categories: true, judges: false };
 
 window.toggleResult = function(key) {
   resultConfig[key] = !resultConfig[key];
@@ -423,25 +419,10 @@ function handleFile(file) {
         const catData = XLSX.utils.sheet_to_json(catSheet, {header:1});
         categories = catData.map(r=>({name:r[0]?String(r[0]).trim():null,max:parseInt(r[1])||10,weight:parseInt(r[2])||1})).filter(c=>c.name);
       }
-      const bingoSheet = wb.Sheets['Bingo'] || wb.Sheets[wb.SheetNames[2]];
-      bingoTexts = [];
-      if (bingoSheet) {
-        const bingoData = XLSX.utils.sheet_to_json(bingoSheet, {header:1});
-        bingoTexts = bingoData.map(r=>r[0]).filter(v=>v&&String(v).trim()).map(v=>String(v).trim()).slice(0,24);
-      }
       renderChips();
       const prev = document.getElementById('import-preview');
       prev.style.display = 'block';
-      let bingoStatus;
-      if(bingoTexts.length===24){
-        bingoStatus='<span style="color:#4caf50;">🎯 24 bingo-tekster lastet — bingo aktivert</span>';
-      } else if(bingoTexts.length>0){
-        bingoStatus=`<span style="color:#e05555;">⚠️ Bingo krever nøyaktig 24 tekster — du har ${bingoTexts.length}. Bingo deaktiveres i spillet.</span>`;
-        bingoTexts=[];
-      } else {
-        bingoStatus='<span style="color:#555;">— Ingen bingo-fane</span>';
-      }
-      prev.innerHTML = `✅ ${subjects.length} emner og ${categories.length} kategorier importert<br>${bingoStatus}`;
+      prev.textContent = `✅ ${subjects.length} emner og ${categories.length} kategorier importert`;
     } catch(err) { alert(`❌ ${err.message}`); }
   };
   reader.readAsBinaryString(file);
@@ -512,12 +493,10 @@ window.createSession = async () => {
   const safeKey=s=>String(s).trim().replace(/[.#$\[\]/]/g,'_').replace(/\s+/g,'_').substring(0,50)||'key';
   const subjectsObj = {}; subjects.forEach((s,i)=>{subjectsObj[i]={name:s,originalIndex:i};});
   const categoriesObj = {}; categories.forEach((c,i)=>{categoriesObj[i]={name:c.name,key:safeKey(c.name),max:c.max,weight:c.weight};});
-  const bingoObj = bingoTexts.length ? bingoTexts : null;
   await set(ref(db,`sessions/${slug}`),{
     name,password,theme,minutesPerSubject:minutes,leaderboardSeconds:lbSecs,
     blindtest:blindtestEnabled,blindtestLocked:false,blindtestRevealed:false,
     resultConfig:buildResultConfig(),
-    bingo:bingoObj,
     status:'published',currentSubjectIndex:0,subjects:subjectsObj,categories:categoriesObj,createdAt:Date.now()
   });
   document.getElementById('create-btn-text').textContent = 'Publiser avstemning →';
@@ -528,7 +507,7 @@ window.createSession = async () => {
   document.getElementById('success-qr').innerHTML = '';
   new QRCode(document.getElementById('success-qr'),{text:url,width:180,height:180,colorDark:'#000',colorLight:'#fff'});
   document.getElementById('success-modal').classList.add('open');
-  subjects=[]; categories=[]; bingoTexts=[]; blindtestEnabled=false;
+  subjects=[]; categories=[]; blindtestEnabled=false;
   document.getElementById('blindtest-toggle').classList.remove('on');
   document.getElementById('cfg-name').value=''; document.getElementById('cfg-slug').value='';
   renderChips(); document.getElementById('import-preview').style.display='none';
@@ -578,8 +557,6 @@ function openModal(id,s) {
   const resultsEl = document.getElementById('modal-results');
   if (s.status==='ended'&&s.subjects) { resultsEl.style.display='block'; renderResults(s); }
   else resultsEl.style.display='none';
-  const regBtn = document.getElementById('modal-start-reg');
-  if(regBtn) regBtn.style.display = s.status !== 'ended' ? 'inline-flex' : 'none';
   document.getElementById('session-modal').classList.add('open');
 }
 
@@ -618,8 +595,6 @@ window.deleteSession = () => { document.getElementById('session-modal').classLis
 window.confirmDelete = async () => { if (!activeSessionId) return; await remove(ref(db,`sessions/${activeSessionId}`)); activeSessionId=null; document.getElementById('confirm-modal').classList.remove('open'); };
 window.closeModal = () => document.getElementById('session-modal').classList.remove('open');
 window.closeSuccess = () => { document.getElementById('success-modal').classList.remove('open'); switchTab('manage'); };
-window.startRegistration = () => { const url = document.getElementById('success-url').dataset.url; if(url) window.location.href = url; };
-window.startRegistrationFromModal = () => { const url = document.getElementById('modal-url').dataset.url; if(url) window.location.href = url; };
 window.copyUrl = () => { const u=document.getElementById('modal-url').dataset.url; navigator.clipboard.writeText(u).then(()=>{document.getElementById('modal-url').textContent='✅ Kopiert!';setTimeout(()=>document.getElementById('modal-url').textContent=u,2000);}); };
 window.copySuccessUrl = () => { const u=document.getElementById('success-url').dataset.url; navigator.clipboard.writeText(u).then(()=>{document.getElementById('success-url').textContent='✅ Kopiert!';setTimeout(()=>document.getElementById('success-url').textContent=u,2000);}); };
 
