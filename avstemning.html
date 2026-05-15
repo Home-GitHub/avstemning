@@ -1454,16 +1454,13 @@ async function handleSessionState(session){
   }
 
   if(session.status==='published'||session.status==='waiting'){showWaitingRoom(session);return;}
-
-  // Lukk bingo-sheet, toast og glitter ved alle status-skifter unntatt ended
+  // Lukk bingo-sheet og toast ved status-skifte
   if(session.status!=='ended'){
     const bingoSheet=document.getElementById('bingo-sheet');
     if(bingoSheet)bingoSheet.classList.remove('open');
     const bingoToast=document.getElementById('bingo-toast');
     if(bingoToast)bingoToast.remove();
-    stopGlitter();
   }
-
   if(session.status==='ended'){
     if(!state.endedHandled){handleEndedState(session);}
     if(session.externalWinner&&document.getElementById('screen-final')?.classList.contains('active')){
@@ -2736,6 +2733,14 @@ window.sendCategorySkal=async function(catName,emoji){
   document.getElementById('skal-sheet').classList.remove('open');
 };
 
+
+
+
+
+
+
+
+
 // ================================================================
 // BINGO
 // ================================================================
@@ -2759,17 +2764,12 @@ function saveBingoState(checked,announcedLines){
   localStorage.setItem(`bingo_${state.sessionId}`,JSON.stringify({checked,announcedLines}));
 }
 
-// Returnerer array av linje-id-er som er fullført
 function getCompletedLines(checked){
-  const all=[...checked,12]; // midtrute alltid med
+  const all=[...checked,12];
   const g=Array(25).fill(false).map((_,i)=>all.includes(i));
   const lines=[];
-  for(let r=0;r<5;r++){
-    if([0,1,2,3,4].every(c=>g[r*5+c]))lines.push(`r${r}`);
-  }
-  for(let c=0;c<5;c++){
-    if([0,1,2,3,4].every(r=>g[r*5+c]))lines.push(`c${c}`);
-  }
+  for(let r=0;r<5;r++){if([0,1,2,3,4].every(c=>g[r*5+c]))lines.push(`r${r}`);}
+  for(let c=0;c<5;c++){if([0,1,2,3,4].every(r=>g[r*5+c]))lines.push(`c${c}`);}
   if([0,6,12,18,24].every(i=>g[i]))lines.push('d1');
   if([4,8,12,16,20].every(i=>g[i]))lines.push('d2');
   return lines;
@@ -2789,9 +2789,7 @@ function buildBingoBoard(){
     const isChecked=isCenter||checked.includes(i);
     cell.style.cssText=`aspect-ratio:1;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:${isCenter?'20px':'9px'};font-weight:${isChecked?'700':'400'};text-align:center;padding:3px;word-break:break-word;line-height:1.2;cursor:${isCenter?'default':'pointer'};transition:all 0.15s;background:${isChecked?'rgba(160,80,255,0.7)':'rgba(255,255,255,0.06)'};color:#fff;`;
     cell.textContent=isCenter?themeIcon:(texts[i<12?i:i-1]||'');
-    if(!isCenter){
-      cell.onclick=()=>toggleBingoCell(i);
-    }
+    if(!isCenter){cell.onclick=()=>toggleBingoCell(i);}
     board.appendChild(cell);
   }
 }
@@ -2805,16 +2803,12 @@ function toggleBingoCell(idx){
   const newAnnouncedLines=[...announcedLines,...newLines];
   saveBingoState(newChecked,newAnnouncedLines);
   buildBingoBoard();
-  if(newLines.length>0){
-    announceBingo();
-  }
+  if(newLines.length>0){announceBingo();}
 }
 
 async function announceBingo(){
   if(!state.sessionId||!state.participantName)return;
-  // 30 aktivitetspoeng
   trackActivity(state.participantName,'bingo');
-  // Skriv til Firebase med unik id per bingo
   await set(ref(db,`sessions/${state.sessionId}/bingoWinners/${generateId()}`),{
     name:state.participantName,at:Date.now()
   });
@@ -2841,10 +2835,6 @@ function showBingoToast(name){
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
     toast.style.opacity='1';
     toast.style.transform='translate(-50%,-50%) scale(1)';
-    // Glitter
-    const rect=toast.getBoundingClientRect();
-    const cx=rect.left+rect.width/2;
-    const cy=rect.top+rect.height/2;
     startGlitter();
     setTimeout(()=>stopGlitter(),7000);
   }));
@@ -2861,16 +2851,6 @@ window.openBingo=function(){
   buildBingoBoard();
   document.getElementById('bingo-sheet').classList.add('open');
 };
-
-// trackActivity støtter 'bingo' med 30 poeng
-
-
-
-
-
-
-
-
 
 // ========== PARTY EVENTS ==========
 let eventQueue=[];let eventShowing=false;
