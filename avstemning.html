@@ -1454,6 +1454,16 @@ async function handleSessionState(session){
   }
 
   if(session.status==='published'||session.status==='waiting'){showWaitingRoom(session);return;}
+
+  // Lukk bingo-sheet, toast og glitter ved alle status-skifter unntatt ended
+  if(session.status!=='ended'){
+    const bingoSheet=document.getElementById('bingo-sheet');
+    if(bingoSheet)bingoSheet.classList.remove('open');
+    const bingoToast=document.getElementById('bingo-toast');
+    if(bingoToast)bingoToast.remove();
+    stopGlitter();
+  }
+
   if(session.status==='ended'){
     if(!state.endedHandled){handleEndedState(session);}
     if(session.externalWinner&&document.getElementById('screen-final')?.classList.contains('active')){
