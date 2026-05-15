@@ -1487,14 +1487,15 @@ async function handleSessionState(session){
         }
       }
       // Vent kort så alle spilleres stemmer rekker å skrives til Firebase
-      state.transitioningToLeaderboard=true;
       await new Promise(resolve=>setTimeout(resolve,0));
-      state.transitioningToLeaderboard=false;
-      showLeaderboardScreen(session);
+      // Hent fersk sesjon fra Firebase så vi alltid rendrer med oppdaterte poeng
+      const freshSnap=await get(ref(db,`sessions/${state.sessionId}`));
+      const freshSession=freshSnap.exists()?freshSnap.val():session;
+      showLeaderboardScreen(freshSession);
     }
     return;
   }
-  if(session.status==='voting'){if(!state.transitioningToLeaderboard)showVotingScreen(session);return;}
+  if(session.status==='voting'){showVotingScreen(session);return;}
 }
 
 // ========== PUNKT 64 – HANDLE ENDED STATE ==========
@@ -1766,10 +1767,11 @@ window.submitVote=async function(){
   if(errEl)errEl.style.display='none';
   const ok=await doSubmitVote(idx);
   if(ok){
-    // Check if all participants have now voted - if so advance immediately
+    // Check if all participants have now voted - fetch fresh count from Firebase
     const session=state.session;
     const pCount=session.participants?Object.keys(session.participants).length:0;
-    const vCount=session.votes&&session.votes[idx]?Object.keys(session.votes[idx]).length:0;
+    const freshSnap=await get(ref(db,`sessions/${state.sessionId}/votes/${idx}`));
+    const vCount=freshSnap.exists()?Object.keys(freshSnap.val()).length:0;
     if(pCount>=2&&vCount>=pCount&&!state.allVotedAdvanced){
       state.allVotedAdvanced=true;
       if(state.timerInterval){clearInterval(state.timerInterval);state.timerInterval=null;}
@@ -2000,6 +2002,9 @@ function showLeaderboardScreen(session){
     // Update active tab
     views.forEach(v=>{const t=document.getElementById(`lb-tab-${v}`);if(t)t.classList.toggle('active',v===view);});
     const nextLabel=isLastView?(isLast?'🏆 Endelig resultat':'Neste emne'):views[viewIdx+1]==='categories'?'Kategori-detaljer':views[viewIdx+1]==='judges'?'Dommer-detaljer':'Topp-liste';
+    // Always show leaderboard screen regardless of view
+    if(!document.getElementById('screen-leaderboard').classList.contains('active'))
+      showScreen('screen-leaderboard');
 
     // Always stay on screen-leaderboard, swap content inside
     const lbList=document.getElementById('leaderboard-list');
@@ -2010,8 +2015,6 @@ function showLeaderboardScreen(session){
       document.getElementById('lb-sub').textContent=`Etter emne ${idx+1} av ${subjects.length}`;
       renderLeaderboard('leaderboard-list',scores);
       document.getElementById('lb-voter-count').textContent=`${vCount} av ${participants.length} stemte`;
-      if(!document.getElementById('screen-leaderboard').classList.contains('active'))
-        showScreen('screen-leaderboard');
     } else if(view==='categories'){
       if(lbList)lbList.style.display='none';
       if(lbSpot)lbSpot.style.display='';
