@@ -1436,6 +1436,21 @@ function watchSkals(){
 
 // ========== HANDLE SESSION STATE ==========
 async function handleSessionState(session){
+  state._pendingSession=session;
+  if(state.handlingSessionState)return;
+  state.handlingSessionState=true;
+  try{
+    while(state._pendingSession){
+      const s=state._pendingSession;
+      state._pendingSession=null;
+      await _handleSessionState(s);
+    }
+  }finally{
+    state.handlingSessionState=false;
+  }
+}
+
+async function _handleSessionState(session){
   const pauseIndicator=document.getElementById('sb-pause-indicator');
   const sendBtn=document.getElementById('submit-vote-btn');
   const pauseBtn=document.getElementById('global-pause-btn');
