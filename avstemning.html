@@ -1487,15 +1487,17 @@ async function handleSessionState(session){
         }
       }
       // Vent kort så alle spilleres stemmer rekker å skrives til Firebase
+      state.transitioningToLeaderboard=true;
       await new Promise(resolve=>setTimeout(resolve,0));
       // Hent fersk sesjon fra Firebase så vi alltid rendrer med oppdaterte poeng
       const freshSnap=await get(ref(db,`sessions/${state.sessionId}`));
       const freshSession=freshSnap.exists()?freshSnap.val():session;
+      state.transitioningToLeaderboard=false;
       showLeaderboardScreen(freshSession);
     }
     return;
   }
-  if(session.status==='voting'){showVotingScreen(session);return;}
+  if(session.status==='voting'){if(!state.transitioningToLeaderboard)showVotingScreen(session);return;}
 }
 
 // ========== PUNKT 64 – HANDLE ENDED STATE ==========
