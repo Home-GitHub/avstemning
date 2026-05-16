@@ -1795,9 +1795,13 @@ function startTimer(session){
   // Lock subjectIdx to THIS subject - never reads from live session
   const lockedSubjectIdx=session.currentSubjectIndex||0;
   const total=(session.minutesPerSubject||3)*60;
+  const lsKey=`lastSubjectSound_${state.sessionId}`;
+  if(ls(lsKey)!==String(lockedSubjectIdx)){
+    ls(lsKey,String(lockedSubjectIdx));
+    playSound('newSubject');
+  }
   if(state.lastWatchdogSubject!==lockedSubjectIdx){
     state.lastWatchdogSubject=lockedSubjectIdx;
-    playSound('newSubject');
     scheduleWatchdog(state.sessionId,session.timerEnd,session.minutesPerSubject,lockedSubjectIdx);
   }
   function tick(){
@@ -1857,8 +1861,7 @@ function scheduleLbWatchdog(sessionId,lbTimerEnd,subjectIndex,isLast,session){
   if(!state.isAdmin)return;
   if(!lbTimerEnd)return;
   const delay=lbTimerEnd-Date.now();
-  if(delay<=0)return;
-  setTimeout(async()=>{
+  const run=async()=>{
     const snap=await get(ref(db,`sessions/${sessionId}`));
     if(!snap.exists())return;
     const s=snap.val();
@@ -1878,7 +1881,8 @@ function scheduleLbWatchdog(sessionId,lbTimerEnd,subjectIndex,isLast,session){
       });
       if(timerEnd)scheduleWatchdog(sessionId,timerEnd,s.minutesPerSubject,nextIdx);
     }
-  },delay+1000);
+  };
+  if(delay<=0){run();}else{setTimeout(run,delay+1000);}
 }
 
 async function advanceSubject(sessionId,session,idx){
