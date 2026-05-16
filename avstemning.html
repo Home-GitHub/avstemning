@@ -1461,14 +1461,10 @@ async function handleSessionState(session){
     const bingoToast=document.getElementById('bingo-toast');
     if(bingoToast)bingoToast.remove();
   }
-  if(session.status==='ended'){
-    if(!state.endedHandled){handleEndedState(session);}
-    if(session.externalWinner&&document.getElementById('screen-final')?.classList.contains('active')){
-      showExternalWinnerTab(session);
-    }
-    if(session.activityWinner&&document.getElementById('screen-final')?.classList.contains('active')){
-      showActivityWinnerTab(session);
-    }
+  if(session.status==='ended'||session.status==='externalWinner'||session.status==='activityWinner'){
+    if(!state.endedHandled){await handleEndedState(session);}
+    if(session.status==='externalWinner'){showExternalWinnerTab(session);return;}
+    if(session.status==='activityWinner'){showActivityWinnerTab(session);return;}
     return;
   }
   if(session.status==='leaderboard'){
@@ -1851,14 +1847,11 @@ function scheduleWatchdog(sessionId,timerEnd,minutes,subjectIndex){
   },delay+1000);
 }
 
-// Leaderboard watchdog - admin only
-// When lbTimerEnd expires, advance to next voting or ended
+// Leaderboard watchdog - runs on all clients, first to fire wins
 function scheduleLbWatchdog(sessionId,lbTimerEnd,subjectIndex,isLast,session){
-  if(!state.isAdmin)return;
   if(!lbTimerEnd)return;
   const delay=lbTimerEnd-Date.now();
-  if(delay<=0)return;
-  setTimeout(async()=>{
+  const run=async()=>{
     const snap=await get(ref(db,`sessions/${sessionId}`));
     if(!snap.exists())return;
     const s=snap.val();
@@ -1869,7 +1862,6 @@ function scheduleLbWatchdog(sessionId,lbTimerEnd,subjectIndex,isLast,session){
     if(isLast){
       await update(ref(db,`sessions/${sessionId}`),{status:'ended',lbTimerEnd:null});
     } else {
-      const subjects=s.subjects?Object.values(s.subjects):[];
       const nextIdx=subjectIndex+1;
       const timerEnd=s.minutesPerSubject>0?Date.now()+s.minutesPerSubject*60000:null;
       await update(ref(db,`sessions/${sessionId}`),{
@@ -1878,7 +1870,8 @@ function scheduleLbWatchdog(sessionId,lbTimerEnd,subjectIndex,isLast,session){
       });
       if(timerEnd)scheduleWatchdog(sessionId,timerEnd,s.minutesPerSubject,nextIdx);
     }
-  },delay+1000);
+  };
+  if(delay<=0){run();}else{setTimeout(run,delay+1000);}
 }
 
 async function advanceSubject(sessionId,session,idx){
@@ -2050,7 +2043,7 @@ function showLeaderboardScreen(session){
     }
   }
 
-  if(state.isAdmin&&session.lbTimerEnd){
+  if(session.lbTimerEnd){
     scheduleLbWatchdog(state.sessionId,session.lbTimerEnd,idx,isLast,session);
   }
   showView(0);
@@ -2558,6 +2551,7 @@ async function calcExternalWinner(session){
   if(winners.length===0)return null;
   // Lagre vinner(e) til Firebase
   await update(ref(db,`sessions/${state.sessionId}`),{
+    status:'externalWinner',
     externalWinner:{winners,subjectName:juryFirstPlace}
   });
   return{winners,subjectName:juryFirstPlace};
@@ -2580,6 +2574,7 @@ async function calcActivityWinner(session){
   if(winners.length===0)return null;
   // Lagre vinner(e) til Firebase
   await update(ref(db,`sessions/${state.sessionId}`),{
+    status:'activityWinner',
     activityWinner:{winners,score:highestScore}
   });
   return{winners,score:highestScore};
@@ -3401,12 +3396,11 @@ function showExternalWinnerTab(session,silent){
     return;
   }
   if(alreadyBuilt)return;
-  // Eksplisitt resume av AudioContext — trigges fra Firebase-callback
   if(_audioCtx&&_audioCtx.state==='suspended')_audioCtx.resume();
   window.switchResultTab('trophy');
   playSound('fanfare');
   startGlitter();
-  // Start timer for aktivitetsvinner — kun admin
+  // Start timer for aktivitetsvinner — admin skriver status til Firebase når tid er ute
   if(state.isAdmin){
     const secs=session.leaderboardSeconds||60;
     if(state.activityWinnerTimer)clearTimeout(state.activityWinnerTimer);
