@@ -853,7 +853,7 @@ import { getDatabase, ref, set, get, update, onValue, onChildAdded, remove, runT
 // Make all window functions available immediately
 Object.defineProperty(window, '__moduleReady', { value: true });
 
-const VERSION = 'Avstemning v5.1';
+const VERSION = 'Avstemning v5.2';
 console.log(VERSION);
 
 const FIREBASE_CONFIG = {
@@ -2902,7 +2902,11 @@ function renderJudgeBreakdown(containerId, session) {
   if (!container) return;
   container.innerHTML = '';
   const stats = buildJudgeBreakdown(session);
-  stats.sort((a,b)=>a.name.localeCompare(b.name,'nb'));
+  stats.sort((a,b)=>{
+    if(a.pid===state.participantId)return -1;
+    if(b.pid===state.participantId)return 1;
+    return a.name.localeCompare(b.name,'nb');
+  });
   const medals = ['🥇','🥈','🥉'];
 
   stats.forEach((judge) => {
