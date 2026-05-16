@@ -3408,7 +3408,7 @@ function showExternalWinnerTab(session,silent){
   if(state.isAdmin){
     const secs=session.leaderboardSeconds||60;
     const activityTimerEnd=Date.now()+secs*1000;
-    await update(ref(db,`sessions/${state.sessionId}`),{activityTimerEnd});
+    update(ref(db,`sessions/${state.sessionId}`),{activityTimerEnd});
     if(state.activityWinnerTimer)clearTimeout(state.activityWinnerTimer);
     state.activityWinnerTimer=setTimeout(async()=>{
       const snap=await get(ref(db,`sessions/${state.sessionId}`));
