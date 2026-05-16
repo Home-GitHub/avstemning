@@ -1847,8 +1847,10 @@ function scheduleWatchdog(sessionId,timerEnd,minutes,subjectIndex){
   },delay+1000);
 }
 
-// Leaderboard watchdog - runs on all clients, first to fire wins
+// Leaderboard watchdog - admin only
+// When lbTimerEnd expires, advance to next voting or ended
 function scheduleLbWatchdog(sessionId,lbTimerEnd,subjectIndex,isLast,session){
+  if(!state.isAdmin)return;
   if(!lbTimerEnd)return;
   const delay=lbTimerEnd-Date.now();
   const run=async()=>{
@@ -1862,6 +1864,7 @@ function scheduleLbWatchdog(sessionId,lbTimerEnd,subjectIndex,isLast,session){
     if(isLast){
       await update(ref(db,`sessions/${sessionId}`),{status:'ended',lbTimerEnd:null});
     } else {
+      const subjects=s.subjects?Object.values(s.subjects):[];
       const nextIdx=subjectIndex+1;
       const timerEnd=s.minutesPerSubject>0?Date.now()+s.minutesPerSubject*60000:null;
       await update(ref(db,`sessions/${sessionId}`),{
@@ -2043,7 +2046,7 @@ function showLeaderboardScreen(session){
     }
   }
 
-  if(session.lbTimerEnd){
+  if(state.isAdmin&&session.lbTimerEnd){
     scheduleLbWatchdog(state.sessionId,session.lbTimerEnd,idx,isLast,session);
   }
   showView(0);
@@ -3396,17 +3399,21 @@ function showExternalWinnerTab(session,silent){
     return;
   }
   if(alreadyBuilt)return;
+  // Eksplisitt resume av AudioContext — trigges fra Firebase-callback
   if(_audioCtx&&_audioCtx.state==='suspended')_audioCtx.resume();
   window.switchResultTab('trophy');
   playSound('fanfare');
   startGlitter();
-  // Start timer for aktivitetsvinner — admin skriver status til Firebase når tid er ute
+  // Start timer for aktivitetsvinner — skriv activityTimerEnd til Firebase
   if(state.isAdmin){
     const secs=session.leaderboardSeconds||60;
+    const activityTimerEnd=Date.now()+secs*1000;
+    await update(ref(db,`sessions/${state.sessionId}`),{activityTimerEnd});
     if(state.activityWinnerTimer)clearTimeout(state.activityWinnerTimer);
     state.activityWinnerTimer=setTimeout(async()=>{
       const snap=await get(ref(db,`sessions/${state.sessionId}`));
       const fresh=snap.exists()?snap.val():session;
+      if(fresh.status!=='externalWinner')return;
       await calcActivityWinner(fresh);
     },secs*1000);
   }
@@ -3700,8 +3707,9 @@ function loadAdminSessions(){
     if(!snap.exists()){container.innerHTML='<div class="text-muted">Ingen sesjoner funnet</div>';return;}
     const sessions=snap.val();
     container.innerHTML='';
-    const active=Object.entries(sessions).filter(([,s])=>s.status!=='ended');
-    const ended=Object.entries(sessions).filter(([,s])=>s.status==='ended');
+    const endedStatuses=['ended','externalWinner','activityWinner'];
+    const active=Object.entries(sessions).filter(([,s])=>!endedStatuses.includes(s.status));
+    const ended=Object.entries(sessions).filter(([,s])=>endedStatuses.includes(s.status));
     [...active,...ended].forEach(([id,s])=>{
       const div=document.createElement('div');
       div.style.cssText='background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;cursor:pointer;';
