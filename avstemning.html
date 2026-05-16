@@ -853,7 +853,7 @@ import { getDatabase, ref, set, get, update, onValue, onChildAdded, remove, runT
 // Make all window functions available immediately
 Object.defineProperty(window, '__moduleReady', { value: true });
 
-const VERSION = 'Avstemning v5.2';
+const VERSION = 'Avstemning v5.3';
 console.log(VERSION);
 
 const FIREBASE_CONFIG = {
@@ -2539,17 +2539,20 @@ async function calcExternalWinner(session){
   const subjects=session.subjects?Object.values(session.subjects):[];
   const subjectIdx=subjects.findIndex(s=>s.name===juryFirstPlace);
   if(subjectIdx===-1)return null;
-  // Hent stemmer på dette emnet
+  // Finn alle deltakere som har jury-emnet som sin personlige #1
   const votes=session.votes||{};
-  const subjectVotes=votes[subjectIdx]||{};
-  // Summer alle kategorier per deltaker og finn høyeste score
-  let highestScore=-1;
-  let winners=[];
-  Object.values(subjectVotes).forEach(v=>{
-    const catScores=v.votes||{};
-    const total=Object.values(catScores).reduce((sum,val)=>sum+(val||0),0);
-    if(total>highestScore){highestScore=total;winners=[v.participantName];}
-    else if(total===highestScore){winners.push(v.participantName);}
+  const participants=session.participants?Object.entries(session.participants):[];
+  const winners=[];
+  participants.forEach(([pid,p])=>{
+    let bestIdx=-1;
+    let bestScore=-1;
+    subjects.forEach((sub,si)=>{
+      const v=votes[si]&&votes[si][pid];
+      if(!v)return;
+      const total=Object.values(v.votes||{}).reduce((sum,val)=>sum+(val||0),0);
+      if(total>bestScore){bestScore=total;bestIdx=si;}
+    });
+    if(bestIdx===subjectIdx&&bestScore>0)winners.push(p.name||pid);
   });
   if(winners.length===0)return null;
   // Lagre vinner(e) til Firebase
@@ -3393,8 +3396,14 @@ function showExternalWinnerTab(session,silent){
     const container=document.getElementById('trophy-diplom-content');
     if(container){
       container.innerHTML='';
-      const winnerName=ew.winners.join(' & ');
+      const winnerName=ew.winners.join('\n');
       const diplom=buildDiplom(winnerName,ew.subjectName,session.name||'');
+      // Separate linjer i diplom-winner-elementet
+      const winnerEl=diplom.querySelector('.diplom-winner');
+      if(winnerEl){
+        winnerEl.style.whiteSpace='pre-line';
+        winnerEl.style.lineHeight='1.4';
+      }
       container.appendChild(diplom);
     }
   }
