@@ -853,7 +853,7 @@ import { getDatabase, ref, set, get, update, onValue, onChildAdded, remove, runT
 // Make all window functions available immediately
 Object.defineProperty(window, '__moduleReady', { value: true });
 
-const VERSION = 'Avstemning v5.0';
+const VERSION = 'Avstemning v5.1';
 console.log(VERSION);
 
 const FIREBASE_CONFIG = {
@@ -3437,9 +3437,11 @@ function showActivityWinnerTab(session,silent){
     const container=document.getElementById('fire-diplom-content');
     if(container){
       container.innerHTML='';
-      const winnerName=aw.winners.join(' & ');
-      const diplom=buildActivityDiplom(winnerName,aw.score||0,session.name||'');
-      container.appendChild(diplom);
+      aw.winners.forEach((winnerName,i)=>{
+        const diplom=buildActivityDiplom(winnerName,aw.score||0,session.name||'');
+        if(i>0)diplom.style.marginTop='24px';
+        container.appendChild(diplom);
+      });
     }
   }
   if(silent){
